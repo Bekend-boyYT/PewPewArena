@@ -31,7 +31,6 @@ namespace SniperGame.Player
         [SerializeField] private float crouchCameraY = 0.9f;
         [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
-        // Runtime Velocity State
         private Vector3 _currentHorizontalVelocity;
         private float _verticalVelocity;
         private bool _isGrounded;
@@ -54,7 +53,7 @@ namespace SniperGame.Player
 
         private void Update()
         {
-            if (!IsOwner || !PlayerLook.IsGameplayActive) return;
+            if (!IsOwner) return;
 
             UpdateGroundCheck();
             HandleCrouch();
@@ -69,7 +68,7 @@ namespace SniperGame.Player
 
             if (_isGrounded && _verticalVelocity < 0f)
             {
-                _verticalVelocity = -4.0f; // Houdt het karakter stevig tegen trappen en hellingen
+                _verticalVelocity = -4.0f;
             }
         }
 
@@ -77,7 +76,6 @@ namespace SniperGame.Player
         {
             if (Keyboard.current == null) return;
 
-            // WASD input direct pollen
             float inputX = 0f;
             float inputZ = 0f;
 
@@ -88,20 +86,16 @@ namespace SniperGame.Player
 
             Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
 
-            // Snelheidskeuze op basis van status
             bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
             float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
-            // Doelrichting relatief aan kijkhoek
             Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
 
-            // Pas acceleratie en frictie toe
             float rate = moveInput.magnitude > 0.01f ? acceleration : deceleration;
             if (!_isGrounded) rate *= airControlMultiplier;
 
             _currentHorizontalVelocity = Vector3.MoveTowards(_currentHorizontalVelocity, targetVelocity, rate * Time.deltaTime);
 
-            // Horizontale verplaatsing uitvoeren
             _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
         }
 
@@ -109,13 +103,11 @@ namespace SniperGame.Player
         {
             if (Keyboard.current == null) return;
 
-            // Sprong trigger
             if (_isGrounded && !_isCrouching && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 _verticalVelocity = jumpForce;
             }
 
-            // Snappy Gravity: Zwaarder vallen dan stijgen voor een strakke boog
             float appliedGravity = baseGravity;
             if (_verticalVelocity < 0f)
             {
@@ -124,7 +116,6 @@ namespace SniperGame.Player
 
             _verticalVelocity += appliedGravity * Time.deltaTime;
 
-            // Verticale verplaatsing uitvoeren
             _characterController.Move(new Vector3(0f, _verticalVelocity, 0f) * Time.deltaTime);
         }
 
@@ -152,6 +143,34 @@ namespace SniperGame.Player
             float smoothedY = Mathf.Lerp(currentPos.y, targetY, Time.deltaTime * crouchSmoothSpeed);
 
             cameraHolder.localPosition = new Vector3(currentPos.x, smoothedY, currentPos.z);
+        }
+
+        /// <summary>
+        /// Teleporteert de speler betrouwbaar naar een spawnpositie en rotatie.
+        /// </summary>
+        [ClientRpc]
+        public void TeleportClientRpc(Vector3 targetPosition, Quaternion targetRotation)
+        {
+            if (_characterController != null)
+            {
+                _characterController.enabled = false;
+            }
+
+            transform.position = targetPosition;
+            transform.rotation = targetRotation;
+
+            _currentHorizontalVelocity = Vector3.zero;
+            _verticalVelocity = 0f;
+
+            if (cameraHolder != null)
+            {
+                cameraHolder.localRotation = Quaternion.identity;
+            }
+
+            if (_characterController != null)
+            {
+                _characterController.enabled = true;
+            }
         }
     }
 }

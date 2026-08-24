@@ -184,6 +184,8 @@ GameObject:
   - component: {fileID: -7700286182009497169}
   - component: {fileID: -960980468623478024}
   - component: {fileID: 2451569977180287874}
+  - component: {fileID: 9152007135830493836}
+  - component: {fileID: 8674415964324781783}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -245,7 +247,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2871761722
+  GlobalObjectIdHash: 1798273257
   InScenePlacedSourceGlobalObjectIdHash: 2871761722
   DeferredDespawnTick: 0
   Ownership: 1
@@ -309,13 +311,17 @@ MonoBehaviour:
   walkSpeed: 5
   sprintSpeed: 8.5
   crouchSpeed: 2.5
-  jumpHeight: 1.2
-  gravity: -19.62
+  acceleration: 18
+  deceleration: 22
+  airControlMultiplier: 0.4
+  jumpForce: 6.5
+  baseGravity: -18
+  fallGravityMultiplier: 2.2
   standingHeight: 2
   crouchHeight: 1.2
   standingCameraY: 1.6
   crouchCameraY: 0.9
-  crouchTransitionSpeed: 10
+  crouchSmoothSpeed: 14
 --- !u!114 &2451569977180287874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -362,6 +368,50 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &9152007135830493836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021642998674229361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56680e7c1b59b8442936ffe3ee622ca7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerHealth
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxHealth: 100
+  CurrentHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
+  characterController: {fileID: 8591399208384449305}
+  visualsRenderer: {fileID: 8131419437210913135}
+--- !u!114 &8674415964324781783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021642998674229361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95564bcb33022ea4fb9c48c921edf8eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Weapons.SniperWeapon
+  ShowTopMostFoldoutHeaderGroup: 1
+  damage: 100
+  range: 500
+  fireRate: 1.5
+  playerCamera: {fileID: 6814447643227849398}
+  firePoint: {fileID: 2605089401782484605}
+  muzzleFlash: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &7321166484154200884
 GameObject:
   m_ObjectHideFlags: 0

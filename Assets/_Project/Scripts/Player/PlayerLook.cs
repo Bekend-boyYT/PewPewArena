@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace SniperGame.Player
 {
@@ -18,13 +19,25 @@ namespace SniperGame.Player
         [SerializeField] private float maxPitch = 85f;
 
         private float _verticalRotation = 0f;
-        public static bool IsGameplayActive = false;
+        private float _sensitivityMultiplier = 1.0f;
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
 
-            if (!IsOwner)
+            if (IsOwner)
+            {
+                // Alleen cursor locken als we daadwerkelijk in de gameplay arena zijn
+                if (SceneManager.GetActiveScene().name == "Maintestgameplay")
+                {
+                    SetCursorState(true);
+                }
+                else
+                {
+                    SetCursorState(false);
+                }
+            }
+            else
             {
                 enabled = false;
             }
@@ -32,7 +45,17 @@ namespace SniperGame.Player
 
         private void Update()
         {
-            if (!IsOwner || !IsGameplayActive) return;
+            if (!IsOwner) return;
+
+            // Blokkeer rondkijken als we nog in het menu zitten
+            if (SceneManager.GetActiveScene().name != "Maintestgameplay")
+            {
+                if (Cursor.lockState != CursorLockMode.None)
+                {
+                    SetCursorState(false);
+                }
+                return;
+            }
 
             HandleCursorLockInput();
             HandleLook();
@@ -44,8 +67,8 @@ namespace SniperGame.Player
 
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
 
-            float lookX = mouseDelta.x * mouseSensitivityX;
-            float lookY = mouseDelta.y * mouseSensitivityY;
+            float lookX = mouseDelta.x * (mouseSensitivityX * _sensitivityMultiplier);
+            float lookY = mouseDelta.y * (mouseSensitivityY * _sensitivityMultiplier);
 
             transform.Rotate(Vector3.up * lookX);
 
@@ -75,6 +98,11 @@ namespace SniperGame.Player
         {
             Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !locked;
+        }
+
+        public void SetSensitivityMultiplier(float multiplier)
+        {
+            _sensitivityMultiplier = multiplier;
         }
     }
 }
