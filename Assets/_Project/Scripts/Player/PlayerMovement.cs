@@ -8,28 +8,32 @@ namespace SniperGame.Player
     public class PlayerMovement : NetworkBehaviour
     {
         [Header("References")]
-        [Tooltip("Sleep hier het CameraHolder GameObject in voor crouch-animatie.")]
         [SerializeField] private Transform cameraHolder;
         private CharacterController _characterController;
 
-        [Header("Speeds")]
-        [SerializeField] private float walkSpeed = 5.0f;
-        [SerializeField] private float sprintSpeed = 8.5f;
-        [SerializeField] private float crouchSpeed = 2.5f;
+        [Header("Movement Speeds")]
+        [SerializeField] private float walkSpeed = 6.0f;
+        [SerializeField] private float sprintSpeed = 9.5f;
+        [SerializeField] private float crouchSpeed = 3.0f;
+        [SerializeField] private float acceleration = 18.0f;
+        [SerializeField] private float deceleration = 22.0f;
+        [SerializeField] private float airControlMultiplier = 0.4f;
 
-        [Header("Jump & Gravity")]
-        [SerializeField] private float jumpHeight = 1.2f;
-        [SerializeField] private float gravity = -19.62f;
+        [Header("Jump & Snappy Physics")]
+        [SerializeField] private float jumpForce = 6.5f;
+        [SerializeField] private float baseGravity = -18.0f;
+        [SerializeField] private float fallGravityMultiplier = 2.2f;
 
-        [Header("Crouch Settings")]
+        [Header("Crouch Configuration")]
         [SerializeField] private float standingHeight = 2.0f;
         [SerializeField] private float crouchHeight = 1.2f;
         [SerializeField] private float standingCameraY = 1.6f;
         [SerializeField] private float crouchCameraY = 0.9f;
-        [SerializeField] private float crouchTransitionSpeed = 10f;
+        [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
-        // State variabelen
-        private Vector3 _verticalVelocity;
+        // Runtime Velocity State
+        private Vector3 _currentHorizontalVelocity;
+        private float _verticalVelocity;
         private bool _isGrounded;
         private bool _isCrouching;
 
@@ -44,97 +48,110 @@ namespace SniperGame.Player
 
             if (!IsOwner)
             {
-                enabled = false; // Schakel bewegingsupdate uit op proxies van de tegenstander
+                enabled = false;
             }
         }
 
         private void Update()
         {
-            if (!IsOwner) return;
+            if (!IsOwner || !PlayerLook.IsGameplayActive) return;
 
-            CheckGrounded();
+            UpdateGroundCheck();
             HandleCrouch();
-            HandleMovement();
+            HandleHorizontalMovement();
             HandleJumpAndGravity();
-            SmoothCameraCrouch();
+            SmoothCameraHeight();
         }
 
-        private void CheckGrounded()
+        private void UpdateGroundCheck()
         {
             _isGrounded = _characterController.isGrounded;
-            if (_isGrounded && _verticalVelocity.y < 0f)
+
+            if (_isGrounded && _verticalVelocity < 0f)
             {
-                // Korte negatieve offset om de speler stevig op de grond te houden
-                _verticalVelocity.y = -2f;
+                _verticalVelocity = -4.0f; // Houdt het karakter stevig tegen trappen en hellingen
             }
         }
 
-        private void HandleMovement()
+        private void HandleHorizontalMovement()
         {
             if (Keyboard.current == null) return;
 
-            // Input uitlezen via het nieuwe Input System
-            float moveX = 0f;
-            float moveZ = 0f;
+            // WASD input direct pollen
+            float inputX = 0f;
+            float inputZ = 0f;
 
-            if (Keyboard.current.aKey.isPressed) moveX -= 1f;
-            if (Keyboard.current.dKey.isPressed) moveX += 1f;
-            if (Keyboard.current.sKey.isPressed) moveZ -= 1f;
-            if (Keyboard.current.wKey.isPressed) moveZ += 1f;
+            if (Keyboard.current.aKey.isPressed) inputX -= 1f;
+            if (Keyboard.current.dKey.isPressed) inputX += 1f;
+            if (Keyboard.current.sKey.isPressed) inputZ -= 1f;
+            if (Keyboard.current.wKey.isPressed) inputZ += 1f;
 
-            Vector3 inputDirection = new Vector3(moveX, 0f, moveZ).normalized;
+            Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
 
-            // Bepaal de huidige snelheid
-            bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputDirection.z > 0f;
-            float currentSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
+            // Snelheidskeuze op basis van status
+            bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
+            float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
-            // Verplaatsing relatief aan de kijkrichting van het lichaam
-            Vector3 moveVector = (transform.right * inputDirection.x + transform.forward * inputDirection.z) * currentSpeed;
+            // Doelrichting relatief aan kijkhoek
+            Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
 
-            _characterController.Move(moveVector * Time.deltaTime);
+            // Pas acceleratie en frictie toe
+            float rate = moveInput.magnitude > 0.01f ? acceleration : deceleration;
+            if (!_isGrounded) rate *= airControlMultiplier;
+
+            _currentHorizontalVelocity = Vector3.MoveTowards(_currentHorizontalVelocity, targetVelocity, rate * Time.deltaTime);
+
+            // Horizontale verplaatsing uitvoeren
+            _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
         }
 
         private void HandleJumpAndGravity()
         {
             if (Keyboard.current == null) return;
 
-            // Springen (alleen wanneer speler op de grond staat en niet hurkt)
+            // Sprong trigger
             if (_isGrounded && !_isCrouching && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
-                _verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                _verticalVelocity = jumpForce;
             }
 
-            // Zwaartekracht toepassen
-            _verticalVelocity.y += gravity * Time.deltaTime;
-            _characterController.Move(_verticalVelocity * Time.deltaTime);
+            // Snappy Gravity: Zwaarder vallen dan stijgen voor een strakke boog
+            float appliedGravity = baseGravity;
+            if (_verticalVelocity < 0f)
+            {
+                appliedGravity *= fallGravityMultiplier;
+            }
+
+            _verticalVelocity += appliedGravity * Time.deltaTime;
+
+            // Verticale verplaatsing uitvoeren
+            _characterController.Move(new Vector3(0f, _verticalVelocity, 0f) * Time.deltaTime);
         }
 
         private void HandleCrouch()
         {
             if (Keyboard.current == null) return;
 
-            // Toggle of ingedrukt houden van Left Ctrl / C
-            bool crouchPressed = Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed;
+            bool crouchInput = Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed;
 
-            if (crouchPressed != _isCrouching)
+            if (crouchInput != _isCrouching)
             {
-                _isCrouching = crouchPressed;
+                _isCrouching = crouchInput;
 
-                // Pas de CharacterController hoogte en center aan
                 _characterController.height = _isCrouching ? crouchHeight : standingHeight;
                 _characterController.center = new Vector3(0f, _characterController.height / 2f, 0f);
             }
         }
 
-        private void SmoothCameraCrouch()
+        private void SmoothCameraHeight()
         {
             if (cameraHolder == null) return;
 
-            float targetCameraY = _isCrouching ? crouchCameraY : standingCameraY;
+            float targetY = _isCrouching ? crouchCameraY : standingCameraY;
             Vector3 currentPos = cameraHolder.localPosition;
-            float newY = Mathf.Lerp(currentPos.y, targetCameraY, Time.deltaTime * crouchTransitionSpeed);
+            float smoothedY = Mathf.Lerp(currentPos.y, targetY, Time.deltaTime * crouchSmoothSpeed);
 
-            cameraHolder.localPosition = new Vector3(currentPos.x, newY, currentPos.z);
+            cameraHolder.localPosition = new Vector3(currentPos.x, smoothedY, currentPos.z);
         }
     }
 }
