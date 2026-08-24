@@ -92,12 +92,16 @@ namespace SniperGame.UI
             }
         }
 
-        private void HideUI()
-        {
-            if (connectionPanel != null)
-            {
-                connectionPanel.SetActive(false);
-            }
-        }
+private void HideUI()
+{
+    if (connectionPanel != null)
+    {
+        connectionPanel.SetActive(false);
+    }
+
+    // Vergrendel direct de muis voor gameplay
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
+}
     }
 }
