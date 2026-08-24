@@ -182,6 +182,8 @@ GameObject:
   - component: {fileID: 1076876266274787383}
   - component: {fileID: 1693454905316361897}
   - component: {fileID: 1899898363880225322}
+  - component: {fileID: -7700286182009497169}
+  - component: {fileID: -960980468623478024}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -243,7 +245,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1077008234
+  GlobalObjectIdHash: 2204905374
   InScenePlacedSourceGlobalObjectIdHash: 2871761722
   DeferredDespawnTick: 0
   Ownership: 1
@@ -318,6 +320,48 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   playerCamera: {fileID: 6814447643227849398}
   audioListener: {fileID: 7438089317243284113}
+--- !u!114 &-7700286182009497169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021642998674229361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4f0911f363a007438d73a216b2b0e26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerLook
+  ShowTopMostFoldoutHeaderGroup: 1
+  cameraHolder: {fileID: 6234881638414218974}
+  mouseSensitivityX: 0.15
+  mouseSensitivityY: 0.15
+  minPitch: -85
+  maxPitch: 85
+--- !u!114 &-960980468623478024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021642998674229361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40adc94aaf022d84b895b29d2937dd92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerMovement
+  ShowTopMostFoldoutHeaderGroup: 1
+  cameraHolder: {fileID: 6234881638414218974}
+  walkSpeed: 5
+  sprintSpeed: 8.5
+  crouchSpeed: 2.5
+  jumpHeight: 1.2
+  gravity: -19.62
+  standingHeight: 2
+  crouchHeight: 1.2
+  standingCameraY: 1.6
+  crouchCameraY: 0.9
+  crouchTransitionSpeed: 10
 --- !u!1 &7321166484154200884
 GameObject:
   m_ObjectHideFlags: 0
@@ -366,7 +410,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7321166484154200884}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
