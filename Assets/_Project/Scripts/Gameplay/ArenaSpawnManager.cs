@@ -2,6 +2,7 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using SniperGame.Player;
+using ProjectPlayerMovement = SniperGame.Player.PlayerMovement;
 
 namespace SniperGame.Gameplay
 {
@@ -56,7 +57,7 @@ namespace SniperGame.Gameplay
                 var client = clients[i];
                 if (client.PlayerObject == null) continue;
 
-                var playerMovement = client.PlayerObject.GetComponent<PlayerMovement>();
+                var playerMovement = client.PlayerObject.GetComponent<ProjectPlayerMovement>();
                 if (playerMovement == null) continue;
 
                 // Speler 0 (Host) krijgt Spawn 1, Speler 1 (Client) krijgt Spawn 2

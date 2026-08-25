@@ -188,15 +188,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e93ac713b5b9a23e18be7d8dd88dfedd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  walkSpeed: 7
-  acceleration: 40
-  airAcceleration: 20
-  friction: 8
-  jumpHeight: 1.2
-  gravity: -25
-  cameraTransform: {fileID: 0}
-  mouseSensitivity: 2
-  maxLookAngle: 89
 --- !u!143 &223026968
 CharacterController:
   m_ObjectHideFlags: 0
@@ -555,6 +546,7 @@ GameObject:
   - component: {fileID: 938129640}
   - component: {fileID: 938129639}
   - component: {fileID: 938129643}
+  - component: {fileID: 938129647}
   - component: {fileID: 938129644}
   - component: {fileID: 938129645}
   - component: {fileID: 938129646}
@@ -695,16 +687,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 938129638}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e93ac713b5b9a23e18be7d8dd88dfedd, type: 3}
+  m_Script: {fileID: 11500000, guid: 296cc55ac0e56e33dba09d37fde5e1be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  ShowTopMostFoldoutHeaderGroup: 1
   walkSpeed: 7
   acceleration: 40
   airAcceleration: 20
   friction: 8
   jumpHeight: 1.2
   gravity: -25
-  cameraTransform: {fileID: 1025642326}
+  cameraTransform: {fileID: 0}
   mouseSensitivity: 2
   maxLookAngle: 89
 --- !u!114 &938129645
@@ -741,6 +734,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d28933ea7f7555c99421ba52fb79ad3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+--- !u!114 &938129647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 938129638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 537682311
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1025642323
 GameObject:
   m_ObjectHideFlags: 0
