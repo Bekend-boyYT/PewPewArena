@@ -82,8 +82,8 @@ public class Sniper : MonoBehaviour
         {
             Debug.Log("You shot: " + hit.collider.name);
 
-            PlayerHealth enemy =
-                hit.collider.GetComponentInParent<PlayerHealth>();
+            PlayerHealths enemy =
+                hit.collider.GetComponentInParent<PlayerHealths>();
 
             if (enemy != null && enemy.gameObject != gameObject)
             {
