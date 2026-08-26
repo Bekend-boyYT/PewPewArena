@@ -18,6 +18,9 @@ namespace SniperGame.Player
         [SerializeField] private float minPitch = -85f;
         [SerializeField] private float maxPitch = 85f;
 
+        [Header("Scene Gating")]
+        [SerializeField] private string gameplaySceneName = "";
+
         private float _verticalRotation = 0f;
         private float _sensitivityMultiplier = 1.0f;
 
@@ -27,8 +30,7 @@ namespace SniperGame.Player
 
             if (IsOwner)
             {
-                // Alleen cursor locken als we daadwerkelijk in de gameplay arena zijn
-                if (SceneManager.GetActiveScene().name == "Maintestgameplay")
+                if (IsLookAllowedInCurrentScene())
                 {
                     SetCursorState(true);
                 }
@@ -47,8 +49,7 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            // Blokkeer rondkijken als we nog in het menu zitten
-            if (SceneManager.GetActiveScene().name != "Maintestgameplay")
+            if (!IsLookAllowedInCurrentScene())
             {
                 if (Cursor.lockState != CursorLockMode.None)
                 {
@@ -59,6 +60,16 @@ namespace SniperGame.Player
 
             HandleCursorLockInput();
             HandleLook();
+        }
+
+        private bool IsLookAllowedInCurrentScene()
+        {
+            if (string.IsNullOrWhiteSpace(gameplaySceneName))
+            {
+                return true;
+            }
+
+            return SceneManager.GetActiveScene().name == gameplaySceneName;
         }
 
         private void HandleLook()

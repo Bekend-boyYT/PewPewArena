@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : NetworkBehaviour
@@ -25,29 +26,75 @@ public class PlayerMovement : NetworkBehaviour
     private float verticalVelocity;
     private float cameraRotation;
 
+    private bool HasLocalControl => !IsSpawned || IsOwner;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
+
+        if (cameraTransform == null)
+        {
+            Camera childCamera = GetComponentInChildren<Camera>();
+            if (childCamera != null)
+            {
+                cameraTransform = childCamera.transform;
+            }
+        }
+    }
+
+    private void Start()
+    {
+        if (HasLocalControl)
+        {
+            LockCursor();
+        }
     }
 
     public override void OnNetworkSpawn()
     {
-        // Only the local player controls their own movement and camera.
-        if (!IsOwner)
-            return;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (HasLocalControl)
+        {
+            LockCursor();
+        }
     }
 
     private void Update()
     {
-        // Do not control other players.
-        if (!IsOwner)
+        if (!HasLocalControl)
+            return;
+
+        HandleCursorLockInput();
+
+        if (Cursor.lockState != CursorLockMode.Locked)
             return;
 
         HandleLook();
         HandleMovement();
+    }
+
+    private void HandleCursorLockInput()
+    {
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            UnlockCursor();
+        }
+
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
+        {
+            LockCursor();
+        }
+    }
+
+    private static void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private static void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     private void HandleMovement()
@@ -117,11 +164,21 @@ public class PlayerMovement : NetworkBehaviour
 
     private void HandleLook()
     {
-        float mouseX =
-            Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseX;
+        float mouseY;
 
-        float mouseY =
-            Input.GetAxis("Mouse Y") * mouseSensitivity;
+        if (Mouse.current != null)
+        {
+            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
+            mouseX = mouseDelta.x * mouseSensitivity;
+            mouseY = mouseDelta.y * mouseSensitivity;
+        }
+        else
+        {
+            // Fallback for legacy input handling.
+            mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+            mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        }
 
         transform.Rotate(Vector3.up * mouseX);
 
@@ -133,12 +190,15 @@ public class PlayerMovement : NetworkBehaviour
             maxLookAngle
         );
 
-        cameraTransform.localRotation =
-            Quaternion.Euler(
-                cameraRotation,
-                0f,
-                0f
-            );
+        if (cameraTransform != null)
+        {
+            cameraTransform.localRotation =
+                Quaternion.Euler(
+                    cameraRotation,
+                    0f,
+                    0f
+                );
+        }
     }
 
     // Used by ArenaSpawnManager to teleport players.

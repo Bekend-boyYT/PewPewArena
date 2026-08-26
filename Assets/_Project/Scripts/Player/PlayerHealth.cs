@@ -24,29 +24,23 @@ namespace SniperGame.Player
             base.OnNetworkSpawn();
 
             CurrentHealth.OnValueChanged += OnHealthChanged;
+            PushHealthToUI(CurrentHealth.Value);
+        }
 
-            if (IsOwner && CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateHealth(
-                    CurrentHealth.Value,
-                    maxHealth
-                );
-            }
+        private void Start()
+        {
+            PushHealthToUI(CurrentHealth.Value);
         }
 
         public override void OnNetworkDespawn()
         {
             CurrentHealth.OnValueChanged -= OnHealthChanged;
-
             base.OnNetworkDespawn();
         }
 
         private void OnHealthChanged(int previousValue, int newValue)
         {
-            if (IsOwner && CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateHealth(newValue, maxHealth);
-            }
+            PushHealthToUI(newValue);
 
             if (newValue <= 0)
             {
@@ -54,42 +48,35 @@ namespace SniperGame.Player
             }
         }
 
+        private void PushHealthToUI(int hp)
+        {
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateHealth(hp, maxHealth);
+            }
+        }
+
         public void TakeDamage(int damageAmount, ulong attackerClientId)
         {
-            if (!IsServer || CurrentHealth.Value <= 0)
-                return;
+            if (!IsServer || CurrentHealth.Value <= 0) return;
 
-            int newHp = Mathf.Max(
-                0,
-                CurrentHealth.Value - damageAmount
-            );
-
+            int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
             CurrentHealth.Value = newHp;
 
-            Debug.Log(
-                $"[Combat] Speler {OwnerClientId} ontving " +
-                $"{damageAmount} damage van Speler {attackerClientId}. " +
-                $"Resterend HP: {newHp}"
-            );
+            Debug.Log($"[Combat] Speler {OwnerClientId} ontving {damageAmount} damage. Resterend: {newHp}");
         }
 
         private void HandleDeath()
         {
-            Debug.Log(
-                $"[Combat] Speler {OwnerClientId} is geëlimineerd!"
-            );
+            Debug.Log($"[Combat] Speler {OwnerClientId} is geëlimineerd!");
 
-            if (characterController != null)
-                characterController.enabled = false;
-
-            if (visualsRenderer != null)
-                visualsRenderer.enabled = false;
+            if (characterController != null) characterController.enabled = false;
+            if (visualsRenderer != null) visualsRenderer.enabled = false;
         }
 
         public void ResetPlayer(Vector3 spawnPosition)
         {
-            if (!IsServer)
-                return;
+            if (!IsServer) return;
 
             CurrentHealth.Value = maxHealth;
 
@@ -104,8 +91,7 @@ namespace SniperGame.Player
                 transform.position = spawnPosition;
             }
 
-            if (visualsRenderer != null)
-                visualsRenderer.enabled = true;
+            if (visualsRenderer != null) visualsRenderer.enabled = true;
         }
     }
 }
