@@ -1,7 +1,6 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using SniperGame.Player;
 using SniperGame.UI;
 
@@ -21,8 +20,9 @@ namespace SniperGame.Gameplay
         public static RoundManager Instance { get; private set; }
 
         [Header("Match Settings")]
-        [SerializeField] private int roundsToWin = 2; // Best of 3 (eerste met 2 punten wint)
+        [SerializeField] private int roundsToWin = 2; // Best of 3
         [SerializeField] private float countdownDuration = 3f;
+        [SerializeField] private float roundDuration = 60f; // 60 seconden per ronde
         [SerializeField] private float roundEndDelay = 3f;
 
         [Header("State (Synchronized)")]
@@ -35,6 +35,7 @@ namespace SniperGame.Gameplay
         public NetworkVariable<int> HostScore = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<int> ClientScore = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<int> CurrentRound = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        public NetworkVariable<float> RoundTimeRemaining = new NetworkVariable<float>(60f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private void Awake()
         {
@@ -48,6 +49,7 @@ namespace SniperGame.Gameplay
 
             HostScore.OnValueChanged += (prev, val) => UpdateScoresUI();
             ClientScore.OnValueChanged += (prev, val) => UpdateScoresUI();
+            RoundTimeRemaining.OnValueChanged += (prev, val) => UpdateTimerUI(val);
 
             if (IsServer)
             {
@@ -55,9 +57,25 @@ namespace SniperGame.Gameplay
             }
         }
 
+        private void Update()
+        {
+            if (!IsServer) return;
+
+            // Timer aftellen tijdens actieve ronde
+            if (CurrentState.Value == MatchState.InRound)
+            {
+                RoundTimeRemaining.Value -= Time.deltaTime;
+
+                if (RoundTimeRemaining.Value <= 0f)
+                {
+                    RoundTimeRemaining.Value = 0f;
+                    OnTimeExpired();
+                }
+            }
+        }
+
         private IEnumerator InitialMatchStartRoutine()
         {
-            // Wacht kort tot beide spelers volledig geladen zijn
             yield return new WaitForSeconds(0.5f);
             StartNewRound();
         }
@@ -71,10 +89,8 @@ namespace SniperGame.Gameplay
         {
             if (!IsServer) return;
 
-            // 1. Reset en teleporteer alle spelers
             ResetAllPlayers();
-
-            // 2. Start Countdown
+            RoundTimeRemaining.Value = roundDuration;
             StartCoroutine(RoundCountdownRoutine());
         }
 
@@ -92,15 +108,30 @@ namespace SniperGame.Gameplay
             CurrentState.Value = MatchState.InRound;
         }
 
+        private void OnTimeExpired()
+        {
+            if (CurrentState.Value != MatchState.InRound) return;
+
+            CurrentState.Value = MatchState.RoundEnded;
+            ShowAnnouncementClientRpc("TIJD IS OM!", Color.yellow, 2.5f);
+
+            StartCoroutine(EndDrawRoundRoutine());
+        }
+
+        private IEnumerator EndDrawRoundRoutine()
+        {
+            yield return new WaitForSeconds(roundEndDelay);
+            CurrentRound.Value++;
+            StartNewRound();
+        }
+
         public void OnPlayerDied(ulong victimClientId)
         {
             if (!IsServer || CurrentState.Value != MatchState.InRound) return;
 
             CurrentState.Value = MatchState.RoundEnded;
 
-            // Bepaal winnaar van de ronde (de andere speler)
             ulong winnerClientId = GetOtherPlayerClientId(victimClientId);
-
             bool isHostWinner = (winnerClientId == NetworkManager.Singleton.LocalClientId);
 
             if (isHostWinner) HostScore.Value++;
@@ -108,7 +139,6 @@ namespace SniperGame.Gameplay
 
             UpdateScoresUI();
 
-            // Controleer of match gewonnen is (Best of 3)
             if (HostScore.Value >= roundsToWin || ClientScore.Value >= roundsToWin)
             {
                 StartCoroutine(EndMatchRoutine(winnerClientId));
@@ -132,9 +162,7 @@ namespace SniperGame.Gameplay
         private IEnumerator EndMatchRoutine(ulong matchWinnerClientId)
         {
             CurrentState.Value = MatchState.MatchEnded;
-
             NotifyMatchOutcomeClientRpc(matchWinnerClientId);
-
             yield return null;
         }
 
@@ -152,7 +180,6 @@ namespace SniperGame.Gameplay
                     var health = client.PlayerObject.GetComponent<PlayerHealth>();
                     if (health != null)
                     {
-                        // Herstel HP naar 100
                         health.ResetHealthServer();
                     }
                 }
@@ -173,6 +200,14 @@ namespace SniperGame.Gameplay
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.UpdateMatchScore(HostScore.Value, ClientScore.Value, CurrentRound.Value);
+            }
+        }
+
+        private void UpdateTimerUI(float timeRemaining)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateTimer(timeRemaining);
             }
         }
 

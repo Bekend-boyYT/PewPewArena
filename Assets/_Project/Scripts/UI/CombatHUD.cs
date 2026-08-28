@@ -26,6 +26,7 @@ namespace SniperGame.UI
 
         [Header("Match & Round UI")]
         [SerializeField] private TextMeshProUGUI scoreText;
+        [SerializeField] private TextMeshProUGUI timerText;
         [SerializeField] private TextMeshProUGUI announcementText;
         [SerializeField] private GameObject matchEndPanel;
         [SerializeField] private TextMeshProUGUI matchEndTitle;
@@ -148,6 +149,19 @@ namespace SniperGame.UI
             int enemyScore = isHost ? clientScore : hostScore;
 
             scoreText.text = $"RONDE {currentRound}  |  <color=#00FF66>JIJ: {myScore}</color> - <color=#FF4444>VIJAND: {enemyScore}</color>";
+        }
+
+        public void UpdateTimer(float timeRemaining)
+        {
+            if (timerText == null) return;
+
+            int minutes = Mathf.FloorToInt(timeRemaining / 60f);
+            int seconds = Mathf.FloorToInt(timeRemaining % 60f);
+
+            timerText.text = $"{minutes:00}:{seconds:00}";
+
+            // Rood waarschuwingstint onder 10 seconden
+            timerText.color = (timeRemaining <= 10f) ? new Color(1f, 0.25f, 0.25f) : Color.white;
         }
 
         public void ShowMatchEndScreen(bool isWinner)

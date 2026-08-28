@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using SniperGame.Player;
@@ -11,7 +12,7 @@ namespace SniperGame.Weapons
         [Header("Weapon Settings")]
         [SerializeField] private int damage = 100;
         [SerializeField] private float range = 500f;
-        [SerializeField] private float fireRate = 1.3f; // Bolt-action tussentijd
+        [SerializeField] private float fireRate = 1.3f;
 
         [Header("Scope / ADS Settings")]
         [SerializeField] private float hipFOV = 60f;
@@ -19,14 +20,23 @@ namespace SniperGame.Weapons
         [SerializeField] private float zoomSpeed = 16f;
         [SerializeField] private float scopedSensitivityMultiplier = 0.35f;
 
+        [Header("Recoil Kick Settings")]
+        [SerializeField] private float hipRecoilPitch = 3.2f;
+        [SerializeField] private float hipRecoilYaw = 1.0f;
+        [SerializeField] private float scopedRecoilPitch = 1.4f;
+        [SerializeField] private float scopedRecoilYaw = 0.4f;
+
         [Header("References")]
         [SerializeField] private Camera playerCamera;
         [SerializeField] private Transform firePoint;
         [SerializeField] private PlayerLook playerLook;
 
-        [Header("Effects")]
+        [Header("Effects & Tracers")]
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitEffectPrefab;
+        [SerializeField] private Material tracerMaterial;
+        [SerializeField] private float tracerDuration = 0.08f;
+        [SerializeField] private float tracerWidth = 0.04f;
 
         [Header("Layers")]
         [SerializeField] private LayerMask hitMask = ~0;
@@ -46,10 +56,8 @@ namespace SniperGame.Weapons
 
         private void Update()
         {
-            // Alleen de eigenaar kan dit wapen besturen
             if (!IsOwner) return;
 
-            // Blokkeer schieten en zoomen als het aftellen van de ronde nog bezig is
             if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
             {
                 ResetAimingState();
@@ -66,23 +74,19 @@ namespace SniperGame.Weapons
 
         private void HandleAiming()
         {
-            // Rechtermuisknop ingedrukt houden om in te zoomen
             isAiming = Input.GetMouseButton(1);
 
-            // Vloeiende overgang van de camera FOV
             if (playerCamera != null)
             {
                 float targetFOV = isAiming ? scopedFOV : hipFOV;
                 playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
             }
 
-            // Gevoeligheid van de muis verlagen tijdens het richten voor meer precisie
             if (playerLook != null)
             {
                 playerLook.SetSensitivityMultiplier(isAiming ? scopedSensitivityMultiplier : 1.0f);
             }
 
-            // HUD aansturen (donkere randen / scope overlay)
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(isAiming);
@@ -118,7 +122,6 @@ namespace SniperGame.Weapons
             Vector3 origin;
             Vector3 direction;
 
-            // Schiet direct door het midden van het vizier
             if (playerCamera != null)
             {
                 origin = playerCamera.transform.position;
@@ -135,10 +138,17 @@ namespace SniperGame.Weapons
                 direction = transform.forward;
             }
 
-            // Speel lokale flits direct af voor 0ms feedback
+            // Pas recoil kick toe op de camera van de schutter
+            if (playerLook != null)
+            {
+                float pitch = isAiming ? scopedRecoilPitch : hipRecoilPitch;
+                float yaw = Random.Range(-1f, 1f) * (isAiming ? scopedRecoilYaw : hipRecoilYaw);
+                playerLook.AddRecoil(pitch, yaw);
+            }
+
             PlayShootEffects();
 
-            // Vraag de server om de Raycast uit te voeren en de hit te valideren
+            // Voer Server-Side Raycast uit
             ShootServerRpc(origin, direction, OwnerClientId);
         }
 
@@ -151,22 +161,20 @@ namespace SniperGame.Weapons
         {
             direction.Normalize();
 
-            // Server-authoritative Raycast
+            Vector3 hitPoint = origin + direction * range;
+            Vector3 hitNormal = -direction;
+
             if (Physics.Raycast(origin, direction, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore))
             {
+                hitPoint = hit.point;
+                hitNormal = hit.normal;
+
                 PlayerHealth targetHealth = hit.collider.GetComponentInParent<PlayerHealth>();
 
-                if (targetHealth != null)
+                if (targetHealth != null && targetHealth.OwnerClientId != shooterClientId)
                 {
-                    // Schiet jezelf niet neer
-                    if (targetHealth.OwnerClientId == shooterClientId) return;
-
-                    // Schade toebrengen op de server
                     targetHealth.TakeDamage(damage, shooterClientId);
 
-                    Debug.Log($"[Sniper] Speler {shooterClientId} raakte Speler {targetHealth.OwnerClientId} voor {damage} damage.");
-
-                    // Stuur hitmarker bevestiging specifiek terug naar de schutter
                     ClientRpcParams clientRpcParams = new ClientRpcParams
                     {
                         Send = new ClientRpcSendParams
@@ -175,16 +183,12 @@ namespace SniperGame.Weapons
                         }
                     };
                     ConfirmHitClientRpc(clientRpcParams);
-
-                    // Spawn impact/kogel effect voor alle spelers
-                    SpawnHitEffectClientRpc(hit.point, hit.normal);
-                }
-                else
-                {
-                    // Muur of vloer geraakt
-                    SpawnHitEffectClientRpc(hit.point, hit.normal);
                 }
             }
+
+            // Spawn Tracer en Impact effect op alle clients
+            Vector3 spawnOrigin = (firePoint != null) ? firePoint.position : origin;
+            SpawnShotVisualsClientRpc(spawnOrigin, hitPoint, hitNormal);
         }
 
         [ClientRpc]
@@ -196,46 +200,64 @@ namespace SniperGame.Weapons
             }
         }
 
-        private void PlayShootEffects()
+        [ClientRpc]
+        private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
         {
-            if (muzzleFlash != null)
+            // Start kogelspoor (Tracer)
+            StartCoroutine(DrawTracerRoutine(origin, hitPosition));
+
+            // Spawn impact FX
+            if (hitEffectPrefab != null)
             {
-                muzzleFlash.Play();
+                GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
+                Destroy(effect, 3f);
+            }
+        }
+
+        private IEnumerator DrawTracerRoutine(Vector3 start, Vector3 end)
+        {
+            GameObject tracerObj = new GameObject("BulletTracer");
+            LineRenderer lr = tracerObj.AddComponent<LineRenderer>();
+
+            lr.startWidth = tracerWidth;
+            lr.endWidth = tracerWidth * 0.5f;
+            lr.positionCount = 2;
+            lr.SetPosition(0, start);
+            lr.SetPosition(1, end);
+
+            // Gebruik het toegewezen materiaal of een standaard wit/geel sprite materiaal
+            if (tracerMaterial != null)
+            {
+                lr.material = tracerMaterial;
+            }
+            else
+            {
+                lr.material = new Material(Shader.Find("Sprites/Default"));
+                lr.startColor = new Color(1f, 0.9f, 0.3f, 0.9f); // Goudgeel spoor
+                lr.endColor = new Color(1f, 1f, 1f, 0.4f);
             }
 
+            yield return new WaitForSeconds(tracerDuration);
+
+            Destroy(tracerObj);
+        }
+
+        private void PlayShootEffects()
+        {
+            if (muzzleFlash != null) muzzleFlash.Play();
             PlayShootEffectsClientRpc();
         }
 
         [ClientRpc]
         private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            // Eigenaar heeft het effect lokaal al direct afgespeeld
             if (IsOwner) return;
-
-            if (muzzleFlash != null)
-            {
-                muzzleFlash.Play();
-            }
-        }
-
-        [ClientRpc]
-        private void SpawnHitEffectClientRpc(Vector3 hitPosition, Vector3 hitNormal)
-        {
-            if (hitEffectPrefab == null) return;
-
-            GameObject effect = Instantiate(
-                hitEffectPrefab,
-                hitPosition,
-                Quaternion.LookRotation(hitNormal)
-            );
-
-            Destroy(effect, 3f);
+            if (muzzleFlash != null) muzzleFlash.Play();
         }
 
         private void OnDrawGizmosSelected()
         {
             if (firePoint == null) return;
-
             Gizmos.color = Color.red;
             Gizmos.DrawRay(firePoint.position, firePoint.forward * range);
         }
