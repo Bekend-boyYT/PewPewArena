@@ -18,9 +18,6 @@ namespace SniperGame.Player
         [SerializeField] private float minPitch = -85f;
         [SerializeField] private float maxPitch = 85f;
 
-        [Header("Scene Gating")]
-        [SerializeField] private string gameplaySceneName = "";
-
         private float _verticalRotation = 0f;
         private float _sensitivityMultiplier = 1.0f;
 
@@ -28,20 +25,41 @@ namespace SniperGame.Player
         {
             base.OnNetworkSpawn();
 
-            if (IsOwner)
+            if (!IsOwner)
             {
-                if (IsLookAllowedInCurrentScene())
-                {
-                    SetCursorState(true);
-                }
-                else
-                {
-                    SetCursorState(false);
-                }
+                enabled = false;
+                return;
+            }
+
+            // Luister naar scene-wisselingen
+            SceneManager.sceneLoaded += OnSceneLoaded;
+
+            CheckActiveScene();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            base.OnNetworkDespawn();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            CheckActiveScene();
+        }
+
+        private void CheckActiveScene()
+        {
+            if (!IsOwner) return;
+
+            // Alleen cursor locken en actief zijn in de gameplay arena
+            if (SceneManager.GetActiveScene().name == "Maintestgameplay")
+            {
+                SetCursorState(true);
             }
             else
             {
-                enabled = false;
+                SetCursorState(false);
             }
         }
 
@@ -49,27 +67,14 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            if (!IsLookAllowedInCurrentScene())
+            // In het menu NOOIT muisvergrendeling of rondkijken toestaan
+            if (SceneManager.GetActiveScene().name != "Maintestgameplay")
             {
-                if (Cursor.lockState != CursorLockMode.None)
-                {
-                    SetCursorState(false);
-                }
                 return;
             }
 
             HandleCursorLockInput();
             HandleLook();
-        }
-
-        private bool IsLookAllowedInCurrentScene()
-        {
-            if (string.IsNullOrWhiteSpace(gameplaySceneName))
-            {
-                return true;
-            }
-
-            return SceneManager.GetActiveScene().name == gameplaySceneName;
         }
 
         private void HandleLook()
