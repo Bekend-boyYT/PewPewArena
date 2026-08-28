@@ -1357,6 +1357,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 426859074}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!1 &993193315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 993193317}
+  - component: {fileID: 993193316}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &993193316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993193315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0302831fa646c4d4cb24ca1ea84914a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Audio.AudioManager
+  hitmarkerClip: {fileID: 0}
+  headshotHitmarkerClip: {fileID: 0}
+  countdownTickClip: {fileID: 8300000, guid: a0264ad0c11cf274d851e0d9a075d6dd, type: 3}
+  countdownStartClip: {fileID: 0}
+  roundWinClip: {fileID: 0}
+  roundLoseClip: {fileID: 0}
+  victoryClip: {fileID: 8300000, guid: 31ddf9c5799c99641b48c0c2cfb26ba7, type: 3}
+  defeatClip: {fileID: 8300000, guid: de0c34804a2919444882d7ac083efddc, type: 3}
+--- !u!4 &993193317
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993193315}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 531.91437, y: 207.93756, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1033472121
 GameObject:
   m_ObjectHideFlags: 0
@@ -8833,3 +8885,4 @@ SceneRoots:
   - {fileID: 1441327047}
   - {fileID: 2101286508}
   - {fileID: 2091589088}
+  - {fileID: 993193317}

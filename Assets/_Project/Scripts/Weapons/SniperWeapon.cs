@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using SniperGame.Player;
 using SniperGame.UI;
 using SniperGame.Gameplay;
+using SniperGame.Audio;
 
 namespace SniperGame.Weapons
 {
@@ -18,6 +19,11 @@ namespace SniperGame.Weapons
         [Header("Ammo Settings")]
         [SerializeField] private int maxClipAmmo = 5;
         [SerializeField] private float reloadDuration = 2.2f;
+
+        [Header("Audio Settings (3D Spatial)")]
+        [SerializeField] private AudioSource weaponAudioSource;
+        [SerializeField] private AudioClip gunshotClip;
+        [SerializeField] private AudioClip reloadClip;
 
         [Header("Scope / ADS Settings")]
         [SerializeField] private float hipFOV = 60f;
@@ -84,13 +90,11 @@ namespace SniperGame.Weapons
                 return;
             }
 
-            // Herladen via R-toets
             if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !_isReloading && _currentAmmo < maxClipAmmo)
             {
                 StartReload();
             }
 
-            // Alleen richten toestaan als we niet aan het herladen zijn
             if (!_isReloading)
             {
                 HandleAiming();
@@ -151,7 +155,6 @@ namespace SniperGame.Weapons
         {
             if (_isReloading || Time.time < nextFireTime) return;
 
-            // Magazijn leeg: start direct de herlaadsequentie
             if (_currentAmmo <= 0)
             {
                 StartReload();
@@ -208,11 +211,28 @@ namespace SniperGame.Weapons
             ResetAimingState();
             UpdateAmmoDisplay();
 
+            PlayReloadSoundServerRpc();
+
             yield return new WaitForSeconds(reloadDuration);
 
             _currentAmmo = maxClipAmmo;
             _isReloading = false;
             UpdateAmmoDisplay();
+        }
+
+        [ServerRpc]
+        private void PlayReloadSoundServerRpc()
+        {
+            PlayReloadSoundClientRpc();
+        }
+
+        [ClientRpc]
+        private void PlayReloadSoundClientRpc()
+        {
+            if (weaponAudioSource != null && reloadClip != null)
+            {
+                weaponAudioSource.PlayOneShot(reloadClip, 0.9f);
+            }
         }
 
         public void ResetAmmo()
@@ -276,6 +296,36 @@ namespace SniperGame.Weapons
             {
                 CombatHUD.Instance.ShowHitmarker();
             }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayHitmarker(false);
+            }
+        }
+
+        private void PlayShootEffects()
+        {
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
+            {
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+            }
+
+            PlayShootEffectsClientRpc();
+        }
+
+        [ClientRpc]
+        private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner) return;
+
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
+            {
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+            }
         }
 
         [ClientRpc]
@@ -315,19 +365,6 @@ namespace SniperGame.Weapons
             yield return new WaitForSeconds(tracerDuration);
 
             Destroy(tracerObj);
-        }
-
-        private void PlayShootEffects()
-        {
-            if (muzzleFlash != null) muzzleFlash.Play();
-            PlayShootEffectsClientRpc();
-        }
-
-        [ClientRpc]
-        private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
-        {
-            if (IsOwner) return;
-            if (muzzleFlash != null) muzzleFlash.Play();
         }
 
         private void OnDrawGizmosSelected()

@@ -10,6 +10,7 @@ namespace SniperGame.Player
     {
         [Header("References")]
         [SerializeField] private Transform cameraHolder;
+        [SerializeField] private AudioSource footstepAudioSource;
         private CharacterController _characterController;
 
         [Header("Movement Speeds")]
@@ -20,7 +21,7 @@ namespace SniperGame.Player
         [SerializeField] private float deceleration = 22.0f;
         [SerializeField] private float airControlMultiplier = 0.4f;
 
-        [Header("Jump & Snappy Physics")]
+        [Header("Jump & Physics")]
         [SerializeField] private float jumpForce = 6.5f;
         [SerializeField] private float baseGravity = -18.0f;
         [SerializeField] private float fallGravityMultiplier = 2.2f;
@@ -32,11 +33,16 @@ namespace SniperGame.Player
         [SerializeField] private float crouchCameraY = 0.9f;
         [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
-        // Runtime Velocity State
+        [Header("Footstep Audio Settings")]
+        [SerializeField] private AudioClip[] footstepClips;
+        [SerializeField] private float walkStepInterval = 0.45f;
+        [SerializeField] private float sprintStepInterval = 0.30f;
+
         private Vector3 _currentHorizontalVelocity;
         private float _verticalVelocity;
         private bool _isGrounded;
         private bool _isCrouching;
+        private float _stepTimer;
 
         private void Awake()
         {
@@ -57,7 +63,6 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            // Blokkeer beweging tijdens de aftelling van de ronde (Round Countdown)
             if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
             {
                 _currentHorizontalVelocity = Vector3.zero;
@@ -69,6 +74,7 @@ namespace SniperGame.Player
             HandleHorizontalMovement();
             HandleJumpAndGravity();
             SmoothCameraHeight();
+            HandleFootsteps();
         }
 
         private void UpdateGroundCheck()
@@ -77,7 +83,7 @@ namespace SniperGame.Player
 
             if (_isGrounded && _verticalVelocity < 0f)
             {
-                _verticalVelocity = -4.0f; // Drukt het karakter stevig tegen hellingen en de vloer
+                _verticalVelocity = -4.0f;
             }
         }
 
@@ -85,7 +91,6 @@ namespace SniperGame.Player
         {
             if (Keyboard.current == null) return;
 
-            // Directe WASD polling
             float inputX = 0f;
             float inputZ = 0f;
 
@@ -96,14 +101,11 @@ namespace SniperGame.Player
 
             Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
 
-            // Snelheidskeuze op basis van sprint/crouch
             bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
             float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
-            // Relatieve bewegingsrichting op basis van kijkrichting
             Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
 
-            // Snappy acceleratie & decceleratie (direct stoppen zonder uitglijden)
             float rate = moveInput.magnitude > 0.01f ? acceleration : deceleration;
             if (!_isGrounded) rate *= airControlMultiplier;
 
@@ -112,17 +114,51 @@ namespace SniperGame.Player
             _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
         }
 
+        private void HandleFootsteps()
+        {
+            if (!_isGrounded || _isCrouching || _currentHorizontalVelocity.magnitude < 1.0f)
+            {
+                return;
+            }
+
+            bool isSprinting = _currentHorizontalVelocity.magnitude > (walkSpeed + 1.0f);
+            float currentInterval = isSprinting ? sprintStepInterval : walkStepInterval;
+
+            _stepTimer += Time.deltaTime;
+
+            if (_stepTimer >= currentInterval)
+            {
+                _stepTimer = 0f;
+                PlayFootstep();
+            }
+        }
+
+        private void PlayFootstep()
+        {
+            if (footstepClips == null || footstepClips.Length == 0) return;
+
+            int randomIndex = Random.Range(0, footstepClips.Length);
+            PlayFootstepClientRpc(randomIndex);
+        }
+
+        [ClientRpc]
+        private void PlayFootstepClientRpc(int clipIndex)
+        {
+            if (footstepAudioSource == null || footstepClips == null || clipIndex >= footstepClips.Length) return;
+
+            footstepAudioSource.pitch = Random.Range(0.9f, 1.1f);
+            footstepAudioSource.PlayOneShot(footstepClips[clipIndex], 0.6f);
+        }
+
         private void HandleJumpAndGravity()
         {
             if (Keyboard.current == null) return;
 
-            // Sprong uitvoeren
             if (_isGrounded && !_isCrouching && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 _verticalVelocity = jumpForce;
             }
 
-            // Snappy Gravity: dubbele zwaartekracht tijdens het vallen (geen zweverige sprongen)
             float appliedGravity = baseGravity;
             if (_verticalVelocity < 0f)
             {
@@ -160,32 +196,21 @@ namespace SniperGame.Player
             cameraHolder.localPosition = new Vector3(currentPos.x, smoothedY, currentPos.z);
         }
 
-        /// <summary>
-        /// Teleporteert de speler betrouwbaar naar een spawnpositie door de CharacterController kort te resetten.
-        /// </summary>
         [ClientRpc]
         public void TeleportClientRpc(Vector3 targetPosition, Quaternion targetRotation)
         {
-            if (_characterController != null)
-            {
-                _characterController.enabled = false;
-            }
+            if (_characterController != null) _characterController.enabled = false;
 
             transform.position = targetPosition;
             transform.rotation = targetRotation;
 
             _currentHorizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
+            _stepTimer = 0f;
 
-            if (cameraHolder != null)
-            {
-                cameraHolder.localRotation = Quaternion.identity;
-            }
+            if (cameraHolder != null) cameraHolder.localRotation = Quaternion.identity;
 
-            if (_characterController != null)
-            {
-                _characterController.enabled = true;
-            }
+            if (_characterController != null) _characterController.enabled = true;
         }
     }
 }
