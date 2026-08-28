@@ -2,6 +2,8 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using SniperGame.Gameplay;
 
 namespace SniperGame.Player
 {
@@ -31,9 +33,7 @@ namespace SniperGame.Player
                 return;
             }
 
-            // Luister naar scene-wisselingen
             SceneManager.sceneLoaded += OnSceneLoaded;
-
             CheckActiveScene();
         }
 
@@ -52,7 +52,6 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            // Alleen cursor locken en actief zijn in de gameplay arena
             if (SceneManager.GetActiveScene().name == "Maintestgameplay")
             {
                 SetCursorState(true);
@@ -67,9 +66,18 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            // In het menu NOOIT muisvergrendeling of rondkijken toestaan
             if (SceneManager.GetActiveScene().name != "Maintestgameplay")
             {
+                return;
+            }
+
+            // Als de match is afgelopen: Muis ALTIJD vrijgeven voor het eindscherm
+            if (RoundManager.Instance != null && RoundManager.Instance.CurrentState.Value == MatchState.MatchEnded)
+            {
+                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
+                {
+                    SetCursorState(false);
+                }
                 return;
             }
 
@@ -104,8 +112,14 @@ namespace SniperGame.Player
                 SetCursorState(false);
             }
 
+            // Alleen muis locken als we NIET op UI knoppen klikken
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
             {
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                {
+                    return; // Klik op een UI-knop negeren
+                }
+
                 SetCursorState(true);
             }
         }

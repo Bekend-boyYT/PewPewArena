@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SniperGame.Gameplay;
 
 namespace SniperGame.Player
 {
@@ -31,6 +32,7 @@ namespace SniperGame.Player
         [SerializeField] private float crouchCameraY = 0.9f;
         [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
+        // Runtime Velocity State
         private Vector3 _currentHorizontalVelocity;
         private float _verticalVelocity;
         private bool _isGrounded;
@@ -55,6 +57,13 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
+            // Blokkeer beweging tijdens de aftelling van de ronde (Round Countdown)
+            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
+            {
+                _currentHorizontalVelocity = Vector3.zero;
+                return;
+            }
+
             UpdateGroundCheck();
             HandleCrouch();
             HandleHorizontalMovement();
@@ -68,7 +77,7 @@ namespace SniperGame.Player
 
             if (_isGrounded && _verticalVelocity < 0f)
             {
-                _verticalVelocity = -4.0f;
+                _verticalVelocity = -4.0f; // Drukt het karakter stevig tegen hellingen en de vloer
             }
         }
 
@@ -76,6 +85,7 @@ namespace SniperGame.Player
         {
             if (Keyboard.current == null) return;
 
+            // Directe WASD polling
             float inputX = 0f;
             float inputZ = 0f;
 
@@ -86,11 +96,14 @@ namespace SniperGame.Player
 
             Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
 
+            // Snelheidskeuze op basis van sprint/crouch
             bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
             float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
+            // Relatieve bewegingsrichting op basis van kijkrichting
             Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
 
+            // Snappy acceleratie & decceleratie (direct stoppen zonder uitglijden)
             float rate = moveInput.magnitude > 0.01f ? acceleration : deceleration;
             if (!_isGrounded) rate *= airControlMultiplier;
 
@@ -103,11 +116,13 @@ namespace SniperGame.Player
         {
             if (Keyboard.current == null) return;
 
+            // Sprong uitvoeren
             if (_isGrounded && !_isCrouching && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 _verticalVelocity = jumpForce;
             }
 
+            // Snappy Gravity: dubbele zwaartekracht tijdens het vallen (geen zweverige sprongen)
             float appliedGravity = baseGravity;
             if (_verticalVelocity < 0f)
             {
@@ -146,7 +161,7 @@ namespace SniperGame.Player
         }
 
         /// <summary>
-        /// Teleporteert de speler betrouwbaar naar een spawnpositie en rotatie.
+        /// Teleporteert de speler betrouwbaar naar een spawnpositie door de CharacterController kort te resetten.
         /// </summary>
         [ClientRpc]
         public void TeleportClientRpc(Vector3 targetPosition, Quaternion targetRotation)

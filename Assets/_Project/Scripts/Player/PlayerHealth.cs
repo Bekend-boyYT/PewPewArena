@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using SniperGame.UI;
+using SniperGame.Gameplay;
 
 namespace SniperGame.Player
 {
@@ -46,6 +47,10 @@ namespace SniperGame.Player
             {
                 HandleDeath();
             }
+            else if (previousValue <= 0 && newValue > 0)
+            {
+                HandleRevive();
+            }
         }
 
         private void PushHealthToUI(int hp)
@@ -63,35 +68,28 @@ namespace SniperGame.Player
             int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
             CurrentHealth.Value = newHp;
 
-            Debug.Log($"[Combat] Speler {OwnerClientId} ontving {damageAmount} damage. Resterend: {newHp}");
+            if (newHp <= 0 && RoundManager.Instance != null)
+            {
+                RoundManager.Instance.OnPlayerDied(OwnerClientId);
+            }
         }
 
         private void HandleDeath()
         {
-            Debug.Log($"[Combat] Speler {OwnerClientId} is geëlimineerd!");
-
             if (characterController != null) characterController.enabled = false;
             if (visualsRenderer != null) visualsRenderer.enabled = false;
         }
 
-        public void ResetPlayer(Vector3 spawnPosition)
+        private void HandleRevive()
+        {
+            if (characterController != null) characterController.enabled = true;
+            if (visualsRenderer != null) visualsRenderer.enabled = true;
+        }
+
+        public void ResetHealthServer()
         {
             if (!IsServer) return;
-
             CurrentHealth.Value = maxHealth;
-
-            if (characterController != null)
-            {
-                characterController.enabled = false;
-                transform.position = spawnPosition;
-                characterController.enabled = true;
-            }
-            else
-            {
-                transform.position = spawnPosition;
-            }
-
-            if (visualsRenderer != null) visualsRenderer.enabled = true;
         }
     }
 }

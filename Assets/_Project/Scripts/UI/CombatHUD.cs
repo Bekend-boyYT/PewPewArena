@@ -1,6 +1,7 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using SniperGame.Player;
@@ -23,6 +24,13 @@ namespace SniperGame.UI
         [SerializeField] private Image healthBackgroundImage;
         [SerializeField] private TextMeshProUGUI healthText;
 
+        [Header("Match & Round UI")]
+        [SerializeField] private TextMeshProUGUI scoreText;
+        [SerializeField] private TextMeshProUGUI announcementText;
+        [SerializeField] private GameObject matchEndPanel;
+        [SerializeField] private TextMeshProUGUI matchEndTitle;
+        [SerializeField] private Button returnToMenuButton;
+
         [Header("Health Gradients")]
         [SerializeField] private Gradient aliveGradient;
         [SerializeField] private Color deadBackgroundColor = new Color(0.55f, 0.05f, 0.05f, 0.9f);
@@ -32,35 +40,34 @@ namespace SniperGame.UI
         [SerializeField] private float hitmarkerDuration = 0.12f;
 
         private Coroutine _hitmarkerCoroutine;
+        private Coroutine _announcementCoroutine;
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (Instance == null) Instance = this;
+            else { Destroy(gameObject); return; }
 
             SetupDefaultGradients();
 
             if (hitmarker != null) hitmarker.SetActive(false);
             if (scopeOverlay != null) scopeOverlay.SetActive(false);
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
+            if (announcementText != null) announcementText.gameObject.SetActive(false);
+            if (matchEndPanel != null) matchEndPanel.SetActive(false);
+
+            if (returnToMenuButton != null)
+            {
+                returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
+            }
         }
 
         private void Start()
         {
-            // Initialiseer direct de health bar bij het inladen van de gameplay scene
             StartCoroutine(InitializeLocalHealthRoutine());
         }
 
         private IEnumerator InitializeLocalHealthRoutine()
         {
-            // Wacht kort tot Netcode de lokale speler gekoppeld heeft in de nieuwe scene
             yield return new WaitForSeconds(0.1f);
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
@@ -83,8 +90,8 @@ namespace SniperGame.UI
             {
                 aliveGradient = new Gradient();
                 var colorKeys = new GradientColorKey[2];
-                colorKeys[0] = new GradientColorKey(new Color(0.08f, 0.45f, 0.08f), 0.0f); // Donkergroen
-                colorKeys[1] = new GradientColorKey(new Color(0.2f, 1.0f, 0.25f), 1.0f);  // Helder lichtgroen
+                colorKeys[0] = new GradientColorKey(new Color(0.08f, 0.45f, 0.08f), 0.0f);
+                colorKeys[1] = new GradientColorKey(new Color(0.2f, 1.0f, 0.25f), 1.0f);
 
                 var alphaKeys = new GradientAlphaKey[2];
                 alphaKeys[0] = new GradientAlphaKey(1.0f, 0.0f);
@@ -103,12 +110,7 @@ namespace SniperGame.UI
         public void ShowHitmarker()
         {
             if (hitmarker == null) return;
-
-            if (_hitmarkerCoroutine != null)
-            {
-                StopCoroutine(_hitmarkerCoroutine);
-            }
-
+            if (_hitmarkerCoroutine != null) StopCoroutine(_hitmarkerCoroutine);
             _hitmarkerCoroutine = StartCoroutine(HitmarkerFlashRoutine());
         }
 
@@ -117,6 +119,57 @@ namespace SniperGame.UI
             hitmarker.SetActive(true);
             yield return new WaitForSeconds(hitmarkerDuration);
             hitmarker.SetActive(false);
+        }
+
+        public void ShowAnnouncement(string text, Color color, float duration)
+        {
+            if (announcementText == null) return;
+            if (_announcementCoroutine != null) StopCoroutine(_announcementCoroutine);
+            _announcementCoroutine = StartCoroutine(AnnouncementRoutine(text, color, duration));
+        }
+
+        private IEnumerator AnnouncementRoutine(string text, Color color, float duration)
+        {
+            announcementText.text = text;
+            announcementText.color = color;
+            announcementText.gameObject.SetActive(true);
+
+            yield return new WaitForSeconds(duration);
+
+            announcementText.gameObject.SetActive(false);
+        }
+
+        public void UpdateMatchScore(int hostScore, int clientScore, int currentRound)
+        {
+            if (scoreText == null) return;
+
+            bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+            int myScore = isHost ? hostScore : clientScore;
+            int enemyScore = isHost ? clientScore : hostScore;
+
+            scoreText.text = $"RONDE {currentRound}  |  <color=#00FF66>JIJ: {myScore}</color> - <color=#FF4444>VIJAND: {enemyScore}</color>";
+        }
+
+        public void ShowMatchEndScreen(bool isWinner)
+        {
+            if (matchEndPanel != null) matchEndPanel.SetActive(true);
+
+            if (matchEndTitle != null)
+            {
+                matchEndTitle.text = isWinner ? "<color=#00FF66>VICTORY!</color>" : "<color=#FF2222>DEFEAT</color>";
+            }
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        private void OnReturnToMenuClicked()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+            SceneManager.LoadScene("01_MainMenu");
         }
 
         public void UpdateHealth(int currentHealth, int maxHealth)
@@ -131,7 +184,6 @@ namespace SniperGame.UI
 
             if (currentHealth > 0)
             {
-                // LEVEND: Groene Fill + Donkere Background
                 if (healthFillImage != null && aliveGradient != null)
                 {
                     healthFillImage.color = aliveGradient.Evaluate(healthRatio);
@@ -150,7 +202,6 @@ namespace SniperGame.UI
             }
             else
             {
-                // GEËLIMINEERD: Hele balk kleurt direct gevaarrood
                 if (healthBackgroundImage != null)
                 {
                     healthBackgroundImage.color = deadBackgroundColor;
