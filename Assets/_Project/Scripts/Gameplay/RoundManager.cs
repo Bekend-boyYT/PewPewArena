@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using SniperGame.Player;
 using SniperGame.UI;
+using SniperGame.Weapons;
 
 namespace SniperGame.Gameplay
 {
@@ -20,7 +21,7 @@ namespace SniperGame.Gameplay
         public static RoundManager Instance { get; private set; }
 
         [Header("Match Settings")]
-        [SerializeField] private int roundsToWin = 2; // Best of 3
+        [SerializeField] private int roundsToWin = 2; // Best of 3 (eerste met 2 punten wint)
         [SerializeField] private float countdownDuration = 3f;
         [SerializeField] private float roundDuration = 60f; // 60 seconden per ronde
         [SerializeField] private float roundEndDelay = 3f;
@@ -39,8 +40,14 @@ namespace SniperGame.Gameplay
 
         private void Awake()
         {
-            if (Instance == null) Instance = this;
-            else Destroy(gameObject);
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -61,7 +68,7 @@ namespace SniperGame.Gameplay
         {
             if (!IsServer) return;
 
-            // Timer aftellen tijdens actieve ronde
+            // Timer synchroon aftellen tijdens een actieve ronde
             if (CurrentState.Value == MatchState.InRound)
             {
                 RoundTimeRemaining.Value -= Time.deltaTime;
@@ -76,6 +83,7 @@ namespace SniperGame.Gameplay
 
         private IEnumerator InitialMatchStartRoutine()
         {
+            // Wacht kort tot beide spelers volledig in de gameplay scene geladen zijn
             yield return new WaitForSeconds(0.5f);
             StartNewRound();
         }
@@ -89,8 +97,13 @@ namespace SniperGame.Gameplay
         {
             if (!IsServer) return;
 
+            // 1. Reset HP, munitie en teleporteer naar spawnpoints
             ResetAllPlayers();
+
+            // 2. Reset timer
             RoundTimeRemaining.Value = roundDuration;
+
+            // 3. Start de 3-seconden aftelling
             StartCoroutine(RoundCountdownRoutine());
         }
 
@@ -131,6 +144,7 @@ namespace SniperGame.Gameplay
 
             CurrentState.Value = MatchState.RoundEnded;
 
+            // Bepaal de winnaar van de ronde (de overlevende speler)
             ulong winnerClientId = GetOtherPlayerClientId(victimClientId);
             bool isHostWinner = (winnerClientId == NetworkManager.Singleton.LocalClientId);
 
@@ -139,6 +153,7 @@ namespace SniperGame.Gameplay
 
             UpdateScoresUI();
 
+            // Controleer of de wedstrijd beslist is (Best of 3)
             if (HostScore.Value >= roundsToWin || ClientScore.Value >= roundsToWin)
             {
                 StartCoroutine(EndMatchRoutine(winnerClientId));
@@ -168,11 +183,13 @@ namespace SniperGame.Gameplay
 
         private void ResetAllPlayers()
         {
+            // Teleporteer spelers naar hun respectievelijke spawns
             if (ArenaSpawnManager.Instance != null)
             {
                 ArenaSpawnManager.Instance.RespawnAllPlayers();
             }
 
+            // Herstel levenspunten en munitie
             foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
             {
                 if (client.PlayerObject != null)
@@ -181,6 +198,12 @@ namespace SniperGame.Gameplay
                     if (health != null)
                     {
                         health.ResetHealthServer();
+                    }
+
+                    var weapon = client.PlayerObject.GetComponent<SniperWeapon>();
+                    if (weapon != null)
+                    {
+                        weapon.ResetAmmo();
                     }
                 }
             }

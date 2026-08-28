@@ -24,6 +24,9 @@ namespace SniperGame.UI
         [SerializeField] private Image healthBackgroundImage;
         [SerializeField] private TextMeshProUGUI healthText;
 
+        [Header("Ammo UI Elements")]
+        [SerializeField] private TextMeshProUGUI ammoText;
+
         [Header("Match & Round UI")]
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private TextMeshProUGUI timerText;
@@ -140,6 +143,21 @@ namespace SniperGame.UI
             announcementText.gameObject.SetActive(false);
         }
 
+        public void UpdateAmmo(int currentClip, int maxClip, bool isReloading)
+        {
+            if (ammoText == null) return;
+
+            if (isReloading)
+            {
+                ammoText.text = "<color=#FFCC00>HERLADEN...</color>";
+            }
+            else
+            {
+                string ammoColor = (currentClip == 0) ? "<color=#FF3333>" : "<color=#FFFFFF>";
+                ammoText.text = $"{ammoColor}{currentClip}</color> / {maxClip}";
+            }
+        }
+
         public void UpdateMatchScore(int hostScore, int clientScore, int currentRound)
         {
             if (scoreText == null) return;
@@ -159,8 +177,6 @@ namespace SniperGame.UI
             int seconds = Mathf.FloorToInt(timeRemaining % 60f);
 
             timerText.text = $"{minutes:00}:{seconds:00}";
-
-            // Rood waarschuwingstint onder 10 seconden
             timerText.color = (timeRemaining <= 10f) ? new Color(1f, 0.25f, 0.25f) : Color.white;
         }
 

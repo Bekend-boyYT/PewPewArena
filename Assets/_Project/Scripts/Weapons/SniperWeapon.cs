@@ -1,6 +1,7 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using SniperGame.Player;
 using SniperGame.UI;
 using SniperGame.Gameplay;
@@ -13,6 +14,10 @@ namespace SniperGame.Weapons
         [SerializeField] private int damage = 100;
         [SerializeField] private float range = 500f;
         [SerializeField] private float fireRate = 1.3f;
+
+        [Header("Ammo Settings")]
+        [SerializeField] private int maxClipAmmo = 5;
+        [SerializeField] private float reloadDuration = 2.2f;
 
         [Header("Scope / ADS Settings")]
         [SerializeField] private float hipFOV = 60f;
@@ -41,6 +46,10 @@ namespace SniperGame.Weapons
         [Header("Layers")]
         [SerializeField] private LayerMask hitMask = ~0;
 
+        private int _currentAmmo;
+        private bool _isReloading;
+        private Coroutine _reloadCoroutine;
+
         private float nextFireTime;
         private bool isAiming;
 
@@ -51,6 +60,17 @@ namespace SniperGame.Weapons
             if (!IsOwner)
             {
                 enabled = false;
+                return;
+            }
+
+            ResetAmmo();
+        }
+
+        private void Start()
+        {
+            if (IsOwner)
+            {
+                UpdateAmmoDisplay();
             }
         }
 
@@ -64,7 +84,21 @@ namespace SniperGame.Weapons
                 return;
             }
 
-            HandleAiming();
+            // Herladen via R-toets
+            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !_isReloading && _currentAmmo < maxClipAmmo)
+            {
+                StartReload();
+            }
+
+            // Alleen richten toestaan als we niet aan het herladen zijn
+            if (!_isReloading)
+            {
+                HandleAiming();
+            }
+            else
+            {
+                ResetAimingState();
+            }
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -115,7 +149,17 @@ namespace SniperGame.Weapons
 
         private void TryShoot()
         {
-            if (Time.time < nextFireTime) return;
+            if (_isReloading || Time.time < nextFireTime) return;
+
+            // Magazijn leeg: start direct de herlaadsequentie
+            if (_currentAmmo <= 0)
+            {
+                StartReload();
+                return;
+            }
+
+            _currentAmmo--;
+            UpdateAmmoDisplay();
 
             nextFireTime = Time.time + fireRate;
 
@@ -138,7 +182,6 @@ namespace SniperGame.Weapons
                 direction = transform.forward;
             }
 
-            // Pas recoil kick toe op de camera van de schutter
             if (playerLook != null)
             {
                 float pitch = isAiming ? scopedRecoilPitch : hipRecoilPitch;
@@ -148,8 +191,44 @@ namespace SniperGame.Weapons
 
             PlayShootEffects();
 
-            // Voer Server-Side Raycast uit
             ShootServerRpc(origin, direction, OwnerClientId);
+        }
+
+        public void StartReload()
+        {
+            if (_isReloading || _currentAmmo >= maxClipAmmo) return;
+
+            if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
+            _reloadCoroutine = StartCoroutine(ReloadRoutine());
+        }
+
+        private IEnumerator ReloadRoutine()
+        {
+            _isReloading = true;
+            ResetAimingState();
+            UpdateAmmoDisplay();
+
+            yield return new WaitForSeconds(reloadDuration);
+
+            _currentAmmo = maxClipAmmo;
+            _isReloading = false;
+            UpdateAmmoDisplay();
+        }
+
+        public void ResetAmmo()
+        {
+            if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
+            _isReloading = false;
+            _currentAmmo = maxClipAmmo;
+            UpdateAmmoDisplay();
+        }
+
+        private void UpdateAmmoDisplay()
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateAmmo(_currentAmmo, maxClipAmmo, _isReloading);
+            }
         }
 
         [ServerRpc]
@@ -186,7 +265,6 @@ namespace SniperGame.Weapons
                 }
             }
 
-            // Spawn Tracer en Impact effect op alle clients
             Vector3 spawnOrigin = (firePoint != null) ? firePoint.position : origin;
             SpawnShotVisualsClientRpc(spawnOrigin, hitPoint, hitNormal);
         }
@@ -203,10 +281,8 @@ namespace SniperGame.Weapons
         [ClientRpc]
         private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
         {
-            // Start kogelspoor (Tracer)
             StartCoroutine(DrawTracerRoutine(origin, hitPosition));
 
-            // Spawn impact FX
             if (hitEffectPrefab != null)
             {
                 GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
@@ -225,7 +301,6 @@ namespace SniperGame.Weapons
             lr.SetPosition(0, start);
             lr.SetPosition(1, end);
 
-            // Gebruik het toegewezen materiaal of een standaard wit/geel sprite materiaal
             if (tracerMaterial != null)
             {
                 lr.material = tracerMaterial;
@@ -233,7 +308,7 @@ namespace SniperGame.Weapons
             else
             {
                 lr.material = new Material(Shader.Find("Sprites/Default"));
-                lr.startColor = new Color(1f, 0.9f, 0.3f, 0.9f); // Goudgeel spoor
+                lr.startColor = new Color(1f, 0.9f, 0.3f, 0.9f);
                 lr.endColor = new Color(1f, 1f, 1f, 0.4f);
             }
 
