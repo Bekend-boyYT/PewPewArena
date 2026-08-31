@@ -17,7 +17,7 @@ namespace SniperGame.UI
         [SerializeField] private GameObject hipCrosshair;
         [SerializeField] private GameObject scopeOverlay;
         [SerializeField] private GameObject hitmarker;
-        [SerializeField] private TextMeshProUGUI hitmarkerText; // Optionele TMP component op de hitmarker
+        [SerializeField] private TextMeshProUGUI hitmarkerText;
 
         [Header("Damage Vignette Feedback")]
         [SerializeField] private CanvasGroup damageVignetteGroup;
@@ -28,6 +28,10 @@ namespace SniperGame.UI
         [SerializeField] private Image healthFillImage;
         [SerializeField] private Image healthBackgroundImage;
         [SerializeField] private TextMeshProUGUI healthText;
+
+        [Header("Stamina UI Elements")]
+        [SerializeField] private Slider staminaSlider;
+        [SerializeField] private Image staminaFillImage;
 
         [Header("Ammo UI Elements")]
         [SerializeField] private TextMeshProUGUI ammoText;
@@ -128,7 +132,6 @@ namespace SniperGame.UI
 
         private IEnumerator HitmarkerFlashRoutine(HitboxType hitboxType)
         {
-            // Pas de kleur van het X-icoon aan: Rood bij headshot, Wit bij body/legs
             Color markerColor = (hitboxType == HitboxType.Head) ? new Color(1f, 0.15f, 0.15f, 1f) : Color.white;
 
             if (hitmarkerText != null)
@@ -197,6 +200,15 @@ namespace SniperGame.UI
             {
                 string ammoColor = (currentClip == 0) ? "<color=#FF3333>" : "<color=#FFFFFF>";
                 ammoText.text = $"{ammoColor}{currentClip}</color> / {maxClip}";
+            }
+        }
+
+        public void UpdateStamina(float currentStamina, float maxStamina)
+        {
+            if (staminaSlider != null)
+            {
+                staminaSlider.maxValue = maxStamina;
+                staminaSlider.value = currentStamina;
             }
         }
 
