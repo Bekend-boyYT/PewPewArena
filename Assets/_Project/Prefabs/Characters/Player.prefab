@@ -388,7 +388,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1805665217
+  GlobalObjectIdHash: 2871761722
   InScenePlacedSourceGlobalObjectIdHash: 2871761722
   DeferredDespawnTick: 0
   Ownership: 1
@@ -458,6 +458,10 @@ MonoBehaviour:
   acceleration: 18
   deceleration: 22
   airControlMultiplier: 0.4
+  maxStamina: 100
+  staminaDrainRate: 28
+  staminaRegenRate: 22
+  regenDelay: 1
   jumpForce: 6.5
   baseGravity: -18
   fallGravityMultiplier: 2.2
@@ -553,7 +557,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Weapons.SniperWeapon
   ShowTopMostFoldoutHeaderGroup: 1
   range: 500
-  fireRate: 1.5
+  fireRate: 1.6
   maxClipAmmo: 5
   reloadDuration: 2.2
   weaponAudioSource: {fileID: 1436527269021096286}

@@ -2,6 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SniperGame.Gameplay;
+using SniperGame.UI;
 
 namespace SniperGame.Player
 {
@@ -20,6 +21,12 @@ namespace SniperGame.Player
         [SerializeField] private float acceleration = 18.0f;
         [SerializeField] private float deceleration = 22.0f;
         [SerializeField] private float airControlMultiplier = 0.4f;
+
+        [Header("Stamina Configuration")]
+        [SerializeField] private float maxStamina = 100.0f;
+        [SerializeField] private float staminaDrainRate = 28.0f; // Verbruikt stamina in ~3.5 seconden
+        [SerializeField] private float staminaRegenRate = 22.0f; // Herstelt in ~4.5 seconden
+        [SerializeField] private float regenDelay = 1.0f;        // Wachttijd voor herstel start
 
         [Header("Jump & Physics")]
         [SerializeField] private float jumpForce = 6.5f;
@@ -44,9 +51,13 @@ namespace SniperGame.Player
         private bool _isCrouching;
         private float _stepTimer;
 
+        private float _currentStamina;
+        private float _regenTimer;
+
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();
+            _currentStamina = maxStamina;
         }
 
         public override void OnNetworkSpawn()
@@ -56,6 +67,13 @@ namespace SniperGame.Player
             if (!IsOwner)
             {
                 enabled = false;
+                return;
+            }
+
+            _currentStamina = maxStamina;
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
             }
         }
 
@@ -100,17 +118,43 @@ namespace SniperGame.Player
             if (Keyboard.current.wKey.isPressed) inputZ += 1f;
 
             Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
+            bool isMoving = moveInput.magnitude > 0.01f;
 
-            bool isSprinting = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
+            // Sprint check: Alleen sprinten als er stamina is en je voorwaarts beweegt
+            bool wantsToSprint = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
+            bool isSprinting = wantsToSprint && _currentStamina > 0f && isMoving;
+
+            // Stamina verbruik & herstel logica
+            if (isSprinting)
+            {
+                _currentStamina = Mathf.Max(0f, _currentStamina - staminaDrainRate * Time.deltaTime);
+                _regenTimer = regenDelay;
+            }
+            else
+            {
+                if (_regenTimer > 0f)
+                {
+                    _regenTimer -= Time.deltaTime;
+                }
+                else
+                {
+                    _currentStamina = Mathf.Min(maxStamina, _currentStamina + staminaRegenRate * Time.deltaTime);
+                }
+            }
+
+            // Werk de Stamina UI bij
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+            }
+
             float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
-
             Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
 
-            float rate = moveInput.magnitude > 0.01f ? acceleration : deceleration;
+            float rate = isMoving ? acceleration : deceleration;
             if (!_isGrounded) rate *= airControlMultiplier;
 
             _currentHorizontalVelocity = Vector3.MoveTowards(_currentHorizontalVelocity, targetVelocity, rate * Time.deltaTime);
-
             _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
         }
 
@@ -166,7 +210,6 @@ namespace SniperGame.Player
             }
 
             _verticalVelocity += appliedGravity * Time.deltaTime;
-
             _characterController.Move(new Vector3(0f, _verticalVelocity, 0f) * Time.deltaTime);
         }
 
@@ -207,9 +250,14 @@ namespace SniperGame.Player
             _currentHorizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
             _stepTimer = 0f;
+            _currentStamina = maxStamina;
+
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+            }
 
             if (cameraHolder != null) cameraHolder.localRotation = Quaternion.identity;
-
             if (_characterController != null) _characterController.enabled = true;
         }
     }
