@@ -44,7 +44,7 @@ namespace SniperGame.UI
 
         private async void Awake()
         {
-            UnlockCursor();
+            ForceUnlockCursor();
 
             if (openCreateScreenButton != null) openCreateScreenButton.onClick.AddListener(OnOpenCreateScreen);
             if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
@@ -58,6 +58,15 @@ namespace SniperGame.UI
             ShowScreen(mainScreen);
 
             await InitializeUnityServicesAsync();
+        }
+
+        private void Update()
+        {
+            // HARD GUARD: In het menu blijft de muis ALTIJD 100% vrij en zichtbaar
+            if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
+            {
+                ForceUnlockCursor();
+            }
         }
 
         private void Start()
@@ -98,7 +107,7 @@ namespace SniperGame.UI
             }
         }
 
-        private void UnlockCursor()
+        private void ForceUnlockCursor()
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -108,13 +117,12 @@ namespace SniperGame.UI
 
         private void ShowScreen(GameObject screenToShow)
         {
-            UnlockCursor();
+            ForceUnlockCursor();
 
             if (mainScreen != null) mainScreen.SetActive(screenToShow == mainScreen);
             if (createScreen != null) createScreen.SetActive(screenToShow == createScreen);
             if (joinScreen != null) joinScreen.SetActive(screenToShow == joinScreen);
 
-            // Zorg dat knoppen op het hoofdscherm altijd klikbaar zijn
             if (openCreateScreenButton != null) openCreateScreenButton.interactable = true;
             if (openJoinScreenButton != null) openJoinScreenButton.interactable = true;
         }
@@ -142,7 +150,6 @@ namespace SniperGame.UI
 
         private void OnCreateBackClicked()
         {
-            // Verbreek actieve host sessie netjes
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 NetworkManager.Singleton.Shutdown();

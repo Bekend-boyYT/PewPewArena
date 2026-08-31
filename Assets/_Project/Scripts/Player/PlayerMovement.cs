@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SniperGame.Gameplay;
 
 namespace SniperGame.Player
 {
@@ -9,6 +10,7 @@ namespace SniperGame.Player
     {
         [Header("References")]
         [SerializeField] private Transform cameraHolder;
+        [SerializeField] private AudioSource footstepAudioSource;
         private CharacterController _characterController;
 
         [Header("Movement Speeds")]
@@ -19,7 +21,7 @@ namespace SniperGame.Player
         [SerializeField] private float deceleration = 22.0f;
         [SerializeField] private float airControlMultiplier = 0.4f;
 
-        [Header("Jump & Snappy Physics")]
+        [Header("Jump & Physics")]
         [SerializeField] private float jumpForce = 6.5f;
         [SerializeField] private float baseGravity = -18.0f;
         [SerializeField] private float fallGravityMultiplier = 2.2f;
@@ -31,10 +33,16 @@ namespace SniperGame.Player
         [SerializeField] private float crouchCameraY = 0.9f;
         [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
+        [Header("Footstep Audio Settings")]
+        [SerializeField] private AudioClip[] footstepClips;
+        [SerializeField] private float walkStepInterval = 0.45f;
+        [SerializeField] private float sprintStepInterval = 0.30f;
+
         private Vector3 _currentHorizontalVelocity;
         private float _verticalVelocity;
         private bool _isGrounded;
         private bool _isCrouching;
+        private float _stepTimer;
 
         private void Awake()
         {
@@ -55,11 +63,18 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
+            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
+            {
+                _currentHorizontalVelocity = Vector3.zero;
+                return;
+            }
+
             UpdateGroundCheck();
             HandleCrouch();
             HandleHorizontalMovement();
             HandleJumpAndGravity();
             SmoothCameraHeight();
+            HandleFootsteps();
         }
 
         private void UpdateGroundCheck()
@@ -97,6 +112,42 @@ namespace SniperGame.Player
             _currentHorizontalVelocity = Vector3.MoveTowards(_currentHorizontalVelocity, targetVelocity, rate * Time.deltaTime);
 
             _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
+        }
+
+        private void HandleFootsteps()
+        {
+            if (!_isGrounded || _isCrouching || _currentHorizontalVelocity.magnitude < 1.0f)
+            {
+                return;
+            }
+
+            bool isSprinting = _currentHorizontalVelocity.magnitude > (walkSpeed + 1.0f);
+            float currentInterval = isSprinting ? sprintStepInterval : walkStepInterval;
+
+            _stepTimer += Time.deltaTime;
+
+            if (_stepTimer >= currentInterval)
+            {
+                _stepTimer = 0f;
+                PlayFootstep();
+            }
+        }
+
+        private void PlayFootstep()
+        {
+            if (footstepClips == null || footstepClips.Length == 0) return;
+
+            int randomIndex = Random.Range(0, footstepClips.Length);
+            PlayFootstepClientRpc(randomIndex);
+        }
+
+        [ClientRpc]
+        private void PlayFootstepClientRpc(int clipIndex)
+        {
+            if (footstepAudioSource == null || footstepClips == null || clipIndex >= footstepClips.Length) return;
+
+            footstepAudioSource.pitch = Random.Range(0.9f, 1.1f);
+            footstepAudioSource.PlayOneShot(footstepClips[clipIndex], 0.6f);
         }
 
         private void HandleJumpAndGravity()
@@ -145,32 +196,21 @@ namespace SniperGame.Player
             cameraHolder.localPosition = new Vector3(currentPos.x, smoothedY, currentPos.z);
         }
 
-        /// <summary>
-        /// Teleporteert de speler betrouwbaar naar een spawnpositie en rotatie.
-        /// </summary>
         [ClientRpc]
         public void TeleportClientRpc(Vector3 targetPosition, Quaternion targetRotation)
         {
-            if (_characterController != null)
-            {
-                _characterController.enabled = false;
-            }
+            if (_characterController != null) _characterController.enabled = false;
 
             transform.position = targetPosition;
             transform.rotation = targetRotation;
 
             _currentHorizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
+            _stepTimer = 0f;
 
-            if (cameraHolder != null)
-            {
-                cameraHolder.localRotation = Quaternion.identity;
-            }
+            if (cameraHolder != null) cameraHolder.localRotation = Quaternion.identity;
 
-            if (_characterController != null)
-            {
-                _characterController.enabled = true;
-            }
+            if (_characterController != null) _characterController.enabled = true;
         }
     }
 }

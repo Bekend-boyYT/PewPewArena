@@ -1,7 +1,11 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using SniperGame.Player;
 using SniperGame.UI;
+using SniperGame.Gameplay;
+using SniperGame.Audio;
 
 namespace SniperGame.Weapons
 {
@@ -10,34 +14,95 @@ namespace SniperGame.Weapons
         [Header("Weapon Settings")]
         [SerializeField] private int damage = 100;
         [SerializeField] private float range = 500f;
-        [SerializeField] private float fireRate = 1.5f;
+        [SerializeField] private float fireRate = 1.3f;
+
+        [Header("Ammo Settings")]
+        [SerializeField] private int maxClipAmmo = 5;
+        [SerializeField] private float reloadDuration = 2.2f;
+
+        [Header("Audio Settings (3D Spatial)")]
+        [SerializeField] private AudioSource weaponAudioSource;
+        [SerializeField] private AudioClip gunshotClip;
+        [SerializeField] private AudioClip reloadClip;
 
         [Header("Scope / ADS Settings")]
         [SerializeField] private float hipFOV = 60f;
         [SerializeField] private float scopedFOV = 18f;
         [SerializeField] private float zoomSpeed = 16f;
+        [SerializeField] private float scopedSensitivityMultiplier = 0.35f;
+
+        [Header("Recoil Kick Settings")]
+        [SerializeField] private float hipRecoilPitch = 3.2f;
+        [SerializeField] private float hipRecoilYaw = 1.0f;
+        [SerializeField] private float scopedRecoilPitch = 1.4f;
+        [SerializeField] private float scopedRecoilYaw = 0.4f;
 
         [Header("References")]
         [SerializeField] private Camera playerCamera;
         [SerializeField] private Transform firePoint;
+        [SerializeField] private PlayerLook playerLook;
 
-        [Header("Effects")]
+        [Header("Effects & Tracers")]
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitEffectPrefab;
+        [SerializeField] private Material tracerMaterial;
+        [SerializeField] private float tracerDuration = 0.08f;
+        [SerializeField] private float tracerWidth = 0.04f;
 
         [Header("Layers")]
         [SerializeField] private LayerMask hitMask = ~0;
 
+        private int _currentAmmo;
+        private bool _isReloading;
+        private Coroutine _reloadCoroutine;
+
         private float nextFireTime;
         private bool isAiming;
 
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            if (!IsOwner)
+            {
+                enabled = false;
+                return;
+            }
+
+            ResetAmmo();
+        }
+
+        private void Start()
+        {
+            if (IsOwner)
+            {
+                UpdateAmmoDisplay();
+            }
+        }
+
         private void Update()
         {
-            // Alleen de eigenaar bestuurt dit wapen
-            if (!IsOwner)
-                return;
+            if (!IsOwner) return;
 
-            HandleAiming();
+            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
+            {
+                ResetAimingState();
+                return;
+            }
+
+            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !_isReloading && _currentAmmo < maxClipAmmo)
+            {
+                StartReload();
+            }
+
+            if (!_isReloading)
+            {
+                HandleAiming();
+            }
+            else
+            {
+                ResetAimingState();
+            }
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -47,27 +112,57 @@ namespace SniperGame.Weapons
 
         private void HandleAiming()
         {
-            // Rechtermuisknop ingedrukt houden om te richten
             isAiming = Input.GetMouseButton(1);
 
-            // Pas FOV (inzoomen) van de camera aan
             if (playerCamera != null)
             {
                 float targetFOV = isAiming ? scopedFOV : hipFOV;
                 playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
             }
 
-            // Schakel Scope Overlay en Hip Crosshair in/uit via CombatHUD
+            if (playerLook != null)
+            {
+                playerLook.SetSensitivityMultiplier(isAiming ? scopedSensitivityMultiplier : 1.0f);
+            }
+
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(isAiming);
             }
         }
 
+        private void ResetAimingState()
+        {
+            isAiming = false;
+
+            if (playerCamera != null)
+            {
+                playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, hipFOV, Time.deltaTime * zoomSpeed);
+            }
+
+            if (playerLook != null)
+            {
+                playerLook.SetSensitivityMultiplier(1.0f);
+            }
+
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.SetScopeActive(false);
+            }
+        }
+
         private void TryShoot()
         {
-            if (Time.time < nextFireTime)
+            if (_isReloading || Time.time < nextFireTime) return;
+
+            if (_currentAmmo <= 0)
+            {
+                StartReload();
                 return;
+            }
+
+            _currentAmmo--;
+            UpdateAmmoDisplay();
 
             nextFireTime = Time.time + fireRate;
 
@@ -90,77 +185,131 @@ namespace SniperGame.Weapons
                 direction = transform.forward;
             }
 
+            if (playerLook != null)
+            {
+                float pitch = isAiming ? scopedRecoilPitch : hipRecoilPitch;
+                float yaw = Random.Range(-1f, 1f) * (isAiming ? scopedRecoilYaw : hipRecoilYaw);
+                playerLook.AddRecoil(pitch, yaw);
+            }
+
             PlayShootEffects();
 
-            // Vraag de server om het schot te verwerken
-            ShootServerRpc(origin, direction);
+            ShootServerRpc(origin, direction, OwnerClientId);
+        }
+
+        public void StartReload()
+        {
+            if (_isReloading || _currentAmmo >= maxClipAmmo) return;
+
+            if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
+            _reloadCoroutine = StartCoroutine(ReloadRoutine());
+        }
+
+        private IEnumerator ReloadRoutine()
+        {
+            _isReloading = true;
+            ResetAimingState();
+            UpdateAmmoDisplay();
+
+            PlayReloadSoundServerRpc();
+
+            yield return new WaitForSeconds(reloadDuration);
+
+            _currentAmmo = maxClipAmmo;
+            _isReloading = false;
+            UpdateAmmoDisplay();
+        }
+
+        [ServerRpc]
+        private void PlayReloadSoundServerRpc()
+        {
+            PlayReloadSoundClientRpc();
+        }
+
+        [ClientRpc]
+        private void PlayReloadSoundClientRpc()
+        {
+            if (weaponAudioSource != null && reloadClip != null)
+            {
+                weaponAudioSource.PlayOneShot(reloadClip, 0.9f);
+            }
+        }
+
+        public void ResetAmmo()
+        {
+            if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
+            _isReloading = false;
+            _currentAmmo = maxClipAmmo;
+            UpdateAmmoDisplay();
+        }
+
+        private void UpdateAmmoDisplay()
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateAmmo(_currentAmmo, maxClipAmmo, _isReloading);
+            }
         }
 
         [ServerRpc]
         private void ShootServerRpc(
             Vector3 origin,
             Vector3 direction,
+            ulong shooterClientId,
             ServerRpcParams serverRpcParams = default)
         {
             direction.Normalize();
 
-            if (Physics.Raycast(
-                origin,
-                direction,
-                out RaycastHit hit,
-                range,
-                hitMask,
-                QueryTriggerInteraction.Ignore))
+            Vector3 hitPoint = origin + direction * range;
+            Vector3 hitNormal = -direction;
+
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore))
             {
-                SniperGame.Player.PlayerHealth playerHealth =
-                    hit.collider.GetComponentInParent<SniperGame.Player.PlayerHealth>();
+                hitPoint = hit.point;
+                hitNormal = hit.normal;
 
-                if (playerHealth != null)
+                PlayerHealth targetHealth = hit.collider.GetComponentInParent<PlayerHealth>();
+
+                if (targetHealth != null && targetHealth.OwnerClientId != shooterClientId)
                 {
-                    // Schiet jezelf niet neer
-                    if (playerHealth.OwnerClientId == OwnerClientId)
-                        return;
+                    targetHealth.TakeDamage(damage, shooterClientId);
 
-                    // Schade toepassen op server
-                    playerHealth.TakeDamage(damage, OwnerClientId);
-
-                    Debug.Log($"[Sniper] Player {OwnerClientId} hit Player {playerHealth.OwnerClientId} for {damage} damage.");
-
-                    // Stuur hitmarker direct terug naar de schutter
                     ClientRpcParams clientRpcParams = new ClientRpcParams
                     {
                         Send = new ClientRpcSendParams
                         {
-                            TargetClientIds = new ulong[] { OwnerClientId }
+                            TargetClientIds = new ulong[] { shooterClientId }
                         }
                     };
                     ConfirmHitClientRpc(clientRpcParams);
-
-                    // Spawn hit effect voor iedereen
-                    SpawnHitEffectClientRpc(hit.point, hit.normal);
-                }
-                else
-                {
-                    SpawnHitEffectClientRpc(hit.point, hit.normal);
                 }
             }
+
+            Vector3 spawnOrigin = (firePoint != null) ? firePoint.position : origin;
+            SpawnShotVisualsClientRpc(spawnOrigin, hitPoint, hitNormal);
         }
 
         [ClientRpc]
         private void ConfirmHitClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            // Laat het 'X' kruisje oplichten op het scherm van de schutter
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.ShowHitmarker();
+            }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayHitmarker(false);
             }
         }
 
         private void PlayShootEffects()
         {
-            if (muzzleFlash != null)
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
             {
-                muzzleFlash.Play();
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
             }
 
             PlayShootEffectsClientRpc();
@@ -169,35 +318,59 @@ namespace SniperGame.Weapons
         [ClientRpc]
         private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            if (IsOwner)
-                return;
+            if (IsOwner) return;
 
-            if (muzzleFlash != null)
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
             {
-                muzzleFlash.Play();
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
             }
         }
 
         [ClientRpc]
-        private void SpawnHitEffectClientRpc(Vector3 hitPosition, Vector3 hitNormal)
+        private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
         {
-            if (hitEffectPrefab == null)
-                return;
+            StartCoroutine(DrawTracerRoutine(origin, hitPosition));
 
-            GameObject effect = Instantiate(
-                hitEffectPrefab,
-                hitPosition,
-                Quaternion.LookRotation(hitNormal)
-            );
+            if (hitEffectPrefab != null)
+            {
+                GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
+                Destroy(effect, 3f);
+            }
+        }
 
-            Destroy(effect, 3f);
+        private IEnumerator DrawTracerRoutine(Vector3 start, Vector3 end)
+        {
+            GameObject tracerObj = new GameObject("BulletTracer");
+            LineRenderer lr = tracerObj.AddComponent<LineRenderer>();
+
+            lr.startWidth = tracerWidth;
+            lr.endWidth = tracerWidth * 0.5f;
+            lr.positionCount = 2;
+            lr.SetPosition(0, start);
+            lr.SetPosition(1, end);
+
+            if (tracerMaterial != null)
+            {
+                lr.material = tracerMaterial;
+            }
+            else
+            {
+                lr.material = new Material(Shader.Find("Sprites/Default"));
+                lr.startColor = new Color(1f, 0.9f, 0.3f, 0.9f);
+                lr.endColor = new Color(1f, 1f, 1f, 0.4f);
+            }
+
+            yield return new WaitForSeconds(tracerDuration);
+
+            Destroy(tracerObj);
         }
 
         private void OnDrawGizmosSelected()
         {
-            if (firePoint == null)
-                return;
-
+            if (firePoint == null) return;
+            Gizmos.color = Color.red;
             Gizmos.DrawRay(firePoint.position, firePoint.forward * range);
         }
     }

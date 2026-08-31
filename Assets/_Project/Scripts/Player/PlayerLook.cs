@@ -2,6 +2,8 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using SniperGame.Gameplay;
 
 namespace SniperGame.Player
 {
@@ -18,30 +20,52 @@ namespace SniperGame.Player
         [SerializeField] private float minPitch = -85f;
         [SerializeField] private float maxPitch = 85f;
 
-        [Header("Scene Gating")]
-        [SerializeField] private string gameplaySceneName = "";
+        [Header("Procedural Recoil Settings")]
+        [SerializeField] private float recoilSnappiness = 22.0f;
+        [SerializeField] private float recoilReturnSpeed = 12.0f;
 
         private float _verticalRotation = 0f;
         private float _sensitivityMultiplier = 1.0f;
+
+        private Vector2 _currentRecoil;
+        private Vector2 _targetRecoil;
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
 
-            if (IsOwner)
+            if (!IsOwner)
             {
-                if (IsLookAllowedInCurrentScene())
-                {
-                    SetCursorState(true);
-                }
-                else
-                {
-                    SetCursorState(false);
-                }
+                enabled = false;
+                return;
+            }
+
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            CheckActiveScene();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            base.OnNetworkDespawn();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            CheckActiveScene();
+        }
+
+        private void CheckActiveScene()
+        {
+            if (!IsOwner) return;
+
+            if (SceneManager.GetActiveScene().name == "Maintestgameplay")
+            {
+                SetCursorState(true);
             }
             else
             {
-                enabled = false;
+                SetCursorState(false);
             }
         }
 
@@ -49,27 +73,27 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            if (!IsLookAllowedInCurrentScene())
+            if (SceneManager.GetActiveScene().name != "Maintestgameplay") return;
+
+            if (RoundManager.Instance != null && RoundManager.Instance.CurrentState.Value == MatchState.MatchEnded)
             {
-                if (Cursor.lockState != CursorLockMode.None)
+                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
                 {
                     SetCursorState(false);
                 }
                 return;
             }
 
+            HandleRecoilDecay();
             HandleCursorLockInput();
             HandleLook();
         }
 
-        private bool IsLookAllowedInCurrentScene()
+        private void HandleRecoilDecay()
         {
-            if (string.IsNullOrWhiteSpace(gameplaySceneName))
-            {
-                return true;
-            }
-
-            return SceneManager.GetActiveScene().name == gameplaySceneName;
+            // Recoil herstelt soepel naar de nulpositie
+            _targetRecoil = Vector2.Lerp(_targetRecoil, Vector2.zero, Time.deltaTime * recoilReturnSpeed);
+            _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, Time.deltaTime * recoilSnappiness);
         }
 
         private void HandleLook()
@@ -81,15 +105,27 @@ namespace SniperGame.Player
             float lookX = mouseDelta.x * (mouseSensitivityX * _sensitivityMultiplier);
             float lookY = mouseDelta.y * (mouseSensitivityY * _sensitivityMultiplier);
 
-            transform.Rotate(Vector3.up * lookX);
+            // Horizontale rotatie (inclusief horizontale recoil)
+            transform.Rotate(Vector3.up * (lookX + _currentRecoil.y * Time.deltaTime));
 
+            // Verticale rotatie
             _verticalRotation -= lookY;
             _verticalRotation = Mathf.Clamp(_verticalRotation, minPitch, maxPitch);
 
             if (cameraHolder != null)
             {
-                cameraHolder.localRotation = Quaternion.Euler(_verticalRotation, 0f, 0f);
+                // Pas pitch toe inclusief actieve terugslag-kick
+                float pitchWithRecoil = Mathf.Clamp(_verticalRotation - _currentRecoil.x, minPitch, maxPitch);
+                cameraHolder.localRotation = Quaternion.Euler(pitchWithRecoil, 0f, 0f);
             }
+        }
+
+        /// <summary>
+        /// Voegt een directe terugslag-kick toe aan het scherm.
+        /// </summary>
+        public void AddRecoil(float pitchKick, float yawKick)
+        {
+            _targetRecoil += new Vector2(pitchKick, yawKick);
         }
 
         private void HandleCursorLockInput()
@@ -101,6 +137,11 @@ namespace SniperGame.Player
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
             {
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
+
                 SetCursorState(true);
             }
         }
