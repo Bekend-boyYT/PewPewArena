@@ -388,7 +388,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2871761722
+  GlobalObjectIdHash: 823785023
   InScenePlacedSourceGlobalObjectIdHash: 2871761722
   DeferredDespawnTick: 0
   Ownership: 1
@@ -535,6 +535,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerHealth
   ShowTopMostFoldoutHeaderGroup: 1
   maxHealth: 100
+  lowHealthThreshold: 30
   CurrentHealth:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -543,6 +544,25 @@ MonoBehaviour:
   characterController: {fileID: 8591399208384449305}
   visualsRenderer: {fileID: 8131419437210913135}
   playerLook: {fileID: -7700286182009497169}
+  normalParticles:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lowHpParticles:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  deathExplosionParticle: {fileID: 0}
 --- !u!114 &8674415964324781783
 MonoBehaviour:
   m_ObjectHideFlags: 0
