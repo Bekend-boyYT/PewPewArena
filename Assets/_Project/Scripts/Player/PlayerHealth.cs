@@ -19,6 +19,7 @@ namespace SniperGame.Player
         [Header("Components to Disable on Death")]
         [SerializeField] private CharacterController characterController;
         [SerializeField] private MeshRenderer visualsRenderer;
+        [SerializeField] private PlayerLook playerLook;
 
         public override void OnNetworkSpawn()
         {
@@ -68,9 +69,30 @@ namespace SniperGame.Player
             int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
             CurrentHealth.Value = newHp;
 
+            // Stuur directe flinch en rode vignette naar het slachtoffer
+            ClientRpcParams clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { OwnerClientId } }
+            };
+            OnTakeDamageFeedbackClientRpc(clientRpcParams);
+
             if (newHp <= 0 && RoundManager.Instance != null)
             {
                 RoundManager.Instance.OnPlayerDied(OwnerClientId);
+            }
+        }
+
+        [ClientRpc]
+        private void OnTakeDamageFeedbackClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.TriggerDamageFlash();
+            }
+
+            if (playerLook != null)
+            {
+                playerLook.AddRecoil(Random.Range(2.5f, 4.5f), Random.Range(-2.5f, 2.5f));
             }
         }
 
