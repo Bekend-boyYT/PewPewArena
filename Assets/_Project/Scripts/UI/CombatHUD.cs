@@ -17,6 +17,11 @@ namespace SniperGame.UI
         [SerializeField] private GameObject hipCrosshair;
         [SerializeField] private GameObject scopeOverlay;
         [SerializeField] private GameObject hitmarker;
+        [SerializeField] private TextMeshProUGUI hitmarkerText; // Optionele TMP component op de hitmarker
+
+        [Header("Damage Vignette Feedback")]
+        [SerializeField] private CanvasGroup damageVignetteGroup;
+        [SerializeField] private float vignetteFadeSpeed = 4.0f;
 
         [Header("Health UI Elements")]
         [SerializeField] private Slider healthSlider;
@@ -45,6 +50,7 @@ namespace SniperGame.UI
 
         private Coroutine _hitmarkerCoroutine;
         private Coroutine _announcementCoroutine;
+        private Coroutine _damageFlashCoroutine;
 
         private void Awake()
         {
@@ -58,6 +64,7 @@ namespace SniperGame.UI
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
             if (announcementText != null) announcementText.gameObject.SetActive(false);
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
+            if (damageVignetteGroup != null) damageVignetteGroup.alpha = 0f;
 
             if (returnToMenuButton != null)
             {
@@ -111,18 +118,53 @@ namespace SniperGame.UI
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
         }
 
-        public void ShowHitmarker()
+        public void ShowHitmarker(HitboxType hitboxType)
         {
             if (hitmarker == null) return;
+
             if (_hitmarkerCoroutine != null) StopCoroutine(_hitmarkerCoroutine);
-            _hitmarkerCoroutine = StartCoroutine(HitmarkerFlashRoutine());
+            _hitmarkerCoroutine = StartCoroutine(HitmarkerFlashRoutine(hitboxType));
         }
 
-        private IEnumerator HitmarkerFlashRoutine()
+        private IEnumerator HitmarkerFlashRoutine(HitboxType hitboxType)
         {
+            // Pas de kleur van het X-icoon aan: Rood bij headshot, Wit bij body/legs
+            Color markerColor = (hitboxType == HitboxType.Head) ? new Color(1f, 0.15f, 0.15f, 1f) : Color.white;
+
+            if (hitmarkerText != null)
+            {
+                hitmarkerText.color = markerColor;
+            }
+            else
+            {
+                var tmp = hitmarker.GetComponent<TextMeshProUGUI>();
+                if (tmp != null) tmp.color = markerColor;
+            }
+
             hitmarker.SetActive(true);
             yield return new WaitForSeconds(hitmarkerDuration);
             hitmarker.SetActive(false);
+        }
+
+        public void TriggerDamageFlash()
+        {
+            if (damageVignetteGroup == null) return;
+
+            if (_damageFlashCoroutine != null) StopCoroutine(_damageFlashCoroutine);
+            _damageFlashCoroutine = StartCoroutine(DamageFlashRoutine());
+        }
+
+        private IEnumerator DamageFlashRoutine()
+        {
+            damageVignetteGroup.alpha = 0.85f;
+
+            while (damageVignetteGroup.alpha > 0.01f)
+            {
+                damageVignetteGroup.alpha = Mathf.MoveTowards(damageVignetteGroup.alpha, 0f, Time.deltaTime * vignetteFadeSpeed);
+                yield return null;
+            }
+
+            damageVignetteGroup.alpha = 0f;
         }
 
         public void ShowAnnouncement(string text, Color color, float duration)

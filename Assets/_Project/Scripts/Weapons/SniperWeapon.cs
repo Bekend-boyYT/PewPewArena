@@ -12,7 +12,6 @@ namespace SniperGame.Weapons
     public class SniperWeapon : NetworkBehaviour
     {
         [Header("Weapon Settings")]
-        [SerializeField] private int damage = 100;
         [SerializeField] private float range = 500f;
         [SerializeField] private float fireRate = 1.3f;
 
@@ -268,20 +267,23 @@ namespace SniperGame.Weapons
                 hitPoint = hit.point;
                 hitNormal = hit.normal;
 
-                PlayerHealth targetHealth = hit.collider.GetComponentInParent<PlayerHealth>();
+                PlayerHitbox hitbox = hit.collider.GetComponent<PlayerHitbox>();
+                PlayerHealth targetHealth = hitbox != null ? hitbox.Health : hit.collider.GetComponentInParent<PlayerHealth>();
 
                 if (targetHealth != null && targetHealth.OwnerClientId != shooterClientId)
                 {
-                    targetHealth.TakeDamage(damage, shooterClientId);
+                    HitboxType hitType = (hitbox != null) ? hitbox.Type : HitboxType.Body;
+                    int appliedDamage = (hitbox != null) ? hitbox.GetDamage() : 100;
+
+                    targetHealth.TakeDamage(appliedDamage, shooterClientId);
+
+                    Debug.Log($"[Combat] Speler {shooterClientId} raakte {hitType} van Speler {targetHealth.OwnerClientId} voor {appliedDamage} DMG.");
 
                     ClientRpcParams clientRpcParams = new ClientRpcParams
                     {
-                        Send = new ClientRpcSendParams
-                        {
-                            TargetClientIds = new ulong[] { shooterClientId }
-                        }
+                        Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { shooterClientId } }
                     };
-                    ConfirmHitClientRpc(clientRpcParams);
+                    ConfirmHitClientRpc(hitType, clientRpcParams);
                 }
             }
 
@@ -290,41 +292,16 @@ namespace SniperGame.Weapons
         }
 
         [ClientRpc]
-        private void ConfirmHitClientRpc(ClientRpcParams clientRpcParams = default)
+        private void ConfirmHitClientRpc(HitboxType hitboxType, ClientRpcParams clientRpcParams = default)
         {
             if (CombatHUD.Instance != null)
             {
-                CombatHUD.Instance.ShowHitmarker();
+                CombatHUD.Instance.ShowHitmarker(hitboxType);
             }
 
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayHitmarker(false);
-            }
-        }
-
-        private void PlayShootEffects()
-        {
-            if (muzzleFlash != null) muzzleFlash.Play();
-            if (weaponAudioSource != null && gunshotClip != null)
-            {
-                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
-            }
-
-            PlayShootEffectsClientRpc();
-        }
-
-        [ClientRpc]
-        private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
-        {
-            if (IsOwner) return;
-
-            if (muzzleFlash != null) muzzleFlash.Play();
-            if (weaponAudioSource != null && gunshotClip != null)
-            {
-                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+                AudioManager.Instance.PlayHitmarker(hitboxType == HitboxType.Head);
             }
         }
 
@@ -365,6 +342,31 @@ namespace SniperGame.Weapons
             yield return new WaitForSeconds(tracerDuration);
 
             Destroy(tracerObj);
+        }
+
+        private void PlayShootEffects()
+        {
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
+            {
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+            }
+
+            PlayShootEffectsClientRpc();
+        }
+
+        [ClientRpc]
+        private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner) return;
+
+            if (muzzleFlash != null) muzzleFlash.Play();
+            if (weaponAudioSource != null && gunshotClip != null)
+            {
+                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+            }
         }
 
         private void OnDrawGizmosSelected()
