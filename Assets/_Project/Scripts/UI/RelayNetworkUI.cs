@@ -88,24 +88,35 @@ namespace SniperGame.UI
         }
 
         private async Task InitializeUnityServicesAsync()
+{
+    try
+    {
+        if (UnityServices.State == ServicesInitializationState.Uninitialized)
         {
-            try
-            {
-                if (UnityServices.State == ServicesInitializationState.Uninitialized)
-                {
-                    await UnityServices.InitializeAsync();
-                }
+            var options = new InitializationOptions();
 
-                if (!AuthenticationService.Instance.IsSignedIn)
-                {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[RelayUI] Authentication fout: {e.Message}");
-            }
+            // Zorgt dat elke build op dezelfde PC een eigen unieke login krijgt
+            #if UNITY_EDITOR
+            options.SetProfile("Editor_User");
+            #else
+            string uniqueProfile = $"BuildUser_{System.Guid.NewGuid().ToString().Substring(0, 6)}";
+            options.SetProfile(uniqueProfile);
+            #endif
+
+            await UnityServices.InitializeAsync(options);
         }
+
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            Debug.Log($"[RelayUI] Ingelogd als speler: {AuthenticationService.Instance.PlayerId}");
+        }
+    }
+    catch (Exception e)
+    {
+        Debug.LogError($"[RelayUI] Authentication fout: {e.Message}");
+    }
+}
 
         private void ForceUnlockCursor()
         {

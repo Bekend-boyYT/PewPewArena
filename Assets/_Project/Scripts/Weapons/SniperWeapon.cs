@@ -262,13 +262,23 @@ namespace SniperGame.Weapons
             Vector3 hitPoint = origin + direction * range;
             Vector3 hitNormal = -direction;
 
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore))
-            {
-                hitPoint = hit.point;
-                hitNormal = hit.normal;
+            // Voer een RaycastAll uit om niet tegen de eigen colliders van de schutter aan te botsen
+            RaycastHit[] hits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
+            foreach (var hit in hits)
+            {
                 PlayerHitbox hitbox = hit.collider.GetComponent<PlayerHitbox>();
                 PlayerHealth targetHealth = hitbox != null ? hitbox.Health : hit.collider.GetComponentInParent<PlayerHealth>();
+
+                // Negeer schoten op de schutter zelf (camera die in eigen head-collider zit)
+                if (targetHealth != null && targetHealth.OwnerClientId == shooterClientId)
+                {
+                    continue;
+                }
+
+                hitPoint = hit.point;
+                hitNormal = hit.normal;
 
                 if (targetHealth != null && targetHealth.OwnerClientId != shooterClientId)
                 {
@@ -277,14 +287,15 @@ namespace SniperGame.Weapons
 
                     targetHealth.TakeDamage(appliedDamage, shooterClientId);
 
-                    Debug.Log($"[Combat] Speler {shooterClientId} raakte {hitType} van Speler {targetHealth.OwnerClientId} voor {appliedDamage} DMG.");
-
                     ClientRpcParams clientRpcParams = new ClientRpcParams
                     {
                         Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { shooterClientId } }
                     };
                     ConfirmHitClientRpc(hitType, clientRpcParams);
                 }
+
+                // Eerste geldige hit geraakt: stop verdere raycast penetratie
+                break;
             }
 
             Vector3 spawnOrigin = (firePoint != null) ? firePoint.position : origin;

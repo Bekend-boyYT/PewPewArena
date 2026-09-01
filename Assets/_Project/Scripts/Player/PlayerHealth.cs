@@ -26,12 +26,12 @@ namespace SniperGame.Player
             base.OnNetworkSpawn();
 
             CurrentHealth.OnValueChanged += OnHealthChanged;
-            PushHealthToUI(CurrentHealth.Value);
-        }
 
-        private void Start()
-        {
-            PushHealthToUI(CurrentHealth.Value);
+            // Directe UI-update bij het spawnen van de speler (voor zowel Host als Client)
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateHealth(CurrentHealth.Value, maxHealth);
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -42,7 +42,10 @@ namespace SniperGame.Player
 
         private void OnHealthChanged(int previousValue, int newValue)
         {
-            PushHealthToUI(newValue);
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateHealth(newValue, maxHealth);
+            }
 
             if (newValue <= 0)
             {
@@ -54,14 +57,6 @@ namespace SniperGame.Player
             }
         }
 
-        private void PushHealthToUI(int hp)
-        {
-            if (IsOwner && CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateHealth(hp, maxHealth);
-            }
-        }
-
         public void TakeDamage(int damageAmount, ulong attackerClientId)
         {
             if (!IsServer || CurrentHealth.Value <= 0) return;
@@ -69,7 +64,6 @@ namespace SniperGame.Player
             int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
             CurrentHealth.Value = newHp;
 
-            // Stuur directe flinch en rode vignette naar het slachtoffer
             ClientRpcParams clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { OwnerClientId } }

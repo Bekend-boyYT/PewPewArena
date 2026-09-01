@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using Coffee.UIExtensions;
 using SniperGame.Player;
 
 namespace SniperGame.UI
@@ -28,6 +29,16 @@ namespace SniperGame.UI
         [SerializeField] private Image healthFillImage;
         [SerializeField] private Image healthBackgroundImage;
         [SerializeField] private TextMeshProUGUI healthText;
+
+        [Header("Health UI Particle Groups")]
+        [Tooltip("UIParticle component op FX_NormalHealth")]
+        [SerializeField] private UIParticle normalHealthUIParticle;
+
+        [Tooltip("UIParticle component op FX_LowHealth")]
+        [SerializeField] private UIParticle lowHealthUIParticle;
+
+        [Tooltip("UIParticle component op FX_DeathExplosion")]
+        [SerializeField] private UIParticle deathExplosionUIParticle;
 
         [Header("Stamina UI Elements")]
         [SerializeField] private Slider staminaSlider;
@@ -55,6 +66,7 @@ namespace SniperGame.UI
         private Coroutine _hitmarkerCoroutine;
         private Coroutine _announcementCoroutine;
         private Coroutine _damageFlashCoroutine;
+        private int _currentParticleState = -1; // 1 = Normal, 2 = Low, 3 = Dead
 
         private void Awake()
         {
@@ -74,28 +86,58 @@ namespace SniperGame.UI
             {
                 returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
             }
+
+            // Directe veilige initialisatie van de particle containers
+            InitializeUIParticles();
         }
 
         private void Start()
         {
-            StartCoroutine(InitializeLocalHealthRoutine());
+            StartCoroutine(InitializeLocalPlayerRoutine());
         }
 
-        private IEnumerator InitializeLocalHealthRoutine()
+        private void InitializeUIParticles()
         {
-            yield return new WaitForSeconds(0.1f);
-
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
+            // Zorg dat GameObjects ALTIJD actief blijven voor de mesh-baking camera
+            if (normalHealthUIParticle != null)
             {
-                var playerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
-                if (playerObj != null)
+                normalHealthUIParticle.gameObject.SetActive(true);
+                normalHealthUIParticle.RefreshParticles();
+            }
+            if (lowHealthUIParticle != null)
+            {
+                lowHealthUIParticle.gameObject.SetActive(true);
+                lowHealthUIParticle.RefreshParticles();
+            }
+            if (deathExplosionUIParticle != null)
+            {
+                deathExplosionUIParticle.gameObject.SetActive(true);
+                deathExplosionUIParticle.RefreshParticles();
+            }
+
+            // Start standaard met State 1 (Normaal)
+            SetParticleState(1);
+        }
+
+        private IEnumerator InitializeLocalPlayerRoutine()
+        {
+            // Blijf zoeken totdat het Netcode PlayerObject van de lokale speler (Host of Client) bestaat
+            while (true)
+            {
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
                 {
-                    var health = playerObj.GetComponent<PlayerHealth>();
-                    if (health != null)
+                    var playerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
+                    if (playerObj != null)
                     {
-                        UpdateHealth(health.CurrentHealth.Value, 100);
+                        var health = playerObj.GetComponent<PlayerHealth>();
+                        if (health != null)
+                        {
+                            UpdateHealth(health.CurrentHealth.Value, 100);
+                            yield break;
+                        }
                     }
                 }
+                yield return new WaitForSeconds(0.05f);
             }
         }
 
@@ -301,6 +343,78 @@ namespace SniperGame.UI
                     healthText.text = "GEËLIMINEERD (0 HP)";
                     healthText.color = new Color(1.0f, 0.3f, 0.3f);
                 }
+            }
+
+            // State bepalen: 1 = > 30 HP, 2 = 1..30 HP, 3 = 0 HP
+            int nextState = currentHealth > 30 ? 1 : (currentHealth > 0 ? 2 : 3);
+            SetParticleState(nextState);
+        }
+
+        /// <summary>
+        /// Schakelt synchroon en gegarandeerd tussen de 3 particle states via de UIParticle API.
+        /// </summary>
+        private void SetParticleState(int state)
+        {
+            if (_currentParticleState == state && state != 3) return;
+            _currentParticleState = state;
+
+            switch (state)
+            {
+                case 1: // STATE 1: NORMALE GEZONDHEID (> 30 HP)
+                    if (lowHealthUIParticle != null)
+                    {
+                        lowHealthUIParticle.StopEmission();
+                        lowHealthUIParticle.Clear();
+                    }
+                    if (deathExplosionUIParticle != null)
+                    {
+                        deathExplosionUIParticle.StopEmission();
+                        deathExplosionUIParticle.Clear();
+                    }
+                    if (normalHealthUIParticle != null)
+                    {
+                        normalHealthUIParticle.StartEmission();
+                        normalHealthUIParticle.Play();
+                    }
+                    break;
+
+                case 2: // STATE 2: LAGE GEZONDHEID (<= 30 HP)
+                    if (normalHealthUIParticle != null)
+                    {
+                        normalHealthUIParticle.StopEmission();
+                        normalHealthUIParticle.Clear();
+                    }
+                    if (deathExplosionUIParticle != null)
+                    {
+                        deathExplosionUIParticle.StopEmission();
+                        deathExplosionUIParticle.Clear();
+                    }
+                    if (lowHealthUIParticle != null)
+                    {
+                        lowHealthUIParticle.StartEmission();
+                        lowHealthUIParticle.Play();
+                    }
+                    break;
+
+                case 3: // STATE 3: DOOD (0 HP)
+                    if (normalHealthUIParticle != null)
+                    {
+                        normalHealthUIParticle.StopEmission();
+                        normalHealthUIParticle.Clear();
+                    }
+                    if (lowHealthUIParticle != null)
+                    {
+                        lowHealthUIParticle.StopEmission();
+                        lowHealthUIParticle.Clear();
+                    }
+                    if (deathExplosionUIParticle != null)
+                    {
+                        // Reset simulatie naar 0 en trigger de 1-shot explosie
+                        deathExplosionUIParticle.Clear();
+                        deathExplosionUIParticle.StartEmission();
+                        deathExplosionUIParticle.Play();
+                    }
+                    break;
             }
         }
     }
