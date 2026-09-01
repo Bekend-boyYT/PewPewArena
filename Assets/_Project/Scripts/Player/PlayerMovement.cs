@@ -77,11 +77,12 @@ namespace SniperGame.Player
             }
         }
 
-        private void Update()
+private void Update()
         {
             if (!IsOwner) return;
 
-            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
+            // Blokkeer beweging tijdens countdown, pauzemenu of na matcheinde
+            if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
             {
                 _currentHorizontalVelocity = Vector3.zero;
                 return;
