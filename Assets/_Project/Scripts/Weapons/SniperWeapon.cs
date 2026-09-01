@@ -79,11 +79,12 @@ namespace SniperGame.Weapons
             }
         }
 
-        private void Update()
+private void Update()
         {
             if (!IsOwner) return;
 
-            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
+            // Blokkeer schieten en richten als de match niet actief is of pauzemenu open staat
+            if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
             {
                 ResetAimingState();
                 return;

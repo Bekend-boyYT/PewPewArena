@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using SniperGame.Gameplay;
+using SniperGame.UI;
 
 namespace SniperGame.Player
 {
@@ -13,8 +14,7 @@ namespace SniperGame.Player
         [SerializeField] private Transform cameraHolder;
 
         [Header("Sensitivity Settings")]
-        [SerializeField] private float mouseSensitivityX = 0.15f;
-        [SerializeField] private float mouseSensitivityY = 0.15f;
+        [SerializeField] private float baseSensitivity = 0.15f;
 
         [Header("Rotation Limits")]
         [SerializeField] private float minPitch = -85f;
@@ -75,12 +75,9 @@ namespace SniperGame.Player
 
             if (SceneManager.GetActiveScene().name != "Maintestgameplay") return;
 
-            if (RoundManager.Instance != null && RoundManager.Instance.CurrentState.Value == MatchState.MatchEnded)
+            // Als pauzemenu open staat of match is afgelopen: blokkeer rondkijken
+            if (PauseMenu.IsPaused || (RoundManager.Instance != null && RoundManager.Instance.CurrentState.Value == MatchState.MatchEnded))
             {
-                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
-                {
-                    SetCursorState(false);
-                }
                 return;
             }
 
@@ -91,7 +88,6 @@ namespace SniperGame.Player
 
         private void HandleRecoilDecay()
         {
-            // Recoil herstelt soepel naar de nulpositie
             _targetRecoil = Vector2.Lerp(_targetRecoil, Vector2.zero, Time.deltaTime * recoilReturnSpeed);
             _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, Time.deltaTime * recoilSnappiness);
         }
@@ -102,27 +98,24 @@ namespace SniperGame.Player
 
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
 
-            float lookX = mouseDelta.x * (mouseSensitivityX * _sensitivityMultiplier);
-            float lookY = mouseDelta.y * (mouseSensitivityY * _sensitivityMultiplier);
+            // Lees dynamisch de gevoeligheid uit van de PauseMenu slider
+            float liveSensitivity = PauseMenu.GetSensitivity();
 
-            // Horizontale rotatie (inclusief horizontale recoil)
+            float lookX = mouseDelta.x * (liveSensitivity * _sensitivityMultiplier);
+            float lookY = mouseDelta.y * (liveSensitivity * _sensitivityMultiplier);
+
             transform.Rotate(Vector3.up * (lookX + _currentRecoil.y * Time.deltaTime));
 
-            // Verticale rotatie
             _verticalRotation -= lookY;
             _verticalRotation = Mathf.Clamp(_verticalRotation, minPitch, maxPitch);
 
             if (cameraHolder != null)
             {
-                // Pas pitch toe inclusief actieve terugslag-kick
                 float pitchWithRecoil = Mathf.Clamp(_verticalRotation - _currentRecoil.x, minPitch, maxPitch);
                 cameraHolder.localRotation = Quaternion.Euler(pitchWithRecoil, 0f, 0f);
             }
         }
 
-        /// <summary>
-        /// Voegt een directe terugslag-kick toe aan het scherm.
-        /// </summary>
         public void AddRecoil(float pitchKick, float yawKick)
         {
             _targetRecoil += new Vector2(pitchKick, yawKick);
@@ -130,10 +123,7 @@ namespace SniperGame.Player
 
         private void HandleCursorLockInput()
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                SetCursorState(false);
-            }
+            if (PauseMenu.IsPaused) return;
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
             {
