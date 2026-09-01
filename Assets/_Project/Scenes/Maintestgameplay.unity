@@ -114781,9 +114781,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1935528899099322426, guid: c00b08492fac687c489eba8b21c9ac83, type: 3}
+      propertyPath: m_Size.z
+      value: 0.07
+      objectReference: {fileID: 0}
     - target: {fileID: 3421539916908046426, guid: c00b08492fac687c489eba8b21c9ac83, type: 3}
       propertyPath: m_Name
       value: MapPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 7356622487342092667, guid: c00b08492fac687c489eba8b21c9ac83, type: 3}
+      propertyPath: m_Size.z
+      value: 0.07
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
