@@ -66,7 +66,7 @@ namespace SniperGame.UI
         private Coroutine _hitmarkerCoroutine;
         private Coroutine _announcementCoroutine;
         private Coroutine _damageFlashCoroutine;
-        private int _currentParticleState = -1; // 1 = Normal, 2 = Low, 3 = Dead
+        private int _currentParticleState = -1;
 
         private void Awake()
         {
@@ -87,7 +87,6 @@ namespace SniperGame.UI
                 returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
             }
 
-            // Directe veilige initialisatie van de particle containers
             InitializeUIParticles();
         }
 
@@ -98,7 +97,6 @@ namespace SniperGame.UI
 
         private void InitializeUIParticles()
         {
-            // Zorg dat GameObjects ALTIJD actief blijven voor de mesh-baking camera
             if (normalHealthUIParticle != null)
             {
                 normalHealthUIParticle.gameObject.SetActive(true);
@@ -115,13 +113,11 @@ namespace SniperGame.UI
                 deathExplosionUIParticle.RefreshParticles();
             }
 
-            // Start standaard met State 1 (Normaal)
             SetParticleState(1);
         }
 
         private IEnumerator InitializeLocalPlayerRoutine()
         {
-            // Blijf zoeken totdat het Netcode PlayerObject van de lokale speler (Host of Client) bestaat
             while (true)
             {
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
@@ -161,7 +157,9 @@ namespace SniperGame.UI
         public void SetScopeActive(bool isScoped)
         {
             if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
-            if (hipCrosshair != null) hipCrosshair.SetActive(true);
+            
+            // Crosshair verdwijnt bij richten en verschijnt weer bij heupschot
+            if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
         }
 
         public void ShowHitmarker(HitboxType hitboxType)
@@ -345,14 +343,10 @@ namespace SniperGame.UI
                 }
             }
 
-            // State bepalen: 1 = > 30 HP, 2 = 1..30 HP, 3 = 0 HP
             int nextState = currentHealth > 30 ? 1 : (currentHealth > 0 ? 2 : 3);
             SetParticleState(nextState);
         }
 
-        /// <summary>
-        /// Schakelt synchroon en gegarandeerd tussen de 3 particle states via de UIParticle API.
-        /// </summary>
         private void SetParticleState(int state)
         {
             if (_currentParticleState == state && state != 3) return;
@@ -360,7 +354,7 @@ namespace SniperGame.UI
 
             switch (state)
             {
-                case 1: // STATE 1: NORMALE GEZONDHEID (> 30 HP)
+                case 1:
                     if (lowHealthUIParticle != null)
                     {
                         lowHealthUIParticle.StopEmission();
@@ -378,7 +372,7 @@ namespace SniperGame.UI
                     }
                     break;
 
-                case 2: // STATE 2: LAGE GEZONDHEID (<= 30 HP)
+                case 2:
                     if (normalHealthUIParticle != null)
                     {
                         normalHealthUIParticle.StopEmission();
@@ -396,7 +390,7 @@ namespace SniperGame.UI
                     }
                     break;
 
-                case 3: // STATE 3: DOOD (0 HP)
+                case 3:
                     if (normalHealthUIParticle != null)
                     {
                         normalHealthUIParticle.StopEmission();
@@ -409,7 +403,6 @@ namespace SniperGame.UI
                     }
                     if (deathExplosionUIParticle != null)
                     {
-                        // Reset simulatie naar 0 en trigger de 1-shot explosie
                         deathExplosionUIParticle.Clear();
                         deathExplosionUIParticle.StartEmission();
                         deathExplosionUIParticle.Play();
