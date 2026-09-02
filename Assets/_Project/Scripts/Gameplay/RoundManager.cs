@@ -23,7 +23,8 @@ namespace SniperGame.Gameplay
 
         [Header("Match Settings")]
         [SerializeField] private int roundsToWin = 2;
-        [SerializeField] private float countdownDuration = 3f;
+        [Tooltip("Exact afgestemd op de audioclip lengte (4.344 seconden)")]
+        [SerializeField] private float countdownDuration = 4.344f;
         [SerializeField] private float roundDuration = 60f;
         [SerializeField] private float roundEndDelay = 3f;
 
@@ -99,14 +100,43 @@ namespace SniperGame.Gameplay
         {
             CurrentState.Value = MatchState.Countdown;
 
-            for (int i = (int)countdownDuration; i > 0; i--)
-            {
-                ShowAnnouncementClientRpc($"{i}", Color.yellow, 0.9f, true);
-                yield return new WaitForSeconds(1.0f);
-            }
+            // Start de audio 1 keer synchroon op alle computers
+            PlayCountdownAudioClientRpc();
 
-            ShowAnnouncementClientRpc("FIGHT!", Color.green, 1.0f, false);
+            // Bereken stapgrootte: 4.344s / 4 stappen (3, 2, 1, GO) = 1.086s
+            float step = countdownDuration / 4f;
+
+            ShowAnnouncementClientRpc("3", Color.yellow, step);
+            yield return new WaitForSeconds(step);
+
+            ShowAnnouncementClientRpc("2", Color.yellow, step);
+            yield return new WaitForSeconds(step);
+
+            ShowAnnouncementClientRpc("1", Color.yellow, step);
+            yield return new WaitForSeconds(step);
+
+            ShowAnnouncementClientRpc("GO!", Color.green, step);
+            yield return new WaitForSeconds(step);
+
             CurrentState.Value = MatchState.InRound;
+        }
+
+        [ClientRpc]
+        private void PlayCountdownAudioClientRpc()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCountdownSequence();
+            }
+        }
+
+        [ClientRpc]
+        private void ShowAnnouncementClientRpc(string message, Color color, float duration)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.ShowAnnouncement(message, color, duration);
+            }
         }
 
         private void OnTimeExpired()
@@ -114,7 +144,7 @@ namespace SniperGame.Gameplay
             if (CurrentState.Value != MatchState.InRound) return;
 
             CurrentState.Value = MatchState.RoundEnded;
-            ShowAnnouncementClientRpc("TIJD IS OM!", Color.yellow, 2.5f, false);
+            ShowAnnouncementClientRpc("TIJD IS OM!", Color.yellow, 2.5f);
 
             StartCoroutine(EndDrawRoundRoutine());
         }
@@ -215,21 +245,6 @@ namespace SniperGame.Gameplay
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.UpdateTimer(timeRemaining);
-            }
-        }
-
-        [ClientRpc]
-        private void ShowAnnouncementClientRpc(string message, Color color, float duration, bool isTick)
-        {
-            if (CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.ShowAnnouncement(message, color, duration);
-            }
-
-            if (AudioManager.Instance != null)
-            {
-                if (isTick) AudioManager.Instance.PlayCountdownTick();
-                else AudioManager.Instance.PlayCountdownStart();
             }
         }
 

@@ -388,13 +388,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 823785023
+  GlobalObjectIdHash: 2871761722
   InScenePlacedSourceGlobalObjectIdHash: 2871761722
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -431,8 +431,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerLook
   ShowTopMostFoldoutHeaderGroup: 1
   cameraHolder: {fileID: 6234881638414218974}
-  mouseSensitivityX: 0.15
-  mouseSensitivityY: 0.15
+  baseSensitivity: 0.15
   minPitch: -85
   maxPitch: 85
   recoilSnappiness: 22
@@ -451,7 +450,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerMovement
   ShowTopMostFoldoutHeaderGroup: 1
   cameraHolder: {fileID: 6234881638414218974}
-  footstepAudioSource: {fileID: 0}
+  footstepAudioSource: {fileID: 2148086025490745545}
   walkSpeed: 5
   sprintSpeed: 8.5
   crouchSpeed: 2.5
@@ -475,6 +474,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: f452c063cf9b70747af5433e7c62a2bf, type: 3}
   walkStepInterval: 0.45
   sprintStepInterval: 0.3
+  footstepVolume: 0.65
 --- !u!114 &2451569977180287874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -535,7 +535,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerHealth
   ShowTopMostFoldoutHeaderGroup: 1
   maxHealth: 100
-  lowHealthThreshold: 30
   CurrentHealth:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -544,25 +543,6 @@ MonoBehaviour:
   characterController: {fileID: 8591399208384449305}
   visualsRenderer: {fileID: 8131419437210913135}
   playerLook: {fileID: -7700286182009497169}
-  normalParticles:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  lowHpParticles:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  deathExplosionParticle: {fileID: 0}
 --- !u!114 &8674415964324781783
 MonoBehaviour:
   m_ObjectHideFlags: 0
