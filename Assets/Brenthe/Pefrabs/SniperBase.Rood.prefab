@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 6184028105252259613}
   - component: {fileID: 2066495368662143577}
   - component: {fileID: 1020570550556580469}
+  - component: {fileID: 2067013819096669009}
   m_Layer: 0
   m_Name: SniperBase.Rood
   m_TagString: Untagged
@@ -181,3 +182,24 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &2067013819096669009
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7479545011288936915}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.00062695384, y: 0.007904002, z: 0.0015099142}
+  m_Center: {x: 0.00011016667, y: 0.001552842, z: -0.00014135538}
