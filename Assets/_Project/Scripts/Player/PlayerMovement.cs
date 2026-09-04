@@ -24,9 +24,9 @@ namespace SniperGame.Player
 
         [Header("Stamina Configuration")]
         [SerializeField] private float maxStamina = 100.0f;
-        [SerializeField] private float staminaDrainRate = 28.0f; // Verbruikt stamina in ~3.5 seconden
-        [SerializeField] private float staminaRegenRate = 22.0f; // Herstelt in ~4.5 seconden
-        [SerializeField] private float regenDelay = 1.0f;        // Wachttijd voor herstel start
+        [SerializeField] private float staminaDrainRate = 28.0f;
+        [SerializeField] private float staminaRegenRate = 22.0f;
+        [SerializeField] private float regenDelay = 1.0f;
 
         [Header("Jump & Physics")]
         [SerializeField] private float jumpForce = 6.5f;
@@ -41,15 +41,18 @@ namespace SniperGame.Player
         [SerializeField] private float crouchSmoothSpeed = 14.0f;
 
         [Header("Footstep Audio Settings")]
+        [Tooltip("Voeg hier meerdere verschillende voetstap-audioclips toe")]
         [SerializeField] private AudioClip[] footstepClips;
         [SerializeField] private float walkStepInterval = 0.45f;
         [SerializeField] private float sprintStepInterval = 0.30f;
+        [Range(0f, 1f)] [SerializeField] private float footstepVolume = 0.65f;
 
         private Vector3 _currentHorizontalVelocity;
         private float _verticalVelocity;
         private bool _isGrounded;
         private bool _isCrouching;
         private float _stepTimer;
+        private int _lastClipIndex = -1;
 
         private float _currentStamina;
         private float _regenTimer;
@@ -77,11 +80,10 @@ namespace SniperGame.Player
             }
         }
 
-private void Update()
+        private void Update()
         {
             if (!IsOwner) return;
 
-            // Blokkeer beweging tijdens countdown, pauzemenu of na matcheinde
             if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
             {
                 _currentHorizontalVelocity = Vector3.zero;
@@ -121,11 +123,9 @@ private void Update()
             Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
             bool isMoving = moveInput.magnitude > 0.01f;
 
-            // Sprint check: Alleen sprinten als er stamina is en je voorwaarts beweegt
             bool wantsToSprint = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
             bool isSprinting = wantsToSprint && _currentStamina > 0f && isMoving;
 
-            // Stamina verbruik & herstel logica
             if (isSprinting)
             {
                 _currentStamina = Mathf.Max(0f, _currentStamina - staminaDrainRate * Time.deltaTime);
@@ -143,7 +143,6 @@ private void Update()
                 }
             }
 
-            // Werk de Stamina UI bij
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
@@ -161,12 +160,13 @@ private void Update()
 
         private void HandleFootsteps()
         {
-            if (!_isGrounded || _isCrouching || _currentHorizontalVelocity.magnitude < 1.0f)
+            // Geen voetstappen als we in de lucht zijn, bukken of stilstaan
+            if (!_isGrounded || _isCrouching || _currentHorizontalVelocity.magnitude < 1.2f)
             {
                 return;
             }
 
-            bool isSprinting = _currentHorizontalVelocity.magnitude > (walkSpeed + 1.0f);
+            bool isSprinting = _currentHorizontalVelocity.magnitude > (walkSpeed + 0.5f);
             float currentInterval = isSprinting ? sprintStepInterval : walkStepInterval;
 
             _stepTimer += Time.deltaTime;
@@ -174,25 +174,58 @@ private void Update()
             if (_stepTimer >= currentInterval)
             {
                 _stepTimer = 0f;
-                PlayFootstep();
+                TriggerFootstep();
             }
         }
 
-        private void PlayFootstep()
+        private void TriggerFootstep()
         {
             if (footstepClips == null || footstepClips.Length == 0) return;
 
-            int randomIndex = Random.Range(0, footstepClips.Length);
-            PlayFootstepClientRpc(randomIndex);
+            // Kies een willekeurige clip, maar nooit dezelfde twee keer achter elkaar
+            int selectedIndex = 0;
+            if (footstepClips.Length > 1)
+            {
+                do
+                {
+                    selectedIndex = Random.Range(0, footstepClips.Length);
+                } while (selectedIndex == _lastClipIndex);
+            }
+            _lastClipIndex = selectedIndex;
+
+            float randomPitch = Random.Range(0.92f, 1.08f);
+
+            // 1. Speel lokaal direct af zonder vertraging
+            PlayFootstepAudio(selectedIndex, randomPitch);
+
+            // 2. Synchroniseer via Server naar de tegenstander
+            PlayFootstepServerRpc(selectedIndex, randomPitch);
         }
 
-        [ClientRpc]
-        private void PlayFootstepClientRpc(int clipIndex)
+        private void PlayFootstepAudio(int clipIndex, float pitch)
         {
             if (footstepAudioSource == null || footstepClips == null || clipIndex >= footstepClips.Length) return;
 
-            footstepAudioSource.pitch = Random.Range(0.9f, 1.1f);
-            footstepAudioSource.PlayOneShot(footstepClips[clipIndex], 0.6f);
+            AudioClip clip = footstepClips[clipIndex];
+            if (clip != null)
+            {
+                footstepAudioSource.pitch = pitch;
+                footstepAudioSource.PlayOneShot(clip, footstepVolume);
+            }
+        }
+
+        [ServerRpc]
+        private void PlayFootstepServerRpc(int clipIndex, float pitch)
+        {
+            // Stuur door naar alle andere clients (niet naar de eigenaar zelf, die hoort het lokaal al)
+            PlayFootstepClientRpc(clipIndex, pitch);
+        }
+
+        [ClientRpc]
+        private void PlayFootstepClientRpc(int clipIndex, float pitch)
+        {
+            if (IsOwner) return; // Dubbele audio bij de schutter voorkomen
+            PlayFootstepAudio(clipIndex, pitch);
         }
 
         private void HandleJumpAndGravity()

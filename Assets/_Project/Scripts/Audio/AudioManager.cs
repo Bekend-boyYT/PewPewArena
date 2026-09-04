@@ -9,8 +9,8 @@ namespace SniperGame.Audio
         [Header("UI & Combat Audio Clips (2D)")]
         [SerializeField] private AudioClip hitmarkerClip;
         [SerializeField] private AudioClip headshotHitmarkerClip;
-        [SerializeField] private AudioClip countdownTickClip;
-        [SerializeField] private AudioClip countdownStartClip;
+        [Tooltip("De volledige countdown audio clip van 4.344 seconden (3 -> 2 -> 1 -> GO)")]
+        [SerializeField] private AudioClip countdownSequenceClip;
         [SerializeField] private AudioClip roundWinClip;
         [SerializeField] private AudioClip roundLoseClip;
         [SerializeField] private AudioClip victoryClip;
@@ -31,7 +31,7 @@ namespace SniperGame.Audio
             }
 
             _2dAudioSource = gameObject.AddComponent<AudioSource>();
-            _2dAudioSource.spatialBlend = 0f; // Puur 2D stereo
+            _2dAudioSource.spatialBlend = 0f; // 2D Stereo
             _2dAudioSource.playOnAwake = false;
         }
 
@@ -41,14 +41,12 @@ namespace SniperGame.Audio
             PlayClip2D(clip, 1.0f);
         }
 
-        public void PlayCountdownTick()
+        /// <summary>
+        /// Speelt het complete countdown fragment (4.344s) eenmalig af.
+        /// </summary>
+        public void PlayCountdownSequence()
         {
-            PlayClip2D(countdownTickClip, 0.8f);
-        }
-
-        public void PlayCountdownStart()
-        {
-            PlayClip2D(countdownStartClip, 1.0f);
+            PlayClip2D(countdownSequenceClip, 1.0f);
         }
 
         public void PlayRoundOutcome(bool isWinner)
