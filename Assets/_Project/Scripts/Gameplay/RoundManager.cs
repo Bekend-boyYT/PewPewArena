@@ -13,6 +13,7 @@ namespace SniperGame.Gameplay
         WaitingForPlayers,
         Countdown,
         InRound,
+        Intermission,
         RoundEnded,
         MatchEnded
     }
@@ -23,10 +24,10 @@ namespace SniperGame.Gameplay
 
         [Header("Match Settings")]
         [SerializeField] private int roundsToWin = 2;
-        [Tooltip("Exact afgestemd op de audioclip lengte (4.344 seconden)")]
+        [Tooltip("Exact duration matching the audio clip (4.344 seconds)")]
         [SerializeField] private float countdownDuration = 4.344f;
         [SerializeField] private float roundDuration = 60f;
-        [SerializeField] private float roundEndDelay = 3f;
+        [SerializeField] private float intermissionDuration = 2.0f;
 
         [Header("State (Synchronized)")]
         public NetworkVariable<MatchState> CurrentState = new NetworkVariable<MatchState>(
@@ -100,10 +101,8 @@ namespace SniperGame.Gameplay
         {
             CurrentState.Value = MatchState.Countdown;
 
-            // Start de audio 1 keer synchroon op alle computers
             PlayCountdownAudioClientRpc();
 
-            // Bereken stapgrootte: 4.344s / 4 stappen (3, 2, 1, GO) = 1.086s
             float step = countdownDuration / 4f;
 
             ShowAnnouncementClientRpc("3", Color.yellow, step);
@@ -144,14 +143,20 @@ namespace SniperGame.Gameplay
             if (CurrentState.Value != MatchState.InRound) return;
 
             CurrentState.Value = MatchState.RoundEnded;
-            ShowAnnouncementClientRpc("TIJD IS OM!", Color.yellow, 2.5f);
+            ShowAnnouncementClientRpc("TIME'S UP!", Color.yellow, 2.0f);
 
             StartCoroutine(EndDrawRoundRoutine());
         }
 
         private IEnumerator EndDrawRoundRoutine()
         {
-            yield return new WaitForSeconds(roundEndDelay);
+            yield return new WaitForSeconds(2.0f);
+
+            CurrentState.Value = MatchState.Intermission;
+            ShowAnnouncementClientRpc("INTERMISSION...", new Color(0f, 0.85f, 1f), intermissionDuration);
+
+            yield return new WaitForSeconds(intermissionDuration);
+
             CurrentRound.Value++;
             StartNewRound();
         }
@@ -184,7 +189,12 @@ namespace SniperGame.Gameplay
         {
             NotifyRoundOutcomeClientRpc(roundWinnerClientId);
 
-            yield return new WaitForSeconds(roundEndDelay);
+            yield return new WaitForSeconds(2.2f);
+
+            CurrentState.Value = MatchState.Intermission;
+            ShowAnnouncementClientRpc("INTERMISSION...", new Color(0f, 0.85f, 1f), intermissionDuration);
+
+            yield return new WaitForSeconds(intermissionDuration);
 
             CurrentRound.Value++;
             StartNewRound();
@@ -201,7 +211,7 @@ namespace SniperGame.Gameplay
         {
             if (ArenaSpawnManager.Instance != null)
             {
-                ArenaSpawnManager.Instance.RespawnAllPlayers();
+                ArenaSpawnManager.Instance.RespawnAllPlayers(CurrentRound.Value);
             }
 
             foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
@@ -252,12 +262,12 @@ namespace SniperGame.Gameplay
         private void NotifyRoundOutcomeClientRpc(ulong winnerClientId)
         {
             bool isMeWinner = (NetworkManager.Singleton.LocalClientId == winnerClientId);
-            string msg = isMeWinner ? "RONDE GEWONNEN!" : "RONDE VERLOREN!";
+            string msg = isMeWinner ? "ROUND WON!" : "ROUND LOST!";
             Color col = isMeWinner ? Color.green : Color.red;
 
             if (CombatHUD.Instance != null)
             {
-                CombatHUD.Instance.ShowAnnouncement(msg, col, 2.5f);
+                CombatHUD.Instance.ShowAnnouncement(msg, col, 2.0f);
             }
 
             if (AudioManager.Instance != null)

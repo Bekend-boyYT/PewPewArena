@@ -671,7 +671,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1799563016}
-    PlayerPrefab: {fileID: 5021642998674229361, guid: a1c483a6aa18a614aa2b0e6ac39478a9, type: 3}
+    PlayerPrefab: {fileID: 6795404076253420896, guid: 208d5985908805345ba26cddfd68c1cc, type: 3}
     Prefabs:
       NetworkPrefabsLists: []
     TickRate: 120
@@ -733,6 +733,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 509840901603176318, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
+      propertyPath: m_text
+      value: Your Game Code
+      objectReference: {fileID: 0}
+    - target: {fileID: 509840901603176318, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: b4fe786949e4ca746825602d8f7cbb4f, type: 2}
@@ -781,6 +785,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3180942757213220994, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
+      propertyPath: m_text
+      value: Enter Code...
+      objectReference: {fileID: 0}
+    - target: {fileID: 3180942757213220994, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset
       value: 
       objectReference: {fileID: 11400000, guid: b4fe786949e4ca746825602d8f7cbb4f, type: 2}
@@ -791,6 +799,10 @@ PrefabInstance:
     - target: {fileID: 3180942757213220994, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4217393834237976902, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
+      propertyPath: m_text
+      value: Create Game
       objectReference: {fileID: 0}
     - target: {fileID: 4217393834237976902, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset
@@ -971,6 +983,10 @@ PrefabInstance:
     - target: {fileID: 8477274861319716287, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8482168307736523894, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
+      propertyPath: m_text
+      value: Join Game
       objectReference: {fileID: 0}
     - target: {fileID: 8482168307736523894, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset

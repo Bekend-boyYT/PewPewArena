@@ -16,7 +16,7 @@ namespace SniperGame.UI
     public class RelayNetworkUI : MonoBehaviour
     {
         [Header("Scene Settings")]
-        [Tooltip("Exacte naam van de gameplay scene in Build Settings.")]
+        [Tooltip("Exact name of the gameplay scene in Build Settings.")]
         [SerializeField] private string gameplaySceneName = "Maintestgameplay";
 
         [Header("Screens / Panels")]
@@ -62,7 +62,6 @@ namespace SniperGame.UI
 
         private void Update()
         {
-            // HARD GUARD: In het menu blijft de muis ALTIJD 100% vrij en zichtbaar
             if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
             {
                 ForceUnlockCursor();
@@ -88,35 +87,34 @@ namespace SniperGame.UI
         }
 
         private async Task InitializeUnityServicesAsync()
-{
-    try
-    {
-        if (UnityServices.State == ServicesInitializationState.Uninitialized)
         {
-            var options = new InitializationOptions();
+            try
+            {
+                if (UnityServices.State == ServicesInitializationState.Uninitialized)
+                {
+                    var options = new InitializationOptions();
 
-            // Zorgt dat elke build op dezelfde PC een eigen unieke login krijgt
-            #if UNITY_EDITOR
-            options.SetProfile("Editor_User");
-            #else
-            string uniqueProfile = $"BuildUser_{System.Guid.NewGuid().ToString().Substring(0, 6)}";
-            options.SetProfile(uniqueProfile);
-            #endif
+                    #if UNITY_EDITOR
+                    options.SetProfile("Editor_User");
+                    #else
+                    string uniqueProfile = $"BuildUser_{System.Guid.NewGuid().ToString().Substring(0, 6)}";
+                    options.SetProfile(uniqueProfile);
+                    #endif
 
-            await UnityServices.InitializeAsync(options);
+                    await UnityServices.InitializeAsync(options);
+                }
+
+                if (!AuthenticationService.Instance.IsSignedIn)
+                {
+                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                    Debug.Log($"[RelayUI] Signed in as player: {AuthenticationService.Instance.PlayerId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[RelayUI] Authentication error: {e.Message}");
+            }
         }
-
-        if (!AuthenticationService.Instance.IsSignedIn)
-        {
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            Debug.Log($"[RelayUI] Ingelogd als speler: {AuthenticationService.Instance.PlayerId}");
-        }
-    }
-    catch (Exception e)
-    {
-        Debug.LogError($"[RelayUI] Authentication fout: {e.Message}");
-    }
-}
 
         private void ForceUnlockCursor()
         {
@@ -142,8 +140,8 @@ namespace SniperGame.UI
         {
             ShowScreen(createScreen);
 
-            if (createStatusText != null) createStatusText.text = "Relay code genereren...";
-            if (gameCodeDisplay != null) gameCodeDisplay.text = "LADEN...";
+            if (createStatusText != null) createStatusText.text = "Generating Relay code...";
+            if (gameCodeDisplay != null) gameCodeDisplay.text = "LOADING...";
             if (createStartButton != null) createStartButton.interactable = false;
             if (createBackButton != null) createBackButton.interactable = true;
 
@@ -153,7 +151,7 @@ namespace SniperGame.UI
         private void OnOpenJoinScreen()
         {
             ShowScreen(joinScreen);
-            if (joinStatusText != null) joinStatusText.text = "Voer de 6-letterige code in.";
+            if (joinStatusText != null) joinStatusText.text = "Enter the 6-character room code.";
             if (joinCodeInput != null) joinCodeInput.text = "";
             if (joinConfirmButton != null) joinConfirmButton.interactable = true;
             if (joinBackButton != null) joinBackButton.interactable = true;
@@ -203,7 +201,7 @@ namespace SniperGame.UI
                 _currentJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
 
                 if (gameCodeDisplay != null) gameCodeDisplay.text = _currentJoinCode;
-                if (createStatusText != null) createStatusText.text = "Code gereed! Wachten tot Speler 2 joint...";
+                if (createStatusText != null) createStatusText.text = "Lobby ready! Waiting for Player 2 to join...";
                 if (createStartButton != null) createStartButton.interactable = true;
 
                 var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
@@ -222,10 +220,10 @@ namespace SniperGame.UI
             }
             catch (Exception e)
             {
-                if (gameCodeDisplay != null) gameCodeDisplay.text = "FOUT";
-                if (createStatusText != null) createStatusText.text = "Relay mislukt!";
+                if (gameCodeDisplay != null) gameCodeDisplay.text = "ERROR";
+                if (createStatusText != null) createStatusText.text = "Relay connection failed!";
                 if (createBackButton != null) createBackButton.interactable = true;
-                Debug.LogError($"[RelayUI] Fout bij CreateAllocation: {e.Message}");
+                Debug.LogError($"[RelayUI] Error during CreateAllocation: {e.Message}");
             }
         }
 
@@ -233,7 +231,7 @@ namespace SniperGame.UI
         {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
-                if (createStatusText != null) createStatusText.text = "Scene inladen...";
+                if (createStatusText != null) createStatusText.text = "Loading scene...";
                 if (createStartButton != null) createStartButton.interactable = false;
 
                 NetworkManager.Singleton.SceneManager.LoadScene(gameplaySceneName, LoadSceneMode.Single);
@@ -246,11 +244,11 @@ namespace SniperGame.UI
 
             if (string.IsNullOrEmpty(code))
             {
-                if (joinStatusText != null) joinStatusText.text = "Vul eerst een code in!";
+                if (joinStatusText != null) joinStatusText.text = "Please enter a code first!";
                 return;
             }
 
-            if (joinStatusText != null) joinStatusText.text = $"Verbinden met code {code}...";
+            if (joinStatusText != null) joinStatusText.text = $"Connecting with code {code}...";
             if (joinConfirmButton != null) joinConfirmButton.interactable = false;
 
             try
@@ -274,9 +272,9 @@ namespace SniperGame.UI
             }
             catch (Exception e)
             {
-                if (joinStatusText != null) joinStatusText.text = "Code ongeldig of host onbereikbaar!";
+                if (joinStatusText != null) joinStatusText.text = "Invalid code or host unreachable!";
                 if (joinConfirmButton != null) joinConfirmButton.interactable = true;
-                Debug.LogError($"[RelayUI] JoinAllocation mislukt: {e.Message}");
+                Debug.LogError($"[RelayUI] JoinAllocation failed: {e.Message}");
             }
         }
 
@@ -292,7 +290,7 @@ namespace SniperGame.UI
                 {
                     if (createStatusText != null)
                     {
-                        createStatusText.text = "<color=#00FF00>Speler 2 verbonden!</color> Klik op START.";
+                        createStatusText.text = "<color=#00FF00>Player 2 connected!</color> Click START.";
                     }
                     if (createStartButton != null)
                     {
@@ -306,7 +304,7 @@ namespace SniperGame.UI
                 {
                     if (joinStatusText != null)
                     {
-                        joinStatusText.text = "<color=#00FF00>Verbonden!</color> Wachten op host...";
+                        joinStatusText.text = "<color=#00FF00>Connected!</color> Waiting for host...";
                     }
                 }
             }
@@ -316,7 +314,7 @@ namespace SniperGame.UI
         {
             if (!NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.LocalClientId)
             {
-                if (joinStatusText != null) joinStatusText.text = "Verbinding verbroken!";
+                if (joinStatusText != null) joinStatusText.text = "Disconnected from host!";
                 if (joinConfirmButton != null) joinConfirmButton.interactable = true;
             }
         }

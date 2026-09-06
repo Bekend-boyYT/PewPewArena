@@ -31,13 +31,13 @@ namespace SniperGame.UI
         [SerializeField] private TextMeshProUGUI healthText;
 
         [Header("Health UI Particle Groups")]
-        [Tooltip("UIParticle component op FX_NormalHealth")]
+        [Tooltip("UIParticle component on FX_NormalHealth")]
         [SerializeField] private UIParticle normalHealthUIParticle;
 
-        [Tooltip("UIParticle component op FX_LowHealth")]
+        [Tooltip("UIParticle component on FX_LowHealth")]
         [SerializeField] private UIParticle lowHealthUIParticle;
 
-        [Tooltip("UIParticle component op FX_DeathExplosion")]
+        [Tooltip("UIParticle component on FX_DeathExplosion")]
         [SerializeField] private UIParticle deathExplosionUIParticle;
 
         [Header("Stamina UI Elements")]
@@ -157,8 +157,6 @@ namespace SniperGame.UI
         public void SetScopeActive(bool isScoped)
         {
             if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
-            
-            // Crosshair verdwijnt bij richten en verschijnt weer bij heupschot
             if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
         }
 
@@ -234,7 +232,7 @@ namespace SniperGame.UI
 
             if (isReloading)
             {
-                ammoText.text = "<color=#FFCC00>HERLADEN...</color>";
+                ammoText.text = "<color=#FFCC00>RELOADING...</color>";
             }
             else
             {
@@ -260,7 +258,7 @@ namespace SniperGame.UI
             int myScore = isHost ? hostScore : clientScore;
             int enemyScore = isHost ? clientScore : hostScore;
 
-            scoreText.text = $"RONDE {currentRound}  |  <color=#00FF66>JIJ: {myScore}</color> - <color=#FF4444>VIJAND: {enemyScore}</color>";
+            scoreText.text = $"ROUND {currentRound}  |  <color=#00FF66>YOU: {myScore}</color> - <color=#FF4444>ENEMY: {enemyScore}</color>";
         }
 
         public void UpdateTimer(float timeRemaining)
@@ -338,7 +336,7 @@ namespace SniperGame.UI
 
                 if (healthText != null)
                 {
-                    healthText.text = "GEËLIMINEERD (0 HP)";
+                    healthText.text = "ELIMINATED (0 HP)";
                     healthText.color = new Color(1.0f, 0.3f, 0.3f);
                 }
             }
