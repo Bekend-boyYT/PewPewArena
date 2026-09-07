@@ -22,7 +22,37 @@ public class Sniper : MonoBehaviour
     public Vector3 hipRotation = Vector3.zero;
     public Vector3 aimRotation = Vector3.zero;
 
+    [Header("Runtime Pose")]
+    [SerializeField] private bool useScenePoseAsHipDefault = true;
+
+    [Header("Scope")]
+    [SerializeField] private GameObject scopeOverlay;
+    [SerializeField] private bool hideWeaponWhileScoped = true;
+
     private bool isAiming;
+
+    private void Awake()
+    {
+        if (weaponTransform == null)
+        {
+            weaponTransform = transform;
+        }
+
+        if (useScenePoseAsHipDefault && weaponTransform != null)
+        {
+            hipPosition = weaponTransform.localPosition;
+            hipRotation = weaponTransform.localEulerAngles;
+            aimRotation = hipRotation;
+        }
+    }
+
+    private void Start()
+    {
+        if (playerCamera != null && weaponTransform != null && weaponTransform.parent != playerCamera.transform)
+        {
+            weaponTransform.SetParent(playerCamera.transform, true);
+        }
+    }
 
     void Update()
     {
@@ -36,15 +66,23 @@ public class Sniper : MonoBehaviour
 
         float targetFOV = isAiming ? aimingFOV : normalFOV;
 
+        if (scopeOverlay != null)
+        {
+            scopeOverlay.SetActive(isAiming);
+        }
+
+        if (hideWeaponWhileScoped && weaponTransform != null)
+        {
+            weaponTransform.gameObject.SetActive(!isAiming);
+        }
+
         playerCamera.fieldOfView = Mathf.Lerp(
             playerCamera.fieldOfView,
             targetFOV,
             zoomSpeed * Time.deltaTime
         );
 
-        Vector3 targetPosition = isAiming
-            ? aimPosition
-            : hipPosition;
+        Vector3 targetPosition = hipPosition;
 
         Vector3 targetRotation = isAiming
             ? aimRotation
