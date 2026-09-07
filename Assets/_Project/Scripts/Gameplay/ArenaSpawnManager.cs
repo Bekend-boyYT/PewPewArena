@@ -1,8 +1,6 @@
-using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using SniperGame.Player;
-using ProjectPlayerMovement = SniperGame.Player.PlayerMovement;
 
 namespace SniperGame.Gameplay
 {
@@ -10,70 +8,49 @@ namespace SniperGame.Gameplay
     {
         public static ArenaSpawnManager Instance { get; private set; }
 
-        [Header("Spawn Points")]
-        [SerializeField] private Transform spawnPointP1;
-        [SerializeField] private Transform spawnPointP2;
+        [Header("Spawn Points (Minimaal 2 nodig)")]
+        [SerializeField] private Transform[] spawnPoints;
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
-
-            if (IsServer)
-            {
-                // Wacht een fractie van een seconde zodat alle spelers netjes in de scene geladen zijn
-                StartCoroutine(PositionAllPlayersRoutine());
-            }
-        }
-
-        private IEnumerator PositionAllPlayersRoutine()
-        {
-            yield return new WaitForSeconds(0.2f);
-            RespawnAllPlayers();
+            if (Instance == null) Instance = this;
+            else Destroy(gameObject);
         }
 
         /// <summary>
-        /// Plaatst alle verbonden spelers op hun respectievelijke spawnpoint.
+        /// Teleporteert alle verbonden spelers naar spawnpoints op basis van het huidige rondenummer.
+        /// Even ronde = omgedraaide spawnpoints.
         /// </summary>
-        public void RespawnAllPlayers()
+        public void RespawnAllPlayers(int currentRound)
         {
             if (!IsServer) return;
+
+            if (spawnPoints == null || spawnPoints.Length < 2)
+            {
+                Debug.LogError("[ArenaSpawnManager] Minimaal 2 spawnpoints toewijzen in de Inspector!");
+                return;
+            }
 
             var clients = NetworkManager.Singleton.ConnectedClientsList;
 
             for (int i = 0; i < clients.Count; i++)
             {
                 var client = clients[i];
-                if (client.PlayerObject == null) continue;
-
-                var playerMovement = client.PlayerObject.GetComponent<ProjectPlayerMovement>();
-                if (playerMovement == null) continue;
-
-                // Speler 0 (Host) krijgt Spawn 1, Speler 1 (Client) krijgt Spawn 2
-                Transform targetSpawn = (i == 0) ? spawnPointP1 : spawnPointP2;
-
-                if (targetSpawn != null)
+                if (client.PlayerObject != null)
                 {
-                    playerMovement.TeleportClientRpc(targetSpawn.position, targetSpawn.rotation);
-                    Debug.Log($"[SpawnManager] Speler {client.ClientId} geteleporteerd naar Spawn {(i == 0 ? "1" : "2")}");
+                    // Ronde 1: Speler 0 -> Spawn 0, Speler 1 -> Spawn 1
+                    // Ronde 2: Speler 0 -> Spawn 1, Speler 1 -> Spawn 0
+                    // Ronde 3: Speler 0 -> Spawn 0, Speler 1 -> Spawn 1
+                    int spawnIndex = (i + (currentRound - 1)) % spawnPoints.Length;
+                    Transform targetSpawn = spawnPoints[spawnIndex];
+
+                    var movement = client.PlayerObject.GetComponent<PlayerMovement>();
+                    if (movement != null)
+                    {
+                        movement.TeleportClientRpc(targetSpawn.position, targetSpawn.rotation);
+                    }
                 }
             }
-        }
-
-        public Transform GetSpawnPoint(int playerIndex)
-        {
-            return playerIndex == 0 ? spawnPointP1 : spawnPointP2;
         }
     }
 }

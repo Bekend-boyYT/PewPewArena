@@ -30,14 +30,21 @@ namespace SniperGame.UI
         [SerializeField] private Image healthBackgroundImage;
         [SerializeField] private TextMeshProUGUI healthText;
 
+        [Header("Health Borders")]
+        [Tooltip("Regular border image displayed when health is normal (> 30 HP)")]
+        [SerializeField] private GameObject normalHealthBorder;
+
+        [Tooltip("Warning border image displayed when health is low (<= 30 HP)")]
+        [SerializeField] private GameObject lowHealthBorder;
+
         [Header("Health UI Particle Groups")]
-        [Tooltip("UIParticle component op FX_NormalHealth")]
+        [Tooltip("UIParticle component on FX_NormalHealth")]
         [SerializeField] private UIParticle normalHealthUIParticle;
 
-        [Tooltip("UIParticle component op FX_LowHealth")]
+        [Tooltip("UIParticle component on FX_LowHealth")]
         [SerializeField] private UIParticle lowHealthUIParticle;
 
-        [Tooltip("UIParticle component op FX_DeathExplosion")]
+        [Tooltip("UIParticle component on FX_DeathExplosion")]
         [SerializeField] private UIParticle deathExplosionUIParticle;
 
         [Header("Stamina UI Elements")]
@@ -57,6 +64,7 @@ namespace SniperGame.UI
 
         [Header("Health Gradients")]
         [SerializeField] private Gradient aliveGradient;
+        [SerializeField] private Gradient lowHealthGradient;
         [SerializeField] private Color deadBackgroundColor = new Color(0.55f, 0.05f, 0.05f, 0.9f);
         [SerializeField] private Color aliveBackgroundColor = new Color(0.12f, 0.12f, 0.12f, 0.85f);
 
@@ -81,6 +89,9 @@ namespace SniperGame.UI
             if (announcementText != null) announcementText.gameObject.SetActive(false);
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
             if (damageVignetteGroup != null) damageVignetteGroup.alpha = 0f;
+
+            if (normalHealthBorder != null) normalHealthBorder.SetActive(true);
+            if (lowHealthBorder != null) lowHealthBorder.SetActive(false);
 
             if (returnToMenuButton != null)
             {
@@ -152,13 +163,25 @@ namespace SniperGame.UI
 
                 aliveGradient.SetKeys(colorKeys, alphaKeys);
             }
+
+            if (lowHealthGradient == null || lowHealthGradient.colorKeys.Length == 0)
+            {
+                lowHealthGradient = new Gradient();
+                var colorKeys = new GradientColorKey[2];
+                colorKeys[0] = new GradientColorKey(new Color(0.55f, 0.05f, 0.05f), 0.0f); // Dark red
+                colorKeys[1] = new GradientColorKey(new Color(1.0f, 0.15f, 0.15f), 1.0f); // Bright red
+
+                var alphaKeys = new GradientAlphaKey[2];
+                alphaKeys[0] = new GradientAlphaKey(1.0f, 0.0f);
+                alphaKeys[1] = new GradientAlphaKey(1.0f, 1.0f);
+
+                lowHealthGradient.SetKeys(colorKeys, alphaKeys);
+            }
         }
 
         public void SetScopeActive(bool isScoped)
         {
             if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
-            
-            // Crosshair verdwijnt bij richten en verschijnt weer bij heupschot
             if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
         }
 
@@ -234,7 +257,7 @@ namespace SniperGame.UI
 
             if (isReloading)
             {
-                ammoText.text = "<color=#FFCC00>HERLADEN...</color>";
+                ammoText.text = "<color=#FFCC00>RELOADING...</color>";
             }
             else
             {
@@ -260,7 +283,7 @@ namespace SniperGame.UI
             int myScore = isHost ? hostScore : clientScore;
             int enemyScore = isHost ? clientScore : hostScore;
 
-            scoreText.text = $"RONDE {currentRound}  |  <color=#00FF66>JIJ: {myScore}</color> - <color=#FF4444>VIJAND: {enemyScore}</color>";
+            scoreText.text = $"ROUND {currentRound}  |  <color=#00FF66>YOU: {myScore}</color> - <color=#FF4444>ENEMY: {enemyScore}</color>";
         }
 
         public void UpdateTimer(float timeRemaining)
@@ -308,9 +331,17 @@ namespace SniperGame.UI
 
             if (currentHealth > 0)
             {
-                if (healthFillImage != null && aliveGradient != null)
+                if (healthFillImage != null)
                 {
-                    healthFillImage.color = aliveGradient.Evaluate(healthRatio);
+                    if (currentHealth > 30 && aliveGradient != null)
+                    {
+                        healthFillImage.color = aliveGradient.Evaluate(healthRatio);
+                    }
+                    else if (currentHealth <= 30 && lowHealthGradient != null)
+                    {
+                        float lowHealthRatio = Mathf.Clamp01((float)currentHealth / 30f);
+                        healthFillImage.color = lowHealthGradient.Evaluate(lowHealthRatio);
+                    }
                 }
 
                 if (healthBackgroundImage != null)
@@ -321,7 +352,7 @@ namespace SniperGame.UI
                 if (healthText != null)
                 {
                     healthText.text = $"{currentHealth} / {maxHealth} HP";
-                    healthText.color = Color.white;
+                    healthText.color = currentHealth <= 30 ? new Color(1f, 0.4f, 0.4f) : Color.white;
                 }
             }
             else
@@ -338,10 +369,14 @@ namespace SniperGame.UI
 
                 if (healthText != null)
                 {
-                    healthText.text = "GEËLIMINEERD (0 HP)";
+                    healthText.text = "ELIMINATED (0 HP)";
                     healthText.color = new Color(1.0f, 0.3f, 0.3f);
                 }
             }
+
+            bool isNormalHealth = currentHealth > 30;
+            if (normalHealthBorder != null) normalHealthBorder.SetActive(isNormalHealth);
+            if (lowHealthBorder != null) lowHealthBorder.SetActive(!isNormalHealth);
 
             int nextState = currentHealth > 30 ? 1 : (currentHealth > 0 ? 2 : 3);
             SetParticleState(nextState);

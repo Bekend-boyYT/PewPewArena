@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Rendering;
 using SniperGame.UI;
 using SniperGame.Gameplay;
 
@@ -18,7 +19,8 @@ namespace SniperGame.Player
 
         [Header("Components to Disable on Death")]
         [SerializeField] private CharacterController characterController;
-        [SerializeField] private MeshRenderer visualsRenderer;
+        [Tooltip("Sleep hier het 'Player character' of 'Low poly soldier' GameObject in")]
+        [SerializeField] private GameObject visualsRoot;
         [SerializeField] private PlayerLook playerLook;
 
         public override void OnNetworkSpawn()
@@ -27,7 +29,16 @@ namespace SniperGame.Player
 
             CurrentHealth.OnValueChanged += OnHealthChanged;
 
-            // Directe UI-update bij het spawnen van de speler (voor zowel Host als Client)
+            // Voor de lokale speler: model op Shadows Only zetten zodat je niet in je eigen helm kijkt
+            if (IsOwner && visualsRoot != null)
+            {
+                var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in renderers)
+                {
+                    r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                }
+            }
+
             if (IsOwner && CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.UpdateHealth(CurrentHealth.Value, maxHealth);
@@ -93,13 +104,13 @@ namespace SniperGame.Player
         private void HandleDeath()
         {
             if (characterController != null) characterController.enabled = false;
-            if (visualsRenderer != null) visualsRenderer.enabled = false;
+            if (visualsRoot != null) visualsRoot.SetActive(false);
         }
 
         private void HandleRevive()
         {
             if (characterController != null) characterController.enabled = true;
-            if (visualsRenderer != null) visualsRenderer.enabled = true;
+            if (visualsRoot != null) visualsRoot.SetActive(true);
         }
 
         public void ResetHealthServer()
