@@ -30,6 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6304926110293085849}
+  - {fileID: 7826922127616916410}
   m_Father: {fileID: 4988023680777666771}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3955658300512689151
@@ -183,7 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1160076932
+  GlobalObjectIdHash: 3779929489
   InScenePlacedSourceGlobalObjectIdHash: 3759555964
   DeferredDespawnTick: 0
   Ownership: 1
@@ -362,6 +363,10 @@ MonoBehaviour:
   scopedFOV: 18
   zoomSpeed: 16
   scopedSensitivityMultiplier: 0.35
+  weaponAnimator: {fileID: 5832424543925260710}
+  weaponVisuals: {fileID: 7436968914139455019}
+  scopeInDuration: 0.25
+  isScopedParam: IsScoped
   hipRecoilPitch: 3.2
   hipRecoilYaw: 1
   scopedRecoilPitch: 1.4
@@ -707,6 +712,61 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerHitbox
   hitboxType: 2
   customDamage: 0
+--- !u!1 &7436968914139455019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7826922127616916410}
+  - component: {fileID: 5832424543925260710}
+  m_Layer: 0
+  m_Name: WeaponHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7826922127616916410
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7436968914139455019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.216, y: -0.1797, z: 0.1456}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4251342227178297038}
+  m_Father: {fileID: 624084381806192015}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &5832424543925260710
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7436968914139455019}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: cc9151c93f16c084cafca206cd9d8bd1, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8012650194189158886
 GameObject:
   m_ObjectHideFlags: 0
@@ -844,6 +904,76 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1001 &807292877390363048
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7826922127616916410}
+    m_Modifications:
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0180002
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.007459983
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.21339925
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4507843972025579413, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+      propertyPath: m_Name
+      value: SniperBase.Rood
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+--- !u!4 &4251342227178297038 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3588200823963430758, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+  m_PrefabInstance: {fileID: 807292877390363048}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4500641748279551793
 PrefabInstance:
   m_ObjectHideFlags: 0
