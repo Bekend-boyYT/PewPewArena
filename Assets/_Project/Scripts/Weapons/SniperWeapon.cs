@@ -51,7 +51,10 @@ namespace SniperGame.Weapons
         [SerializeField] private Transform firePoint;
         [SerializeField] private PlayerLook playerLook;
 
-        [Header("Effects & Tracers")]
+        [Header("Effects, Bullets & Tracers")]
+        [Tooltip("Your 3D bullet prefab that flies from the barrel")]
+        [SerializeField] private GameObject bulletPrefab;
+        [SerializeField] private float bulletSpeed = 450f;
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitEffectPrefab;
         [SerializeField] private Material tracerMaterial;
@@ -182,24 +185,20 @@ namespace SniperGame.Weapons
 
         private IEnumerator ScopeInRoutine()
         {
-            // Trigger animation in Animator
             if (weaponAnimator != null)
             {
                 weaponAnimator.SetBool(isScopedParam, true);
             }
 
-            // Ensure weapon is visible while raising
             SetWeaponVisualsVisible(true);
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(false);
             }
 
-            // Wait until the animation is almost finished before swapping
             float waitTime = Mathf.Max(0.01f, scopeInDuration - scopeOverlayLeadTime);
             yield return new WaitForSeconds(waitTime);
 
-            // Once almost finished, swap: hide weapon mesh and display 2D scope overlay
             _isFullyScoped = true;
             SetWeaponVisualsVisible(false);
 
@@ -223,7 +222,6 @@ namespace SniperGame.Weapons
                 weaponAnimator.SetBool(isScopedParam, false);
             }
 
-            // Immediately restore weapon model and hide overlay
             SetWeaponVisualsVisible(true);
 
             if (CombatHUD.Instance != null)
@@ -460,12 +458,25 @@ namespace SniperGame.Weapons
         [ClientRpc]
         private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
         {
-            StartCoroutine(DrawTracerRoutine(origin, hitPosition));
-
-            if (hitEffectPrefab != null)
+            if (bulletPrefab != null)
             {
-                GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
-                Destroy(effect, 3f);
+                GameObject bullet = Instantiate(bulletPrefab, origin, Quaternion.identity);
+                var cosmetic = bullet.GetComponent<CosmeticBullet>();
+                if (cosmetic == null)
+                {
+                    cosmetic = bullet.AddComponent<CosmeticBullet>();
+                }
+                cosmetic.Initialize(hitPosition, hitNormal, hitEffectPrefab, bulletSpeed);
+            }
+            else
+            {
+                StartCoroutine(DrawTracerRoutine(origin, hitPosition));
+
+                if (hitEffectPrefab != null)
+                {
+                    GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
+                    Destroy(effect, 3f);
+                }
             }
         }
 
