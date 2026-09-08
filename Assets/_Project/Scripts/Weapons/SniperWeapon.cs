@@ -34,8 +34,10 @@ namespace SniperGame.Weapons
         [SerializeField] private Animator weaponAnimator;
         [Tooltip("The GameObject holding the sniper mesh/renderers (e.g. WeaponHolder or the Sniper Model)")]
         [SerializeField] private GameObject weaponVisuals;
-        [Tooltip("Time in seconds for the ScopedIn animation to complete before popping up the overlay")]
+        [Tooltip("Time in seconds for the ScopedIn animation to complete")]
         [SerializeField] private float scopeInDuration = 0.25f;
+        [Tooltip("How many seconds before the animation completely finishes the overlay should appear")]
+        [SerializeField] private float scopeOverlayLeadTime = 0.08f;
         [SerializeField] private string isScopedParam = "IsScoped";
 
         [Header("Recoil Kick Settings")]
@@ -61,6 +63,7 @@ namespace SniperGame.Weapons
 
         private int _currentAmmo;
         private bool _isReloading;
+        private float _reloadStartTime;
         private Coroutine _reloadCoroutine;
         private Coroutine _scopeCoroutine;
 
@@ -129,10 +132,31 @@ namespace SniperGame.Weapons
             }
 
             UpdateCameraZoom();
+            UpdateCooldownIndicator();
 
             if (Input.GetMouseButtonDown(0))
             {
                 TryShoot();
+            }
+        }
+
+        private void UpdateCooldownIndicator()
+        {
+            if (CombatHUD.Instance == null) return;
+
+            if (_isReloading)
+            {
+                float reloadProgress = Mathf.Clamp01((Time.time - _reloadStartTime) / reloadDuration);
+                CombatHUD.Instance.UpdateCooldownBar(reloadProgress, true);
+            }
+            else if (Time.time < nextFireTime)
+            {
+                float shootProgress = 1f - Mathf.Clamp01((nextFireTime - Time.time) / fireRate);
+                CombatHUD.Instance.UpdateCooldownBar(shootProgress, false);
+            }
+            else
+            {
+                CombatHUD.Instance.UpdateCooldownBar(1f, false);
             }
         }
 
@@ -171,10 +195,11 @@ namespace SniperGame.Weapons
                 CombatHUD.Instance.SetScopeActive(false);
             }
 
-            // Wait for the scoping-in animation to finish
-            yield return new WaitForSeconds(scopeInDuration);
+            // Wait until the animation is almost finished before swapping
+            float waitTime = Mathf.Max(0.01f, scopeInDuration - scopeOverlayLeadTime);
+            yield return new WaitForSeconds(waitTime);
 
-            // Once finished, swap: hide weapon mesh and display 2D scope overlay
+            // Once almost finished, swap: hide weapon mesh and display 2D scope overlay
             _isFullyScoped = true;
             SetWeaponVisualsVisible(false);
 
@@ -325,6 +350,7 @@ namespace SniperGame.Weapons
         private IEnumerator ReloadRoutine()
         {
             _isReloading = true;
+            _reloadStartTime = Time.time;
             ResetAimingState();
             UpdateAmmoDisplay();
 
