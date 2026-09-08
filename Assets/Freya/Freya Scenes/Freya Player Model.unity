@@ -570,7 +570,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d19abbfeee58ac4eb93597562a78da1, type: 3}
---- !u!1001 &6874522724495928244
+--- !u!1001 &5864504339257177423
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -578,55 +578,55 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 3725949089798226739, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
+      propertyPath: m_Name
+      value: Low poly soldier Rig Weight painted
+      objectReference: {fileID: 0}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.5283887
+      value: -1.3050463
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.32
+      value: 0.00000005863356
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.611
+      value: -3.2781656
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 444114837341517025, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+    - target: {fileID: 4106977575332305289, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 964334077488983643, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
-      propertyPath: m_Name
-      value: Low poly soldier + rig seperated
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 94ecc753d544a475bab56e06d5efa9b0, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: 5c8edd19af7e9504b976bd0acfbb687d, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -636,5 +636,5 @@ SceneRoots:
   - {fileID: 4674319825322993924}
   - {fileID: 1017750189513593562}
   - {fileID: 3292283469815373616}
-  - {fileID: 6874522724495928244}
   - {fileID: 3754491620060381653}
+  - {fileID: 5864504339257177423}
