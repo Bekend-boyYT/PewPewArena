@@ -9,6 +9,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f824319f3306b09418a25c7c26506866, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f824319f3306b09418a25c7c26506866, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f824319f3306b09418a25c7c26506866, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f824319f3306b09418a25c7c26506866, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.2898319
       objectReference: {fileID: 0}
@@ -52,6 +64,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 93109765ed322ff49b0fd0210940334d, type: 2}
+    - target: {fileID: -5754084199372789682, guid: f824319f3306b09418a25c7c26506866, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 1020477059044179253, guid: 8925c6da6e45b01429740b2ba18d3170, type: 3}
     - target: {fileID: 919132149155446097, guid: f824319f3306b09418a25c7c26506866, type: 3}
       propertyPath: m_Name
       value: stopsign
