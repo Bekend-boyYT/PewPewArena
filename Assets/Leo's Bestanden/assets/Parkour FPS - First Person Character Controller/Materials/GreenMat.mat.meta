@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 304e0befa3ef4d840be9b5cdf51ad541
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 290830
+  packageName: Parkour FPS - First Person Character Controller
+  packageVersion: 1.0.1
+  assetPath: Assets/Parkour FPS - First Person Character Controller/Materials/GreenMat.mat
+  uploadId: 735156

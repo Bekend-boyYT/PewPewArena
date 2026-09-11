@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0b95536756a26eb4fbc80703c9fb0e28
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 290830
+  packageName: Parkour FPS - First Person Character Controller
+  packageVersion: 1.0.1
+  assetPath: Assets/Parkour FPS - First Person Character Controller/Materials/SpeedLinesMat.mat
+  uploadId: 735156

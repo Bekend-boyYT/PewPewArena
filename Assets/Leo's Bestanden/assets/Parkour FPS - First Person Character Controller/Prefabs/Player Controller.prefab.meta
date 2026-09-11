@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 92d47fad1f15424438aa8f0d389d24cd
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 290830
+  packageName: Parkour FPS - First Person Character Controller
+  packageVersion: 1.0.1
+  assetPath: Assets/Parkour FPS - First Person Character Controller/Prefabs/Player
+    Controller.prefab
+  uploadId: 735156
