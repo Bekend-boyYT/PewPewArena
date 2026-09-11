@@ -20,24 +20,23 @@ Material:
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
-  m_LockedProperties: :m_EnableInstancingVariants
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
     - _QueueControl: 0
-    - _SpecSize: 25
-    - _SpecSpeed: 0.38
-    - _SpecThick: 5.25
-    - _Water: 0.5
-    - _WaveFeq: 9.51
-    - _waveamp: 0.13
-    - _wavespeed: 3.39
+    - _SpecSize: 451.3
+    - _SpecSpeed: 1.23
+    - _SpecThick: 3.96
+    - _WaveFeq: 5.32
+    - _waveamp: 0.38
+    - _wavespeed: 0.5
     m_Colors:
-    - _Deep_Kleur: {r: 0.15294118, g: 0.5803922, b: 0.77254903, a: 1}
-    - _Shallow_Kleur: {r: 0.42745098, g: 0.8509804, b: 0.8156863, a: 1}
-    - _SpecColor: {r: 0.45678172, g: 0.5320754, b: 0.5320754, a: 1}
+    - _Deep_Kleur: {r: 0.26495546, g: 0.6002255, b: 0.7509433, a: 1}
+    - _Shallow_Kleur: {r: 0.24446416, g: 0.3188625, b: 0.4113207, a: 1}
+    - _SpecColor: {r: 0.2278889, g: 0.5320754, b: 0.5320754, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &8203811133892338287
