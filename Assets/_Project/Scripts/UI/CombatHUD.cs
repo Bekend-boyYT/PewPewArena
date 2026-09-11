@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using Coffee.UIExtensions;
 using SniperGame.Player;
+using SniperGame.Gameplay;
 
 namespace SniperGame.UI
 {
@@ -19,6 +20,14 @@ namespace SniperGame.UI
         [SerializeField] private GameObject scopeOverlay;
         [SerializeField] private GameObject hitmarker;
         [SerializeField] private TextMeshProUGUI hitmarkerText;
+
+        [Header("Shoot / Reload Cooldown Bar")]
+        [Tooltip("Parent container of the cooldown bar (auto-hides when ready to shoot)")]
+        [SerializeField] private GameObject cooldownBarRoot;
+        [Tooltip("Image with Image Type set to 'Filled'")]
+        [SerializeField] private Image cooldownFillImage;
+        [SerializeField] private Color shootCooldownColor = new Color(1f, 1f, 1f, 0.85f);
+        [SerializeField] private Color reloadCooldownColor = new Color(1f, 0.8f, 0.2f, 0.9f);
 
         [Header("Damage Vignette Feedback")]
         [SerializeField] private CanvasGroup damageVignetteGroup;
@@ -60,7 +69,14 @@ namespace SniperGame.UI
         [SerializeField] private TextMeshProUGUI announcementText;
         [SerializeField] private GameObject matchEndPanel;
         [SerializeField] private TextMeshProUGUI matchEndTitle;
+        [SerializeField] private Button restartButton;
+        [SerializeField] private TextMeshProUGUI rematchStatusText;
         [SerializeField] private Button returnToMenuButton;
+
+        [Header("Rematch Consent Prompt")]
+        [SerializeField] private GameObject rematchPromptPanel;
+        [SerializeField] private Button acceptRematchButton;
+        [SerializeField] private Button declineRematchButton;
 
         [Header("Health Gradients")]
         [SerializeField] private Gradient aliveGradient;
@@ -86,12 +102,30 @@ namespace SniperGame.UI
             if (hitmarker != null) hitmarker.SetActive(false);
             if (scopeOverlay != null) scopeOverlay.SetActive(false);
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
+            if (cooldownBarRoot != null) cooldownBarRoot.SetActive(false);
             if (announcementText != null) announcementText.gameObject.SetActive(false);
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
+            if (rematchStatusText != null) rematchStatusText.text = "";
             if (damageVignetteGroup != null) damageVignetteGroup.alpha = 0f;
 
             if (normalHealthBorder != null) normalHealthBorder.SetActive(true);
             if (lowHealthBorder != null) lowHealthBorder.SetActive(false);
+
+            if (restartButton != null)
+            {
+                restartButton.onClick.AddListener(OnRestartButtonClicked);
+            }
+
+            if (acceptRematchButton != null)
+            {
+                acceptRematchButton.onClick.AddListener(OnAcceptRematchClicked);
+            }
+
+            if (declineRematchButton != null)
+            {
+                declineRematchButton.onClick.AddListener(OnDeclineRematchClicked);
+            }
 
             if (returnToMenuButton != null)
             {
@@ -168,8 +202,8 @@ namespace SniperGame.UI
             {
                 lowHealthGradient = new Gradient();
                 var colorKeys = new GradientColorKey[2];
-                colorKeys[0] = new GradientColorKey(new Color(0.55f, 0.05f, 0.05f), 0.0f); // Dark red
-                colorKeys[1] = new GradientColorKey(new Color(1.0f, 0.15f, 0.15f), 1.0f); // Bright red
+                colorKeys[0] = new GradientColorKey(new Color(0.55f, 0.05f, 0.05f), 0.0f);
+                colorKeys[1] = new GradientColorKey(new Color(1.0f, 0.15f, 0.15f), 1.0f);
 
                 var alphaKeys = new GradientAlphaKey[2];
                 alphaKeys[0] = new GradientAlphaKey(1.0f, 0.0f);
@@ -183,6 +217,36 @@ namespace SniperGame.UI
         {
             if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
             if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
+
+            if (isScoped && cooldownBarRoot != null)
+            {
+                cooldownBarRoot.SetActive(false);
+            }
+        }
+
+        public void UpdateCooldownBar(float progress, bool isReloading)
+        {
+            if (cooldownBarRoot == null || cooldownFillImage == null) return;
+
+            // Hide while scoped
+            if (scopeOverlay != null && scopeOverlay.activeSelf)
+            {
+                if (cooldownBarRoot.activeSelf) cooldownBarRoot.SetActive(false);
+                return;
+            }
+
+            bool isCoolingDown = progress < 1.0f;
+
+            if (cooldownBarRoot.activeSelf != isCoolingDown)
+            {
+                cooldownBarRoot.SetActive(isCoolingDown);
+            }
+
+            if (isCoolingDown)
+            {
+                cooldownFillImage.fillAmount = Mathf.Clamp01(progress);
+                cooldownFillImage.color = isReloading ? reloadCooldownColor : shootCooldownColor;
+            }
         }
 
         public void ShowHitmarker(HitboxType hitboxType)
@@ -300,6 +364,9 @@ namespace SniperGame.UI
         public void ShowMatchEndScreen(bool isWinner)
         {
             if (matchEndPanel != null) matchEndPanel.SetActive(true);
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
+            if (rematchStatusText != null) rematchStatusText.text = "";
+            if (restartButton != null) restartButton.interactable = true;
 
             if (matchEndTitle != null)
             {
@@ -308,6 +375,68 @@ namespace SniperGame.UI
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+        }
+
+        public void HideMatchEndScreen()
+        {
+            if (matchEndPanel != null) matchEndPanel.SetActive(false);
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
+            if (rematchStatusText != null) rematchStatusText.text = "";
+            if (restartButton != null) restartButton.interactable = true;
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        private void OnRestartButtonClicked()
+        {
+            if (restartButton != null) restartButton.interactable = false;
+            if (rematchStatusText != null) rematchStatusText.text = "Waiting for opponent...";
+
+            if (RoundManager.Instance != null)
+            {
+                RoundManager.Instance.RequestRematch();
+            }
+        }
+
+        public void ShowRematchPrompt()
+        {
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        private void OnAcceptRematchClicked()
+        {
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
+
+            if (RoundManager.Instance != null)
+            {
+                RoundManager.Instance.RespondRematch(true);
+            }
+        }
+
+        private void OnDeclineRematchClicked()
+        {
+            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
+
+            if (RoundManager.Instance != null)
+            {
+                RoundManager.Instance.RespondRematch(false);
+            }
+        }
+
+        public void OnRematchDeclined()
+        {
+            if (rematchStatusText != null)
+            {
+                rematchStatusText.text = "<color=#FF4444>Opponent declined rematch.</color>";
+            }
+
+            if (restartButton != null)
+            {
+                restartButton.interactable = true;
+            }
         }
 
         private void OnReturnToMenuClicked()

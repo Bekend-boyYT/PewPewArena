@@ -207,6 +207,105 @@ namespace SniperGame.Gameplay
             yield return null;
         }
 
+        #region Rematch System
+
+        public void RequestRematch()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                RequestRematchServerRpc(NetworkManager.Singleton.LocalClientId);
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestRematchServerRpc(ulong requesterClientId)
+        {
+            ulong targetClientId = GetOtherPlayerClientId(requesterClientId);
+
+            if (targetClientId == requesterClientId)
+            {
+                // Only one player in game; restart immediately
+                RestartMatchServer();
+                return;
+            }
+
+            ClientRpcParams clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { targetClientId } }
+            };
+            ShowRematchPromptClientRpc(clientRpcParams);
+        }
+
+        [ClientRpc]
+        private void ShowRematchPromptClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.ShowRematchPrompt();
+            }
+        }
+
+        public void RespondRematch(bool accepted)
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                RespondRematchServerRpc(accepted, NetworkManager.Singleton.LocalClientId);
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RespondRematchServerRpc(bool accepted, ulong responderClientId)
+        {
+            ulong requesterClientId = GetOtherPlayerClientId(responderClientId);
+
+            if (accepted)
+            {
+                RestartMatchServer();
+            }
+            else
+            {
+                ClientRpcParams clientRpcParams = new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { requesterClientId } }
+                };
+                RematchDeclinedClientRpc(clientRpcParams);
+            }
+        }
+
+        [ClientRpc]
+        private void RematchDeclinedClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.OnRematchDeclined();
+            }
+        }
+
+        private void RestartMatchServer()
+        {
+            StopAllCoroutines();
+
+            HostScore.Value = 0;
+            ClientScore.Value = 0;
+            CurrentRound.Value = 1;
+
+            UpdateScoresUI();
+            HideMatchEndScreenClientRpc();
+
+            StartNewRound();
+        }
+
+        [ClientRpc]
+        private void HideMatchEndScreenClientRpc()
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.HideMatchEndScreen();
+            }
+        }
+
+        #endregion
+
         private void ResetAllPlayers()
         {
             if (ArenaSpawnManager.Instance != null)

@@ -30,6 +30,16 @@ namespace SniperGame.Weapons
         [SerializeField] private float zoomSpeed = 16f;
         [SerializeField] private float scopedSensitivityMultiplier = 0.35f;
 
+        [Header("Weapon Model & Scope Animation")]
+        [SerializeField] private Animator weaponAnimator;
+        [Tooltip("The GameObject holding the sniper mesh/renderers (e.g. WeaponHolder or the Sniper Model)")]
+        [SerializeField] private GameObject weaponVisuals;
+        [Tooltip("Time in seconds for the ScopedIn animation to complete")]
+        [SerializeField] private float scopeInDuration = 0.25f;
+        [Tooltip("How many seconds before the animation completely finishes the overlay should appear")]
+        [SerializeField] private float scopeOverlayLeadTime = 0.08f;
+        [SerializeField] private string isScopedParam = "IsScoped";
+
         [Header("Recoil Kick Settings")]
         [SerializeField] private float hipRecoilPitch = 3.2f;
         [SerializeField] private float hipRecoilYaw = 1.0f;
@@ -41,7 +51,10 @@ namespace SniperGame.Weapons
         [SerializeField] private Transform firePoint;
         [SerializeField] private PlayerLook playerLook;
 
-        [Header("Effects & Tracers")]
+        [Header("Effects, Bullets & Tracers")]
+        [Tooltip("Your 3D bullet prefab that flies from the barrel")]
+        [SerializeField] private GameObject bulletPrefab;
+        [SerializeField] private float bulletSpeed = 450f;
         [SerializeField] private ParticleSystem muzzleFlash;
         [SerializeField] private GameObject hitEffectPrefab;
         [SerializeField] private Material tracerMaterial;
@@ -53,10 +66,14 @@ namespace SniperGame.Weapons
 
         private int _currentAmmo;
         private bool _isReloading;
+        private float _reloadStartTime;
         private Coroutine _reloadCoroutine;
+        private Coroutine _scopeCoroutine;
 
         private float nextFireTime;
-        private bool isAiming;
+        private bool _wantsToScope;
+        private bool _isFullyScoped;
+        private Renderer[] _weaponRenderers;
 
         public override void OnNetworkSpawn()
         {
@@ -71,19 +88,32 @@ namespace SniperGame.Weapons
             ResetAmmo();
         }
 
+        private void Awake()
+        {
+            CacheWeaponRenderers();
+        }
+
         private void Start()
         {
             if (IsOwner)
             {
                 UpdateAmmoDisplay();
+                SetWeaponVisualsVisible(true);
             }
         }
 
-private void Update()
+        private void CacheWeaponRenderers()
+        {
+            if (weaponVisuals != null)
+            {
+                _weaponRenderers = weaponVisuals.GetComponentsInChildren<Renderer>(true);
+            }
+        }
+
+        private void Update()
         {
             if (!IsOwner) return;
 
-            // Blokkeer schieten en richten als de match niet actief is of pauzemenu open staat
             if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
             {
                 ResetAimingState();
@@ -97,12 +127,15 @@ private void Update()
 
             if (!_isReloading)
             {
-                HandleAiming();
+                HandleAimingInput();
             }
             else
             {
                 ResetAimingState();
             }
+
+            UpdateCameraZoom();
+            UpdateCooldownIndicator();
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -110,35 +143,123 @@ private void Update()
             }
         }
 
-        private void HandleAiming()
+        private void UpdateCooldownIndicator()
         {
-            isAiming = Input.GetMouseButton(1);
+            if (CombatHUD.Instance == null) return;
 
-            if (playerCamera != null)
+            if (_isReloading)
             {
-                float targetFOV = isAiming ? scopedFOV : hipFOV;
-                playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
+                float reloadProgress = Mathf.Clamp01((Time.time - _reloadStartTime) / reloadDuration);
+                CombatHUD.Instance.UpdateCooldownBar(reloadProgress, true);
+            }
+            else if (Time.time < nextFireTime)
+            {
+                float shootProgress = 1f - Mathf.Clamp01((nextFireTime - Time.time) / fireRate);
+                CombatHUD.Instance.UpdateCooldownBar(shootProgress, false);
+            }
+            else
+            {
+                CombatHUD.Instance.UpdateCooldownBar(1f, false);
+            }
+        }
+
+        private void HandleAimingInput()
+        {
+            bool rmbPressed = Input.GetMouseButton(1);
+
+            if (rmbPressed && !_wantsToScope)
+            {
+                _wantsToScope = true;
+
+                if (_scopeCoroutine != null) StopCoroutine(_scopeCoroutine);
+                _scopeCoroutine = StartCoroutine(ScopeInRoutine());
+            }
+            else if (!rmbPressed && _wantsToScope)
+            {
+                _wantsToScope = false;
+
+                if (_scopeCoroutine != null) StopCoroutine(_scopeCoroutine);
+                ScopeOut();
+            }
+        }
+
+        private IEnumerator ScopeInRoutine()
+        {
+            if (weaponAnimator != null)
+            {
+                weaponAnimator.SetBool(isScopedParam, true);
+            }
+
+            SetWeaponVisualsVisible(true);
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.SetScopeActive(false);
+            }
+
+            float waitTime = Mathf.Max(0.01f, scopeInDuration - scopeOverlayLeadTime);
+            yield return new WaitForSeconds(waitTime);
+
+            _isFullyScoped = true;
+            SetWeaponVisualsVisible(false);
+
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.SetScopeActive(true);
             }
 
             if (playerLook != null)
             {
-                playerLook.SetSensitivityMultiplier(isAiming ? scopedSensitivityMultiplier : 1.0f);
+                playerLook.SetSensitivityMultiplier(scopedSensitivityMultiplier);
             }
+        }
+
+        private void ScopeOut()
+        {
+            _isFullyScoped = false;
+
+            if (weaponAnimator != null)
+            {
+                weaponAnimator.SetBool(isScopedParam, false);
+            }
+
+            SetWeaponVisualsVisible(true);
 
             if (CombatHUD.Instance != null)
             {
-                CombatHUD.Instance.SetScopeActive(isAiming);
+                CombatHUD.Instance.SetScopeActive(false);
             }
+
+            if (playerLook != null)
+            {
+                playerLook.SetSensitivityMultiplier(1.0f);
+            }
+        }
+
+        private void UpdateCameraZoom()
+        {
+            if (playerCamera == null) return;
+
+            float targetFOV = _isFullyScoped ? scopedFOV : hipFOV;
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
         }
 
         private void ResetAimingState()
         {
-            isAiming = false;
+            _wantsToScope = false;
+            _isFullyScoped = false;
 
-            if (playerCamera != null)
+            if (_scopeCoroutine != null)
             {
-                playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, hipFOV, Time.deltaTime * zoomSpeed);
+                StopCoroutine(_scopeCoroutine);
+                _scopeCoroutine = null;
             }
+
+            if (weaponAnimator != null)
+            {
+                weaponAnimator.SetBool(isScopedParam, false);
+            }
+
+            SetWeaponVisualsVisible(true);
 
             if (playerLook != null)
             {
@@ -148,6 +269,25 @@ private void Update()
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(false);
+            }
+        }
+
+        private void SetWeaponVisualsVisible(bool visible)
+        {
+            if (_weaponRenderers == null || _weaponRenderers.Length == 0)
+            {
+                CacheWeaponRenderers();
+            }
+
+            if (_weaponRenderers != null)
+            {
+                for (int i = 0; i < _weaponRenderers.Length; i++)
+                {
+                    if (_weaponRenderers[i] != null)
+                    {
+                        _weaponRenderers[i].enabled = visible;
+                    }
+                }
             }
         }
 
@@ -187,8 +327,8 @@ private void Update()
 
             if (playerLook != null)
             {
-                float pitch = isAiming ? scopedRecoilPitch : hipRecoilPitch;
-                float yaw = Random.Range(-1f, 1f) * (isAiming ? scopedRecoilYaw : hipRecoilYaw);
+                float pitch = _isFullyScoped ? scopedRecoilPitch : hipRecoilPitch;
+                float yaw = Random.Range(-1f, 1f) * (_isFullyScoped ? scopedRecoilYaw : hipRecoilYaw);
                 playerLook.AddRecoil(pitch, yaw);
             }
 
@@ -208,6 +348,7 @@ private void Update()
         private IEnumerator ReloadRoutine()
         {
             _isReloading = true;
+            _reloadStartTime = Time.time;
             ResetAimingState();
             UpdateAmmoDisplay();
 
@@ -263,7 +404,6 @@ private void Update()
             Vector3 hitPoint = origin + direction * range;
             Vector3 hitNormal = -direction;
 
-            // Voer een RaycastAll uit om niet tegen de eigen colliders van de schutter aan te botsen
             RaycastHit[] hits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
@@ -272,7 +412,6 @@ private void Update()
                 PlayerHitbox hitbox = hit.collider.GetComponent<PlayerHitbox>();
                 PlayerHealth targetHealth = hitbox != null ? hitbox.Health : hit.collider.GetComponentInParent<PlayerHealth>();
 
-                // Negeer schoten op de schutter zelf (camera die in eigen head-collider zit)
                 if (targetHealth != null && targetHealth.OwnerClientId == shooterClientId)
                 {
                     continue;
@@ -295,7 +434,6 @@ private void Update()
                     ConfirmHitClientRpc(hitType, clientRpcParams);
                 }
 
-                // Eerste geldige hit geraakt: stop verdere raycast penetratie
                 break;
             }
 
@@ -320,12 +458,25 @@ private void Update()
         [ClientRpc]
         private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
         {
-            StartCoroutine(DrawTracerRoutine(origin, hitPosition));
-
-            if (hitEffectPrefab != null)
+            if (bulletPrefab != null)
             {
-                GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
-                Destroy(effect, 3f);
+                GameObject bullet = Instantiate(bulletPrefab, origin, Quaternion.identity);
+                var cosmetic = bullet.GetComponent<CosmeticBullet>();
+                if (cosmetic == null)
+                {
+                    cosmetic = bullet.AddComponent<CosmeticBullet>();
+                }
+                cosmetic.Initialize(hitPosition, hitNormal, hitEffectPrefab, bulletSpeed);
+            }
+            else
+            {
+                StartCoroutine(DrawTracerRoutine(origin, hitPosition));
+
+                if (hitEffectPrefab != null)
+                {
+                    GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
+                    Destroy(effect, 3f);
+                }
             }
         }
 
