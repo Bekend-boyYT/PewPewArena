@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1499614337433338343}
   - component: {fileID: 8345846418289605183}
   - component: {fileID: 117807845712028534}
-  - component: {fileID: 5957387416885882160}
+  - component: {fileID: 3201339125041342152}
   m_Layer: 0
   m_Name: Kogel01
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &5957387416885882160
+--- !u!65 &3201339125041342152
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

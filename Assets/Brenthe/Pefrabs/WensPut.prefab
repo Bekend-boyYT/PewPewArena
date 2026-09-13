@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1744579588070491890}
   - component: {fileID: 6924547275187026666}
-  - component: {fileID: 2343841231059344538}
+  - component: {fileID: 4814293896466120270}
   m_Layer: 0
   m_Name: WensPut
   m_TagString: Untagged
@@ -94,7 +94,7 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.13427824, y: 1.127688, z: 0.04941988}
     m_Extent: {x: 1.3606696, y: 1.6157387, z: 1.8339524}
   m_DirtyAABB: 0
---- !u!65 &2343841231059344538
+--- !u!65 &4814293896466120270
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

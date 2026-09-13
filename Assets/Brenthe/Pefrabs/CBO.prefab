@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5817352103286071161}
   - component: {fileID: 6263946757104227439}
   - component: {fileID: 5660956640162061229}
-  - component: {fileID: -5937220427641688720}
+  - component: {fileID: -5049837567569024547}
   m_Layer: 0
   m_Name: CBO
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &-5937220427641688720
+--- !u!64 &-5049837567569024547
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -112,4 +112,4 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: -4770019741501735456, guid: 9e102a882f42046499fca599fbc05640, type: 3}
+  m_Mesh: {fileID: -4770019741501735456, guid: 8925c6da6e45b01429740b2ba18d3170, type: 3}

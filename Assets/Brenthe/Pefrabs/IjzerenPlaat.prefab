@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6290212085326876390}
   - component: {fileID: 3294872771098047383}
   - component: {fileID: 15199069780992423}
-  - component: {fileID: -7141911905061345394}
+  - component: {fileID: -5483973082347321955}
   m_Layer: 0
   m_Name: IjzerenPlaat
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &-7141911905061345394
+--- !u!65 &-5483973082347321955
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.029564122, y: 0.023354283, z: 0.0011828797}
-  m_Center: {x: 0.0000000018626451, y: -0.0000968268, z: 0.00003269017}
+  m_Size: {x: 2.9564123, y: 0.11828798, z: 2.3354285}
+  m_Center: {x: 0.00000017881393, y: 0.0032690181, z: 0.009682654}

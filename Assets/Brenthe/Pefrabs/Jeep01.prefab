@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8624185998310531630}
   - component: {fileID: 3834842389424139773}
   - component: {fileID: 6522690973444565645}
-  - component: {fileID: -551513360077259326}
+  - component: {fileID: -643418292338084531}
   m_Layer: 0
   m_Name: Jeep01
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &-551513360077259326
+--- !u!65 &-643418292338084531
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.03651788, y: 0.021623563, z: 0.019999998}
-  m_Center: {x: 0.0019241208, y: -0.000028229779, z: 0.009628481}
+  m_Size: {x: 3.6517882, y: 2.0000002, z: 2.1623566}
+  m_Center: {x: 0.19241208, y: 0.96284837, z: 0.0028229952}

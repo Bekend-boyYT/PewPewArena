@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 772776659416288714}
   - component: {fileID: 395854681163896906}
   - component: {fileID: 8370302676306021501}
-  - component: {fileID: -2490176197317345662}
+  - component: {fileID: -3136959239573311878}
   m_Layer: 0
   m_Name: Boom1
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &-2490176197317345662
+--- !u!65 &-3136959239573311878
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.054404646, y: 0.055165343, z: 0.060000002}
-  m_Center: {x: -0.00299164, y: -0.0023082974, z: 0.027385756}
+  m_Size: {x: 5.440465, y: 6.0000014, z: 5.5165358}
+  m_Center: {x: -0.29916406, y: 2.7385762, z: 0.23082983}
