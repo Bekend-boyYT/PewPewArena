@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5865727939100538788}
   - component: {fileID: 2302659688821937357}
   - component: {fileID: 2114482855758165036}
-  - component: {fileID: 2385769100833516822}
+  - component: {fileID: -5571948380776413129}
   m_Layer: 0
   m_Name: ConcreteBarrier
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &2385769100833516822
+--- !u!65 &-5571948380776413129
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.008541998, y: 0.026380952, z: 0.01387189}
-  m_Center: {x: -0.0000014128163, y: 0.00000057183195, z: 0.00015661397}
+  m_Size: {x: 0.8541999, y: 1.3871893, z: 2.6380959}
+  m_Center: {x: -0.00014129281, y: 0.015661418, z: -0.00005722046}

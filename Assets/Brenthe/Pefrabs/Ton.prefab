@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6445735631296114765}
   - component: {fileID: 5136705782000303251}
   - component: {fileID: 4338639263186474879}
-  - component: {fileID: 2872594674662269701}
+  - component: {fileID: -2224739036866325564}
   m_Layer: 0
   m_Name: Ton
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &2872594674662269701
+--- !u!65 &-2224739036866325564
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.021323659, y: 0.022421017, z: 0.026452726}
-  m_Center: {x: 9.313225e-10, y: 1.015526e-17, z: 0.0014292254}
+  m_Size: {x: 0.02132366, y: 0.022421023, z: 0.026452731}
+  m_Center: {x: 9.313226e-10, y: 0, z: 0.0014292258}

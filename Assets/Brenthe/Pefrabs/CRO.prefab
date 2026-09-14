@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5141343349715467954}
   - component: {fileID: 8333155134246222276}
   - component: {fileID: 1792580963885745571}
-  - component: {fileID: -7167361371612323259}
+  - component: {fileID: -7370328634502495734}
   m_Layer: 0
   m_Name: CRO
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &-7167361371612323259
+--- !u!64 &-7370328634502495734
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -112,4 +112,4 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 8638930863953135213, guid: 9e102a882f42046499fca599fbc05640, type: 3}
+  m_Mesh: {fileID: 8638930863953135213, guid: 8925c6da6e45b01429740b2ba18d3170, type: 3}

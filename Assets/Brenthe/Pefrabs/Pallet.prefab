@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7336277936776276196}
   - component: {fileID: 8612498456919070121}
   - component: {fileID: 2961805644361690501}
-  - component: {fileID: -8873412861817878450}
+  - component: {fileID: 8964928724349125211}
   m_Layer: 0
   m_Name: Pallet
   m_TagString: Untagged
@@ -91,7 +91,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &-8873412861817878450
+--- !u!65 &8964928724349125211
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,5 +110,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.031145891, y: 0.019644529, z: 0.0027187}
-  m_Center: {x: 0.000046244822, y: -0.000009500885, z: -0.00070042384}
+  m_Size: {x: 3.1145892, y: 0.27187005, z: 1.9644532}
+  m_Center: {x: 0.004624486, y: -0.0700424, z: 0.00095009804}
