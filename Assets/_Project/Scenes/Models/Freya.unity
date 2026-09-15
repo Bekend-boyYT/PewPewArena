@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 297837656}
   - component: {fileID: 297837655}
   m_Layer: 0
-  m_Name: Plane
+  m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -606,7 +606,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5976108788699655281, guid: 82bc4142f991d4d288f42f179f281e61, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.04
+      value: -2.459
       objectReference: {fileID: 0}
     - target: {fileID: 5976108788699655281, guid: 82bc4142f991d4d288f42f179f281e61, type: 3}
       propertyPath: m_LocalPosition.y
@@ -614,7 +614,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5976108788699655281, guid: 82bc4142f991d4d288f42f179f281e61, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.15
+      value: -2.217
       objectReference: {fileID: 0}
     - target: {fileID: 5976108788699655281, guid: 82bc4142f991d4d288f42f179f281e61, type: 3}
       propertyPath: m_LocalRotation.w
