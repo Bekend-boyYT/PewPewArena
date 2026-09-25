@@ -217,7 +217,7 @@ namespace SniperGame.Gameplay
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void RequestRematchServerRpc(ulong requesterClientId)
         {
             ulong targetClientId = GetOtherPlayerClientId(requesterClientId);
@@ -253,7 +253,7 @@ namespace SniperGame.Gameplay
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void RespondRematchServerRpc(bool accepted, ulong responderClientId)
         {
             ulong requesterClientId = GetOtherPlayerClientId(responderClientId);
