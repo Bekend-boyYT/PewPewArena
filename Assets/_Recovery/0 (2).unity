@@ -132,6 +132,10 @@ PrefabInstance:
       value: Retro_Hangar_wall_plain_01 (21)
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
@@ -187,15 +191,24 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 263870297}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &44090393 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 44090392}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &63214591 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1308481672}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &153957977
 PrefabInstance:
@@ -208,6 +221,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -265,15 +282,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1808144519}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &153957978 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 153957977}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &184945582 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1835381173}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &202347794 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 505034429}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &205146621
 PrefabInstance:
@@ -337,7 +368,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -397,6 +428,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d14b62aee33c309dab5066ab801966b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+--- !u!1 &263870293 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 44090392}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &263870297
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263870293}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.0000020563602, y: 1.2499998, z: 2.1175824e-21}
+--- !u!1 &420004664 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1486820977}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &464985523
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -408,6 +470,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (25)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -465,15 +531,24 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1233127122}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &464985524 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 464985523}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &478598113 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 490578757}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &490578757
 PrefabInstance:
@@ -486,6 +561,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (26)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -543,16 +622,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 490578762}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &490578758 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 490578757}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &490578762
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 478598113}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 0.00000023841858}
 --- !u!1001 &505034429
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -564,6 +668,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -621,16 +729,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 505034434}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &505034430 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 505034429}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &505034434
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 202347794}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &520298992
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -642,6 +775,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -699,10 +836,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 670975406}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &520298993 stripped
 Transform:
@@ -720,6 +861,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -777,10 +922,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1065136420}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &541625113 stripped
 Transform:
@@ -849,6 +998,10 @@ PrefabInstance:
       value: Retro_Hangar_wall_plain_01 (22)
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
@@ -904,10 +1057,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1178967849}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &559484678 stripped
 Transform:
@@ -925,6 +1082,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -982,16 +1143,46 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1654737257}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &617351950 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 617351949}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &670975402 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 520298992}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &670975406
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 670975402}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000062584877, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &696882922
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1003,6 +1194,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1060,15 +1255,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1508625495}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &696882923 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 696882922}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &716258532 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1402866922}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &724319586 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1471391527}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &790691081
 PrefabInstance:
@@ -1081,6 +1290,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1138,10 +1351,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1047848038}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &790691082 stripped
 Transform:
@@ -1170,6 +1387,47 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: c7f796e84faeca9e89047116c5ac18a9, type: 2}
+--- !u!1 &872385060 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1290411629}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &964312650 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1257966714}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &970436073 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1415016358}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1047848034 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 790691081}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1047848038
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047848034}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: -0.00000023841858}
 --- !u!1 &1063098875
 GameObject:
   m_ObjectHideFlags: 0
@@ -1179,7 +1437,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1063098876}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Walls
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1228,6 +1486,32 @@ Transform:
   - {fileID: 1841140914}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1065136416 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 541625112}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1065136420
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1065136416}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.0000020563602, y: 1.2499998, z: -0.00000023841858}
 --- !u!1 &1090219850
 GameObject:
   m_ObjectHideFlags: 0
@@ -1237,7 +1521,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1090219851}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Floors
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1267,6 +1551,42 @@ Transform:
   - {fileID: 205146622}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1121047194 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1560148730}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1174564572 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1415196870}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1178967845 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 559484677}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1178967849
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178967845}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.0000020563602, y: 1.2499998, z: -0.00000023841858}
 --- !u!1001 &1224770586
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1278,6 +1598,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1335,16 +1659,46 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1437249547}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1224770587 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1224770586}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1233127118 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 464985523}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1233127122
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233127118}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000062584877, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1257966714
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1356,6 +1710,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1413,16 +1771,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1257966719}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1257966715 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1257966714}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1257966719
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964312650}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000026822093, y: 1.2499998, z: 0.00000023841858}
 --- !u!1 &1289525952
 GameObject:
   m_ObjectHideFlags: 0
@@ -1563,6 +1946,10 @@ PrefabInstance:
       value: Retro_Hangar_wall_plain_01
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
@@ -1618,15 +2005,45 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1290411634}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1290411630 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1290411629}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1290411634
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872385060}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2, y: 2.4999998, z: 0.5610984}
+  m_Center: {x: 0.00000014901161, y: 1.2499999, z: 0}
+--- !u!1 &1298974409 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1322594610}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1308481672
 PrefabInstance:
@@ -1639,6 +2056,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1696,16 +2117,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1308481677}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1308481673 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1308481672}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1308481677
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 63214591}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000026822093, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1322594610
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1717,6 +2163,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1774,16 +2224,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1322594615}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1322594611 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1322594610}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1322594615
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298974409}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1359919594
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1795,6 +2270,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (23)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1852,10 +2331,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1828077701}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1359919595 stripped
 Transform:
@@ -1873,6 +2356,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1930,16 +2417,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1402866927}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1402866923 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1402866922}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1402866927
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 716258532}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2, y: 2.4999998, z: 0.5610984}
+  m_Center: {x: 0.00000023841858, y: 1.2499999, z: 0}
 --- !u!1001 &1415016358
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1951,6 +2463,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (24)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2008,16 +2524,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1415016363}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1415016359 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1415016358}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1415016363
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970436073}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: -0.0000008046627, y: 1.2499998, z: 0.00000023841858}
 --- !u!1001 &1415196870
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2029,6 +2570,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (17)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2086,16 +2631,67 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1415196875}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1415196871 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1415196870}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1415196875
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174564572}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.0000011026859, y: 1.2499998, z: 2.1175824e-21}
+--- !u!1 &1437249543 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1224770586}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1437249547
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1437249543}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: -0.0000008046627, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1445925510
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2158,7 +2754,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2185,6 +2781,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2242,16 +2842,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1471391532}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1471391528 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1471391527}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1471391532
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 724319586}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: -0.00000023841858}
 --- !u!1001 &1486820977
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2263,6 +2888,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2320,16 +2949,72 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1486820982}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1486820978 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1486820977}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1486820982
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420004664}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
+--- !u!1 &1505850852 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1692728888}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1508625491 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 696882922}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1508625495
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508625491}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1560148730
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2341,6 +3026,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2398,16 +3087,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1560148735}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1560148731 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1560148730}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1560148735
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1121047194}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2, y: 2.4999998, z: 0.5610984}
+  m_Center: {x: 0.0000002682209, y: 1.2499998, z: 0}
 --- !u!1001 &1610590291
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2564,6 +3278,32 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3727964109188551717, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
   m_PrefabInstance: {fileID: 1621941173}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1654737253 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 617351949}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1654737257
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1654737253}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.0000020563602, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1692728888
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2575,6 +3315,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (12)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2632,16 +3376,72 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1692728893}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1692728889 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1692728888}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1692728893
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1505850852}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: -0.00000023841858}
+--- !u!1 &1753635606 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 2010631999}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1808144515 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 153957977}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1808144519
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1808144515}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 0.00000047683716}
 --- !u!1001 &1816476125
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2704,7 +3504,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2798,6 +3598,32 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3727964109188551717, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
   m_PrefabInstance: {fileID: 1827058975}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1828077697 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1359919594}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1828077701
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1828077697}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &1835381173
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2809,6 +3635,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (20)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2866,16 +3696,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1835381178}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1835381174 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 1835381173}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &1835381178
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184945582}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: -0.0000008046627, y: 1.2499998, z: 0.00000047683716}
 --- !u!1001 &1841140913
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2887,6 +3742,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2944,10 +3803,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1947694108}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &1841140914 stripped
 Transform:
@@ -3081,6 +3944,32 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 555266663}
   m_SourcePrefab: {fileID: 100100000, guid: 92d47fad1f15424438aa8f0d389d24cd, type: 3}
+--- !u!1 &1947694104 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+  m_PrefabInstance: {fileID: 1841140913}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1947694108
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1947694104}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000020861629, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &2010631999
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3092,6 +3981,10 @@ PrefabInstance:
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_Name
       value: Retro_Hangar_wall_plain_01 (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -3149,16 +4042,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4958927757728483907, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4731571368402538990, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2010632004}
   m_SourcePrefab: {fileID: 100100000, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
 --- !u!4 &2010632000 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5395940980735773524, guid: 98791a0faf189f744ac00e41271de57b, type: 3}
   m_PrefabInstance: {fileID: 2010631999}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &2010632004
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753635606}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.0000005, y: 2.4999998, z: 0.5610985}
+  m_Center: {x: 0.00000014901164, y: 1.2499998, z: 2.1175824e-21}
 --- !u!1001 &2091193882
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3299,7 +4217,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4104946636678401695, guid: e96be6ad824153b48925a3bbda8d2bd0, type: 3}
       propertyPath: m_StaticEditorFlags
