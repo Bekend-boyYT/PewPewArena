@@ -58,7 +58,7 @@ public class Esc : MonoBehaviour
     {
         if (!Application.isPlaying) return;
 
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        if (!TutorialBootSequence.IsRunning && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if (isPaused) Resume();
             else Pause();
