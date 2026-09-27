@@ -33,6 +33,9 @@ namespace ParkourFPS
 
         #endregion
 
+        // Lets external scripts (e.g. a pause menu) freeze look/key input without touching Time.timeScale.
+        [HideInInspector] public bool InputEnabled = true;
+
         [Header("Camera")]
 
         [Tooltip("player camera transform")]
@@ -395,6 +398,8 @@ namespace ParkourFPS
         {
 
 /* handle player input */
+
+            if (!InputEnabled) return;
 
             SetRotation(); // set player rotation
 
