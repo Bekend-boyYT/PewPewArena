@@ -27,6 +27,8 @@ public class TutorialBootSequence : MonoBehaviour
 
     [Header("Startup Audio")]
     [SerializeField, Range(0f, 1f)] private float startupVolume = 0.7f;
+    [SerializeField, Range(0f, 1f)] private float musicVolume = 0.6f;
+    [SerializeField, Min(0f)] private float musicFadeInDuration = 3f;
 
     [Header("Scene UI")]
     [SerializeField] private GameObject bootCanvas;
@@ -60,6 +62,7 @@ public class TutorialBootSequence : MonoBehaviour
     private bool sequenceStarted;
     private AudioSource ambienceSource;
     private AudioSource cueSource;
+    private AudioSource musicSource;
     private AudioClip powerUpClip;
     private AudioClip bootHumClip;
     private AudioClip terminalTickClip;
@@ -67,6 +70,7 @@ public class TutorialBootSequence : MonoBehaviour
     private AudioClip glitchClip;
     private AudioClip eraseSweepClip;
     private AudioClip revealChimeClip;
+    private AudioClip tutorialMusicClip;
 
     private void Awake()
     {
@@ -107,9 +111,11 @@ public class TutorialBootSequence : MonoBehaviour
         glitchClip = Resources.Load<AudioClip>("Startup/glitch");
         eraseSweepClip = Resources.Load<AudioClip>("Startup/erase_sweep");
         revealChimeClip = Resources.Load<AudioClip>("Startup/reveal_chime");
+        tutorialMusicClip = Resources.Load<AudioClip>("Music/TutorialLevelMusic");
 
         ambienceSource = CreateAudioSource("Boot Ambience");
         cueSource = CreateAudioSource("Boot Cues");
+        musicSource = CreateAudioSource("Tutorial Music");
         PlayCue(powerUpClip, 0.75f);
 
         if (bootHumClip != null)
@@ -257,6 +263,7 @@ public class TutorialBootSequence : MonoBehaviour
         if (blackHoldDuration > 0f) yield return new WaitForSecondsRealtime(blackHoldDuration);
 
         PlayCue(revealChimeClip, 0.7f);
+        HandControlBackToPlayer();
         elapsed = 0f;
         float revealDuration = Mathf.Max(overlayFadeDuration, focusRecoveryDuration);
         while (elapsed < revealDuration)
@@ -378,12 +385,37 @@ public class TutorialBootSequence : MonoBehaviour
     private void FinishSequence()
     {
         RestoreDepthOfField();
-        Time.timeScale = previousTimeScale;
-        if (playerController != null) playerController.InputEnabled = previousInputEnabled;
-        OnPlayerWokeUp?.Invoke();
         StopAndReleaseAudio();
         isRunning = false;
         sequenceStarted = false;
+    }
+
+    private void HandControlBackToPlayer()
+    {
+        Time.timeScale = previousTimeScale;
+        if (playerController != null) playerController.InputEnabled = previousInputEnabled;
+        OnPlayerWokeUp?.Invoke();
+        StartCoroutine(FadeInTutorialMusic());
+    }
+
+    private IEnumerator FadeInTutorialMusic()
+    {
+        if (musicSource == null || tutorialMusicClip == null) yield break;
+
+        musicSource.clip = tutorialMusicClip;
+        musicSource.loop = true;
+        musicSource.volume = 0f;
+        musicSource.Play();
+
+        float elapsed = 0f;
+        while (elapsed < musicFadeInDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            musicSource.volume = musicVolume * Mathf.Clamp01(elapsed / musicFadeInDuration);
+            yield return null;
+        }
+
+        musicSource.volume = musicVolume;
     }
 
     private void RestoreDepthOfField()

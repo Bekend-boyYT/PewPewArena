@@ -5794,7 +5794,9 @@ MonoBehaviour:
   overlayFadeDuration: 5
   focusRecoveryDuration: 5
   initialBlurRadius: 1.5
-  startupVolume: 0.7
+  startupVolume: 0.196
+  musicVolume: 0.134
+  musicFadeInDuration: 6
   bootCanvas: {fileID: 562459327}
   bootCanvasGroup: {fileID: 562459329}
   background: {fileID: 547692198}
