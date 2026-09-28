@@ -19,7 +19,7 @@ namespace SniperGame.Player
 
         [Header("Camera & Visuals")]
         [SerializeField] private Transform cameraTransform;
-        [Tooltip("Assign the 3D soldier model here")]
+        [Tooltip("Assign the 3D soldier model GameObject here (auto-detected if left empty)")]
         [SerializeField] private GameObject visualsRoot;
         [SerializeField] private float baseFOV = 80f;
         [SerializeField] private float lookSensitivity = 2f;
@@ -31,6 +31,14 @@ namespace SniperGame.Player
         [SerializeField] private float crouchSpeed = 5f;
         [SerializeField] private float acceleration = 14f;
         [SerializeField] private float airControl = 0.6f;
+
+        [Header("Stamina Settings")]
+        [SerializeField] private bool staminaEnabled = true;
+        [SerializeField] private float maxStamina = 100f;
+        [SerializeField] private float staminaDrainRate = 22f;
+        [SerializeField] private float staminaRegenRate = 18f;
+        [SerializeField] private float staminaRegenDelay = 0.9f;
+        [SerializeField] private float minStaminaToSprint = 15f;
 
         [Header("Jumping & Gravity")]
         [SerializeField] private float jumpHeight = 2.4f;
@@ -49,7 +57,6 @@ namespace SniperGame.Player
 
         [Header("Wall Running (Hold Space)")]
         [SerializeField] private LayerMask wallRunMask = ~0;
-        [Tooltip("How many seconds Space must be held before wall running starts (prevents single-tap jumps from wall running)")]
         [SerializeField] private float wallRunHoldTime = 0.4f;
         [SerializeField] private float wallRunSpeed = 16f;
         [SerializeField] private float wallRunDownwardDrift = 0.5f;
@@ -59,10 +66,7 @@ namespace SniperGame.Player
         [SerializeField] private float wallJumpSideForce = 13f;
 
         [Header("Wall Run UI Prompt")]
-        [Tooltip("Assign your WallRunPrompt UI Text GameObject here")]
-        [SerializeField] private GameObject wallRunPromptUI;
-        [Tooltip("Max distance looking at a wall to show the prompt")]
-        [SerializeField] private float lookAtWallDistance = 4.5f;
+        [SerializeField] private float promptDistance = 3.5f;
 
         [Header("Camera Tilt & Effects")]
         [SerializeField] private float cameraTiltSpeed = 12f;
@@ -70,7 +74,7 @@ namespace SniperGame.Player
         [SerializeField] private float runFovIncrease = 8f;
         [SerializeField] private float slideFovIncrease = 14f;
 
-        // States
+        // Runtime states
         private Vector3 _velocity;
         private Vector3 _horizontalVelocity;
         private float _currRotationX = 0f;
@@ -82,6 +86,11 @@ namespace SniperGame.Player
         private float _lastGroundedTime;
         private float _lastJumpPressedTime;
         private float _spaceHoldTimer;
+
+        // Stamina runtime states
+        private float _currentStamina;
+        private float _lastSprintTime;
+        private bool _isExhausted;
 
         // Slide variables
         private bool _isSliding;
@@ -113,7 +122,6 @@ namespace SniperGame.Player
             if (!IsOwner)
             {
                 if (cameraTransform != null) cameraTransform.gameObject.SetActive(false);
-                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 enabled = false;
                 return;
             }
@@ -136,6 +144,12 @@ namespace SniperGame.Player
             }
 
             _wallHoldLayerIndex = LayerMask.NameToLayer("wallHold");
+            if (_wallHoldLayerIndex == -1)
+            {
+                _wallHoldLayerIndex = LayerMask.NameToLayer("WallHold");
+            }
+
+            _currentStamina = maxStamina;
         }
 
         private void Start()
@@ -145,19 +159,45 @@ namespace SniperGame.Player
                 _cameraComponent.fieldOfView = baseFOV;
             }
 
-            if (wallRunPromptUI != null)
+            if (CombatHUD.Instance != null && staminaEnabled)
             {
-                wallRunPromptUI.SetActive(false);
+                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+            }
+
+            if (IsOwner)
+            {
+                HideLocalPlayerBody();
             }
         }
 
         private void HideLocalPlayerBody()
         {
+            if (visualsRoot == null)
+            {
+                foreach (Transform child in transform)
+                {
+                    if (cameraTransform != null && (child == cameraTransform || child.IsChildOf(cameraTransform)))
+                        continue;
+
+                    if (child.name.ToLower().Contains("camera") || child.name.ToLower().Contains("weapon"))
+                        continue;
+
+                    if (child.GetComponentInChildren<Renderer>() != null)
+                    {
+                        visualsRoot = child.gameObject;
+                        break;
+                    }
+                }
+            }
+
             if (visualsRoot != null)
             {
                 var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
                 foreach (var r in renderers)
                 {
+                    if (cameraTransform != null && r.transform.IsChildOf(cameraTransform))
+                        continue;
+
                     r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
                 }
             }
@@ -167,11 +207,17 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            if (SceneManager.GetActiveScene().name != "Maintestgameplay" || PauseMenu.IsPaused)
+            // Release cursor in menus, when game is paused, or when Match End / Rematch screen is open
+            bool isMatchEnd = CombatHUD.Instance != null && CombatHUD.Instance.IsMatchEndActive;
+
+            if (SceneManager.GetActiveScene().name != "Maintestgameplay" || PauseMenu.IsPaused || isMatchEnd)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
+                if (Cursor.lockState != CursorLockMode.None)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                UpdatePromptVisuals(false);
                 return;
             }
 
@@ -185,19 +231,13 @@ namespace SniperGame.Player
 
             if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
             {
-                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
+                UpdatePromptVisuals(false);
                 return;
             }
 
-            // Track Space key hold duration
-            if (Input.GetKey(KeyCode.Space))
-            {
-                _spaceHoldTimer += Time.deltaTime;
-            }
-            else
-            {
-                _spaceHoldTimer = 0f;
-            }
+            bool isPressingSpace = Input.GetKey(KeyCode.Space);
+            float targetTimer = isPressingSpace ? wallRunHoldTime : 0f;
+            _spaceHoldTimer = Mathf.MoveTowards(_spaceHoldTimer, targetTimer, Time.deltaTime);
 
             CheckGroundedStatus();
             CheckWallRun();
@@ -226,6 +266,14 @@ namespace SniperGame.Player
             _isSliding = false;
             _isWallRunning = false;
             _spaceHoldTimer = 0f;
+
+            _currentStamina = maxStamina;
+            _isExhausted = false;
+
+            if (CombatHUD.Instance != null && staminaEnabled)
+            {
+                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+            }
         }
 
         #endregion
@@ -311,44 +359,50 @@ namespace SniperGame.Player
         {
             if (obj == null) return false;
 
-            // If wallHold layer exists, strictly enforce it
             if (_wallHoldLayerIndex != -1)
             {
                 return obj.layer == _wallHoldLayerIndex;
             }
 
-            // Fallback to wallRunMask
             return (wallRunMask.value & (1 << obj.layer)) != 0;
         }
 
         private void UpdateWallRunPromptUI()
         {
-            if (wallRunPromptUI == null) return;
-
-            // Hide UI while actively wall running or standing on ground
-            if (_isWallRunning || _isGrounded)
+            if (_isWallRunning)
             {
-                wallRunPromptUI.SetActive(false);
+                UpdatePromptVisuals(false);
                 return;
             }
 
-            bool lookingAtWallHold = false;
+            bool closeToWall = false;
+
             if (cameraTransform != null)
             {
-                if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out RaycastHit hit, lookAtWallDistance, wallRunMask, QueryTriggerInteraction.Ignore))
+                if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out RaycastHit hit, promptDistance, wallRunMask, QueryTriggerInteraction.Ignore))
                 {
-                    // Must be vertical surface AND match the wallHold layer
                     if (Mathf.Abs(hit.normal.y) < 0.25f && !hit.collider.transform.IsChildOf(transform) && IsValidWallRunObject(hit.collider.gameObject))
                     {
-                        lookingAtWallHold = true;
+                        closeToWall = true;
                     }
                 }
             }
 
-            bool shouldShow = lookingAtWallHold || _canWallRunNear;
-            if (wallRunPromptUI.activeSelf != shouldShow)
+            if (!closeToWall && _canWallRunNear)
             {
-                wallRunPromptUI.SetActive(shouldShow);
+                closeToWall = true;
+            }
+
+            UpdatePromptVisuals(closeToWall);
+        }
+
+        private void UpdatePromptVisuals(bool shouldShow)
+        {
+            float progress = Mathf.Clamp01(_spaceHoldTimer / Mathf.Max(0.01f, wallRunHoldTime));
+
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.SetWallRunPrompt(shouldShow, progress);
             }
         }
 
@@ -407,12 +461,42 @@ namespace SniperGame.Player
             }
             else
             {
-                bool isRunning = Input.GetKey(KeyCode.LeftShift) && !_isScoped;
+                bool wantsToRun = Input.GetKey(KeyCode.LeftShift) && !_isScoped && inputZ > 0.1f && !_isSliding;
                 bool isCrouching = Input.GetKey(KeyCode.LeftControl);
+
+                if (_isExhausted && _currentStamina >= minStaminaToSprint)
+                {
+                    _isExhausted = false;
+                }
+
+                bool isRunning = wantsToRun && !_isExhausted && (!staminaEnabled || _currentStamina > 0f);
+
+                if (staminaEnabled)
+                {
+                    if (isRunning && _horizontalVelocity.magnitude > 6f)
+                    {
+                        _currentStamina = Mathf.Max(0f, _currentStamina - staminaDrainRate * Time.deltaTime);
+                        _lastSprintTime = Time.time;
+
+                        if (_currentStamina <= 0f)
+                        {
+                            _isExhausted = true;
+                        }
+                    }
+                    else if (Time.time >= _lastSprintTime + staminaRegenDelay)
+                    {
+                        _currentStamina = Mathf.Min(maxStamina, _currentStamina + staminaRegenRate * Time.deltaTime);
+                    }
+
+                    if (CombatHUD.Instance != null)
+                    {
+                        CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+                    }
+                }
 
                 float targetSpeed = walkSpeed;
                 if (isCrouching) targetSpeed = crouchSpeed;
-                else if (isRunning && inputZ > 0.1f) targetSpeed = runSpeed;
+                else if (isRunning) targetSpeed = runSpeed;
 
                 Vector3 targetVelocity = wishDir * targetSpeed;
                 float currentAccel = _isGrounded ? acceleration : acceleration * airControl;
@@ -437,7 +521,6 @@ namespace SniperGame.Player
 
         private void HandleJumpInput()
         {
-            // Releasing Space while wall running initiates the wall jump
             if (_isWallRunning && Input.GetKeyUp(KeyCode.Space))
             {
                 ExecuteWallJump();
@@ -519,12 +602,7 @@ namespace SniperGame.Player
             _canWallRunNear = hitWall;
 
             float forwardInput = Input.GetAxisRaw("Vertical");
-
-            // Wall run condition:
-            // 1. Next to a valid wallHold object
-            // 2. Moving forward
-            // 3. Space held down for AT LEAST wallRunHoldTime (prevents accidental tap triggers)
-            bool isHoldingSpaceLongEnough = _spaceHoldTimer >= wallRunHoldTime;
+            bool isHoldingSpaceLongEnough = _spaceHoldTimer >= (wallRunHoldTime * 0.95f);
 
             if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? Input.GetKey(KeyCode.Space) : isHoldingSpaceLongEnough))
             {
