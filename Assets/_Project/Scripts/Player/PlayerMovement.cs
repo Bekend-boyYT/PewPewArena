@@ -713,4 +713,4 @@ namespace SniperGame.Player
 
         #endregion
     }
-}
+} 
