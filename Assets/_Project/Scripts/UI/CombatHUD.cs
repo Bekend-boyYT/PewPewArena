@@ -21,6 +21,10 @@ namespace SniperGame.UI
         [SerializeField] private GameObject hitmarker;
         [SerializeField] private TextMeshProUGUI hitmarkerText;
 
+        [Header("Wall Run Button Prompt")]
+        [Tooltip("Drag the WallRunPrompt GameObject from CombatHUDCanvas here")]
+        [SerializeField] private HoldKeyPrompt wallRunPrompt;
+
         [Header("Shoot / Reload Cooldown Bar")]
         [Tooltip("Parent container of the cooldown bar (auto-hides when ready to shoot)")]
         [SerializeField] private GameObject cooldownBarRoot;
@@ -87,6 +91,9 @@ namespace SniperGame.UI
         [Header("Settings")]
         [SerializeField] private float hitmarkerDuration = 0.12f;
 
+        public bool IsMatchEndActive => (matchEndPanel != null && matchEndPanel.activeSelf) || 
+                                        (rematchPromptPanel != null && rematchPromptPanel.activeSelf);
+
         private Coroutine _hitmarkerCoroutine;
         private Coroutine _announcementCoroutine;
         private Coroutine _damageFlashCoroutine;
@@ -138,6 +145,19 @@ namespace SniperGame.UI
         private void Start()
         {
             StartCoroutine(InitializeLocalPlayerRoutine());
+        }
+
+        private void Update()
+        {
+            // Keeps the cursor free and visible whenever match end or rematch prompt is open
+            if (IsMatchEndActive)
+            {
+                if (Cursor.lockState != CursorLockMode.None)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+            }
         }
 
         private void InitializeUIParticles()
@@ -213,6 +233,14 @@ namespace SniperGame.UI
             }
         }
 
+        public void SetWallRunPrompt(bool visible, float progress)
+        {
+            if (wallRunPrompt != null)
+            {
+                wallRunPrompt.SetPromptState(visible, progress);
+            }
+        }
+
         public void SetScopeActive(bool isScoped)
         {
             if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
@@ -228,7 +256,6 @@ namespace SniperGame.UI
         {
             if (cooldownBarRoot == null || cooldownFillImage == null) return;
 
-            // Hide while scoped
             if (scopeOverlay != null && scopeOverlay.activeSelf)
             {
                 if (cooldownBarRoot.activeSelf) cooldownBarRoot.SetActive(false);
