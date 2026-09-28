@@ -19,7 +19,7 @@ namespace SniperGame.Player
 
         [Header("Camera & Visuals")]
         [SerializeField] private Transform cameraTransform;
-        [Tooltip("Sleep hier het 3D-lichaamsmodel van de soldaat in")]
+        [Tooltip("Assign the 3D soldier model here")]
         [SerializeField] private GameObject visualsRoot;
         [SerializeField] private float baseFOV = 80f;
         [SerializeField] private float lookSensitivity = 2f;
@@ -47,16 +47,22 @@ namespace SniperGame.Player
         [SerializeField] private float slideCooldown = 0.4f;
         [SerializeField] private float slideCameraLean = 10f;
 
-        [Header("Wall Running (Straight Line & Stick)")]
+        [Header("Wall Running (Hold Space)")]
         [SerializeField] private LayerMask wallRunMask = ~0;
+        [Tooltip("How many seconds Space must be held before wall running starts (prevents single-tap jumps from wall running)")]
+        [SerializeField] private float wallRunHoldTime = 0.4f;
         [SerializeField] private float wallRunSpeed = 16f;
-        [Tooltip("Houdt de lijn horizontaal. 0 = perfect vlakke lijn, 0.5 - 1.5 = heel subtiele daling")]
         [SerializeField] private float wallRunDownwardDrift = 0.5f;
-        [Tooltip("Kracht waarmee de speler tegen de muur gezogen blijft")]
         [SerializeField] private float wallStickForce = 6f;
         [SerializeField] private float wallRunCameraLean = 14f;
         [SerializeField] private float wallJumpUpForce = 9f;
         [SerializeField] private float wallJumpSideForce = 13f;
+
+        [Header("Wall Run UI Prompt")]
+        [Tooltip("Assign your WallRunPrompt UI Text GameObject here")]
+        [SerializeField] private GameObject wallRunPromptUI;
+        [Tooltip("Max distance looking at a wall to show the prompt")]
+        [SerializeField] private float lookAtWallDistance = 4.5f;
 
         [Header("Camera Tilt & Effects")]
         [SerializeField] private float cameraTiltSpeed = 12f;
@@ -64,7 +70,7 @@ namespace SniperGame.Player
         [SerializeField] private float runFovIncrease = 8f;
         [SerializeField] private float slideFovIncrease = 14f;
 
-        // Statussen
+        // States
         private Vector3 _velocity;
         private Vector3 _horizontalVelocity;
         private float _currRotationX = 0f;
@@ -75,8 +81,9 @@ namespace SniperGame.Player
         private bool _hasDoubleJump;
         private float _lastGroundedTime;
         private float _lastJumpPressedTime;
+        private float _spaceHoldTimer;
 
-        // Slide variabelen
+        // Slide variables
         private bool _isSliding;
         private Vector3 _slideDirection;
         private float _slideTimer;
@@ -85,11 +92,12 @@ namespace SniperGame.Player
         private Vector3 _defaultCenter;
         private Vector3 _defaultCamPos;
 
-        // Wall Run variabelen
+        // Wall Run variables
         private bool _isWallRunning;
         private bool _wallIsOnRight;
         private RaycastHit _wallHit;
-        private float _wallRunStartTime;
+        private bool _canWallRunNear;
+        private int _wallHoldLayerIndex = -1;
 
         // Sniper ADS & Recoil hooks
         private bool _isScoped = false;
@@ -105,6 +113,7 @@ namespace SniperGame.Player
             if (!IsOwner)
             {
                 if (cameraTransform != null) cameraTransform.gameObject.SetActive(false);
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 enabled = false;
                 return;
             }
@@ -125,6 +134,8 @@ namespace SniperGame.Player
                 _cameraComponent = cameraTransform.GetComponent<Camera>();
                 _defaultCamPos = cameraTransform.localPosition;
             }
+
+            _wallHoldLayerIndex = LayerMask.NameToLayer("wallHold");
         }
 
         private void Start()
@@ -132,6 +143,11 @@ namespace SniperGame.Player
             if (_cameraComponent != null)
             {
                 _cameraComponent.fieldOfView = baseFOV;
+            }
+
+            if (wallRunPromptUI != null)
+            {
+                wallRunPromptUI.SetActive(false);
             }
         }
 
@@ -155,6 +171,7 @@ namespace SniperGame.Player
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 return;
             }
 
@@ -168,11 +185,23 @@ namespace SniperGame.Player
 
             if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
             {
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 return;
+            }
+
+            // Track Space key hold duration
+            if (Input.GetKey(KeyCode.Space))
+            {
+                _spaceHoldTimer += Time.deltaTime;
+            }
+            else
+            {
+                _spaceHoldTimer = 0f;
             }
 
             CheckGroundedStatus();
             CheckWallRun();
+            UpdateWallRunPromptUI();
             HandleSlideInput();
             HandleJumpInput();
             CalculateMovement();
@@ -196,6 +225,7 @@ namespace SniperGame.Player
             _currRotationX = 0f;
             _isSliding = false;
             _isWallRunning = false;
+            _spaceHoldTimer = 0f;
         }
 
         #endregion
@@ -275,6 +305,55 @@ namespace SniperGame.Player
 
         #endregion
 
+        #region UI Prompt & Detection
+
+        private bool IsValidWallRunObject(GameObject obj)
+        {
+            if (obj == null) return false;
+
+            // If wallHold layer exists, strictly enforce it
+            if (_wallHoldLayerIndex != -1)
+            {
+                return obj.layer == _wallHoldLayerIndex;
+            }
+
+            // Fallback to wallRunMask
+            return (wallRunMask.value & (1 << obj.layer)) != 0;
+        }
+
+        private void UpdateWallRunPromptUI()
+        {
+            if (wallRunPromptUI == null) return;
+
+            // Hide UI while actively wall running or standing on ground
+            if (_isWallRunning || _isGrounded)
+            {
+                wallRunPromptUI.SetActive(false);
+                return;
+            }
+
+            bool lookingAtWallHold = false;
+            if (cameraTransform != null)
+            {
+                if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out RaycastHit hit, lookAtWallDistance, wallRunMask, QueryTriggerInteraction.Ignore))
+                {
+                    // Must be vertical surface AND match the wallHold layer
+                    if (Mathf.Abs(hit.normal.y) < 0.25f && !hit.collider.transform.IsChildOf(transform) && IsValidWallRunObject(hit.collider.gameObject))
+                    {
+                        lookingAtWallHold = true;
+                    }
+                }
+            }
+
+            bool shouldShow = lookingAtWallHold || _canWallRunNear;
+            if (wallRunPromptUI.activeSelf != shouldShow)
+            {
+                wallRunPromptUI.SetActive(shouldShow);
+            }
+        }
+
+        #endregion
+
         #region Ground & Movement
 
         private void CheckGroundedStatus()
@@ -312,23 +391,18 @@ namespace SniperGame.Player
             }
             else if (_isWallRunning)
             {
-                // Wall Run: Vaste vlakke beweging langs de muur
                 Vector3 wallNormal = _wallHit.normal;
                 Vector3 wallForward = Vector3.Cross(wallNormal, Vector3.up);
 
-                // Zorg dat we altijd vooruit bewegen ten opzichte van de kijkrichting
                 if (Vector3.Dot(wallForward, transform.forward) < 0f)
                 {
                     wallForward = -wallForward;
                 }
 
-                // Snelheid langs de wand + lichte zuigkracht TEGEN de muur (voorkomt loslaten)
                 Vector3 forwardMovement = wallForward * wallRunSpeed;
                 Vector3 stickToWall = -wallNormal * wallStickForce;
 
                 _horizontalVelocity = forwardMovement + stickToWall;
-
-                // Kaarsrechte lijn (Y blijft perfect vlak)
                 _velocity.y = -wallRunDownwardDrift;
             }
             else
@@ -363,6 +437,13 @@ namespace SniperGame.Player
 
         private void HandleJumpInput()
         {
+            // Releasing Space while wall running initiates the wall jump
+            if (_isWallRunning && Input.GetKeyUp(KeyCode.Space))
+            {
+                ExecuteWallJump();
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 _lastJumpPressedTime = Time.time;
@@ -372,20 +453,7 @@ namespace SniperGame.Player
 
             if (wantsToJump)
             {
-                if (_isWallRunning)
-                {
-                    // Wall Jump: krachtig wegschieten van de muur
-                    _lastJumpPressedTime = -10f;
-                    _isWallRunning = false;
-
-                    Vector3 jumpAway = _wallHit.normal * wallJumpSideForce + Vector3.up * wallJumpUpForce + transform.forward * (runSpeed * 0.75f);
-                    _horizontalVelocity = new Vector3(jumpAway.x, 0, jumpAway.z);
-                    _velocity.y = jumpAway.y;
-
-                    _hasDoubleJump = true;
-                    PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
-                }
-                else if (Time.time - _lastGroundedTime <= coyoteTime)
+                if (Time.time - _lastGroundedTime <= coyoteTime)
                 {
                     _lastJumpPressedTime = -10f;
                     _lastGroundedTime = -10f;
@@ -402,7 +470,7 @@ namespace SniperGame.Player
 
                     PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
                 }
-                else if (_hasDoubleJump)
+                else if (_hasDoubleJump && !_isWallRunning)
                 {
                     _lastJumpPressedTime = -10f;
                     _hasDoubleJump = false;
@@ -413,42 +481,61 @@ namespace SniperGame.Player
             }
         }
 
+        private void ExecuteWallJump()
+        {
+            _isWallRunning = false;
+            _lastJumpPressedTime = -10f;
+            _spaceHoldTimer = 0f;
+
+            Vector3 jumpAway = _wallHit.normal * wallJumpSideForce + Vector3.up * wallJumpUpForce + transform.forward * (runSpeed * 0.75f);
+            _horizontalVelocity = new Vector3(jumpAway.x, 0, jumpAway.z);
+            _velocity.y = jumpAway.y;
+
+            _hasDoubleJump = true;
+            PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
+        }
+
         private void CheckWallRun()
         {
-            // Niet wallrunnen als je al stevig op de vloer staat
             if (_isGrounded)
             {
                 _isWallRunning = false;
+                _canWallRunNear = false;
                 return;
             }
 
             float checkDistance = controller.radius + 0.65f;
             Vector3 center = transform.position + Vector3.up * (controller.height * 0.5f);
 
-            // Controleer rechts, links en licht diagonaal zodat rondkijken de raycast niet breekt
             bool hitRight = Physics.Raycast(center, transform.right, out RaycastHit hitR, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore)
                          || Physics.Raycast(center, (transform.right + transform.forward * 0.5f).normalized, out hitR, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore);
 
             bool hitLeft = Physics.Raycast(center, -transform.right, out RaycastHit hitL, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore)
                         || Physics.Raycast(center, (-transform.right + transform.forward * 0.5f).normalized, out hitL, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore);
 
+            RaycastHit candidateHit = hitRight ? hitR : hitL;
+            bool hitWall = (hitRight || hitLeft) && IsValidWallRunObject(candidateHit.collider.gameObject);
+
+            _canWallRunNear = hitWall;
+
             float forwardInput = Input.GetAxisRaw("Vertical");
 
-            if ((hitRight || hitLeft) && forwardInput > 0.1f && !_isSliding)
-            {
-                RaycastHit activeHit = hitRight ? hitR : hitL;
+            // Wall run condition:
+            // 1. Next to a valid wallHold object
+            // 2. Moving forward
+            // 3. Space held down for AT LEAST wallRunHoldTime (prevents accidental tap triggers)
+            bool isHoldingSpaceLongEnough = _spaceHoldTimer >= wallRunHoldTime;
 
-                // Controleer of het een verticale muur is (geen vloer of hellend dak)
-                if (Mathf.Abs(activeHit.normal.y) < 0.2f)
+            if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? Input.GetKey(KeyCode.Space) : isHoldingSpaceLongEnough))
+            {
+                if (Mathf.Abs(candidateHit.normal.y) < 0.2f)
                 {
                     if (!_isWallRunning)
                     {
-                        // Eerste frame van contact: neutraliseer verticale jumpsnelheid
                         _velocity.y = 0f;
-                        _wallRunStartTime = Time.time;
                     }
 
-                    _wallHit = activeHit;
+                    _wallHit = candidateHit;
                     _wallIsOnRight = hitRight;
                     _isWallRunning = true;
                     _hasDoubleJump = true;
