@@ -9,7 +9,12 @@ internal static class SpeakerVoiceLineGenerator
 {
     private const int SampleRate = 22050;
     private const string OutputFolder = "Tutorial Level Assets/Audio/Resources/Voice";
-    private const string DefaultLine = "Welcome to Pew Pew Arena, in this short tutorial we will go over the basics of how to play. Press W A S D to walk";
+
+    private static readonly (string FileName, string Text)[] Lines =
+    {
+        ("wake_up_greeting.wav", "Welcome to Pew Pew Arena, in this short tutorial we will go over the basics of how to play. Press W A S D to walk"),
+        ("run_jump_confirmation.wav", "Good job, you can walk, now lets see if you can run AND jump at the same time."),
+    };
 
     static SpeakerVoiceLineGenerator()
     {
@@ -27,21 +32,27 @@ internal static class SpeakerVoiceLineGenerator
         string directory = Path.Combine(Application.dataPath, OutputFolder);
         Directory.CreateDirectory(directory);
 
-        string path = Path.Combine(directory, "wake_up_greeting.wav");
-        if (File.Exists(path)) return;
-
-        List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(DefaultLine, out float totalDuration);
-        int sampleCount = Mathf.CeilToInt(totalDuration * SampleRate);
-        float[] samples = new float[sampleCount];
-        System.Random random = new System.Random(12345);
-
-        foreach (SpeakerVoiceLineTiming.WordTiming word in timeline)
+        bool generatedAny = false;
+        foreach ((string fileName, string text) in Lines)
         {
-            WriteMumbleBurst(samples, word, random);
+            string path = Path.Combine(directory, fileName);
+            if (File.Exists(path)) continue;
+
+            List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(text, out float totalDuration);
+            int sampleCount = Mathf.CeilToInt(totalDuration * SampleRate);
+            float[] samples = new float[sampleCount];
+            System.Random random = new System.Random(12345);
+
+            foreach (SpeakerVoiceLineTiming.WordTiming word in timeline)
+            {
+                WriteMumbleBurst(samples, word, random);
+            }
+
+            WritePcmWave(path, samples);
+            generatedAny = true;
         }
 
-        WritePcmWave(path, samples);
-        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        if (generatedAny) AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
     }
 
     private static void WriteMumbleBurst(float[] samples, SpeakerVoiceLineTiming.WordTiming word, System.Random random)

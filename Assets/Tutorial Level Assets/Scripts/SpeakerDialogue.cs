@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,9 @@ public class SpeakerDialogue : MonoBehaviour
     private string subtitleLine = "Welcome to Pew Pew Arena, in this short tutorial we will go over the basics of how to play. Press W A S D to walk";
     [SerializeField] private string voiceClipResourcePath = "Voice/wake_up_greeting";
     [SerializeField, Min(0f)] private float wakeUpDelay = 1f;
+
+    // Fired once the wake-up greeting has fully finished (audio + subtitle fade-out).
+    public static event Action OnGreetingFinished;
 
     [Header("Talk Scale")]
     [SerializeField, Range(0f, 2f)] private float scaleIntensity = 0.35f;
@@ -75,12 +79,26 @@ public class SpeakerDialogue : MonoBehaviour
         HandlePlayerWokeUp();
     }
 
+    // Public entry point for other systems (e.g. HangerDoorController) to make the speaker say an arbitrary line.
+    public void SayLine(string text, string clipResourcePath)
+    {
+        if (!Application.isPlaying) return;
+        if (playbackRoutine != null) StopCoroutine(playbackRoutine);
+        playbackRoutine = StartCoroutine(PlaySubtitleLine(text, clipResourcePath));
+    }
+
     private IEnumerator PlayGreeting()
     {
         if (wakeUpDelay > 0f) yield return new WaitForSeconds(wakeUpDelay);
 
-        AudioClip clip = Resources.Load<AudioClip>(voiceClipResourcePath);
-        List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(subtitleLine, out float lineDuration);
+        yield return PlaySubtitleLine(subtitleLine, voiceClipResourcePath);
+        OnGreetingFinished?.Invoke();
+    }
+
+    private IEnumerator PlaySubtitleLine(string text, string clipResourcePath)
+    {
+        AudioClip clip = Resources.Load<AudioClip>(clipResourcePath);
+        List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(text, out float lineDuration);
         float playDuration = clip != null ? clip.length : lineDuration;
 
         audioSource.clip = clip;
