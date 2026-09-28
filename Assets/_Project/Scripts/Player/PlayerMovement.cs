@@ -1,67 +1,110 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using SniperGame.Gameplay;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 using SniperGame.UI;
+using SniperGame.Gameplay;
+using ParkourFPS;
 
 namespace SniperGame.Player
 {
     [RequireComponent(typeof(CharacterController))]
     public class PlayerMovement : NetworkBehaviour
     {
-        [Header("References")]
-        [SerializeField] private Transform cameraHolder;
-        [SerializeField] private AudioSource footstepAudioSource;
-        private CharacterController _characterController;
+        #region Components
+        private CharacterController controller;
+        private SoundPlayer soundPlayer;
+        #endregion
+
+        [Header("Camera & Visuals")]
+        [SerializeField] private Transform cameraTransform;
+        [Tooltip("Assign the 3D soldier model here")]
+        [SerializeField] private GameObject visualsRoot;
+        [SerializeField] private float baseFOV = 80f;
+        [SerializeField] private float lookSensitivity = 2f;
+        [SerializeField] private float lookXLimit = 85f;
 
         [Header("Movement Speeds")]
-        [SerializeField] private float walkSpeed = 6.0f;
-        [SerializeField] private float sprintSpeed = 9.5f;
-        [SerializeField] private float crouchSpeed = 3.0f;
-        [SerializeField] private float acceleration = 18.0f;
-        [SerializeField] private float deceleration = 22.0f;
-        [SerializeField] private float airControlMultiplier = 0.4f;
+        [SerializeField] private float walkSpeed = 9f;
+        [SerializeField] private float runSpeed = 15f;
+        [SerializeField] private float crouchSpeed = 5f;
+        [SerializeField] private float acceleration = 14f;
+        [SerializeField] private float airControl = 0.6f;
 
-        [Header("Stamina Configuration")]
-        [SerializeField] private float maxStamina = 100.0f;
-        [SerializeField] private float staminaDrainRate = 28.0f;
-        [SerializeField] private float staminaRegenRate = 22.0f;
-        [SerializeField] private float regenDelay = 1.0f;
+        [Header("Jumping & Gravity")]
+        [SerializeField] private float jumpHeight = 2.4f;
+        [SerializeField] private float doubleJumpHeight = 2.0f;
+        [SerializeField] private float gravity = 28f;
+        [SerializeField] private float jumpBufferTime = 0.15f;
+        [SerializeField] private float coyoteTime = 0.15f;
 
-        [Header("Jump & Physics")]
-        [SerializeField] private float jumpForce = 6.5f;
-        [SerializeField] private float baseGravity = -18.0f;
-        [SerializeField] private float fallGravityMultiplier = 2.2f;
+        [Header("Sliding")]
+        [SerializeField] private KeyCode slideKey = KeyCode.C;
+        [SerializeField] private float slideBoostSpeed = 20f;
+        [SerializeField] private float slideDuration = 0.75f;
+        [SerializeField] private float slideFriction = 12f;
+        [SerializeField] private float slideCooldown = 0.4f;
+        [SerializeField] private float slideCameraLean = 10f;
 
-        [Header("Crouch Configuration")]
-        [SerializeField] private float standingHeight = 2.0f;
-        [SerializeField] private float crouchHeight = 1.2f;
-        [SerializeField] private float standingCameraY = 1.6f;
-        [SerializeField] private float crouchCameraY = 0.9f;
-        [SerializeField] private float crouchSmoothSpeed = 14.0f;
+        [Header("Wall Running (Hold Space)")]
+        [SerializeField] private LayerMask wallRunMask = ~0;
+        [Tooltip("How many seconds Space must be held before wall running starts (prevents single-tap jumps from wall running)")]
+        [SerializeField] private float wallRunHoldTime = 0.4f;
+        [SerializeField] private float wallRunSpeed = 16f;
+        [SerializeField] private float wallRunDownwardDrift = 0.5f;
+        [SerializeField] private float wallStickForce = 6f;
+        [SerializeField] private float wallRunCameraLean = 14f;
+        [SerializeField] private float wallJumpUpForce = 9f;
+        [SerializeField] private float wallJumpSideForce = 13f;
 
-        [Header("Footstep Audio Settings")]
-        [Tooltip("Voeg hier meerdere verschillende voetstap-audioclips toe")]
-        [SerializeField] private AudioClip[] footstepClips;
-        [SerializeField] private float walkStepInterval = 0.45f;
-        [SerializeField] private float sprintStepInterval = 0.30f;
-        [Range(0f, 1f)] [SerializeField] private float footstepVolume = 0.65f;
+        [Header("Wall Run UI Prompt")]
+        [Tooltip("Assign your WallRunPrompt UI Text GameObject here")]
+        [SerializeField] private GameObject wallRunPromptUI;
+        [Tooltip("Max distance looking at a wall to show the prompt")]
+        [SerializeField] private float lookAtWallDistance = 4.5f;
 
-        private Vector3 _currentHorizontalVelocity;
-        private float _verticalVelocity;
+        [Header("Camera Tilt & Effects")]
+        [SerializeField] private float cameraTiltSpeed = 12f;
+        [SerializeField] private float fovChangeSpeed = 8f;
+        [SerializeField] private float runFovIncrease = 8f;
+        [SerializeField] private float slideFovIncrease = 14f;
+
+        // States
+        private Vector3 _velocity;
+        private Vector3 _horizontalVelocity;
+        private float _currRotationX = 0f;
+        private float _currentTilt = 0f;
+        private Camera _cameraComponent;
+
         private bool _isGrounded;
-        private bool _isCrouching;
-        private float _stepTimer;
-        private int _lastClipIndex = -1;
+        private bool _hasDoubleJump;
+        private float _lastGroundedTime;
+        private float _lastJumpPressedTime;
+        private float _spaceHoldTimer;
 
-        private float _currentStamina;
-        private float _regenTimer;
+        // Slide variables
+        private bool _isSliding;
+        private Vector3 _slideDirection;
+        private float _slideTimer;
+        private float _lastSlideEndTime = -10f;
+        private float _defaultHeight;
+        private Vector3 _defaultCenter;
+        private Vector3 _defaultCamPos;
 
-        private void Awake()
-        {
-            _characterController = GetComponent<CharacterController>();
-            _currentStamina = maxStamina;
-        }
+        // Wall Run variables
+        private bool _isWallRunning;
+        private bool _wallIsOnRight;
+        private RaycastHit _wallHit;
+        private bool _canWallRunNear;
+        private int _wallHoldLayerIndex = -1;
+
+        // Sniper ADS & Recoil hooks
+        private bool _isScoped = false;
+        private float _scopedFov = 18f;
+        private float _sensitivityMultiplier = 1.0f;
+        private float _recoilPitch = 0f;
+        private float _recoilYaw = 0f;
 
         public override void OnNetworkSpawn()
         {
@@ -69,14 +112,54 @@ namespace SniperGame.Player
 
             if (!IsOwner)
             {
+                if (cameraTransform != null) cameraTransform.gameObject.SetActive(false);
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 enabled = false;
                 return;
             }
 
-            _currentStamina = maxStamina;
-            if (CombatHUD.Instance != null)
+            HideLocalPlayerBody();
+        }
+
+        private void Awake()
+        {
+            controller = GetComponent<CharacterController>();
+            soundPlayer = GetComponent<SoundPlayer>();
+
+            _defaultHeight = controller.height;
+            _defaultCenter = controller.center;
+
+            if (cameraTransform != null)
             {
-                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+                _cameraComponent = cameraTransform.GetComponent<Camera>();
+                _defaultCamPos = cameraTransform.localPosition;
+            }
+
+            _wallHoldLayerIndex = LayerMask.NameToLayer("wallHold");
+        }
+
+        private void Start()
+        {
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.fieldOfView = baseFOV;
+            }
+
+            if (wallRunPromptUI != null)
+            {
+                wallRunPromptUI.SetActive(false);
+            }
+        }
+
+        private void HideLocalPlayerBody()
+        {
+            if (visualsRoot != null)
+            {
+                var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in renderers)
+                {
+                    r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                }
             }
         }
 
@@ -84,215 +167,472 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
+            if (SceneManager.GetActiveScene().name != "Maintestgameplay" || PauseMenu.IsPaused)
             {
-                _currentHorizontalVelocity = Vector3.zero;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
                 return;
             }
 
-            UpdateGroundCheck();
-            HandleCrouch();
-            HandleHorizontalMovement();
-            HandleJumpAndGravity();
-            SmoothCameraHeight();
-            HandleFootsteps();
-        }
-
-        private void UpdateGroundCheck()
-        {
-            _isGrounded = _characterController.isGrounded;
-
-            if (_isGrounded && _verticalVelocity < 0f)
+            if (Cursor.lockState != CursorLockMode.Locked)
             {
-                _verticalVelocity = -4.0f;
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
-        }
 
-        private void HandleHorizontalMovement()
-        {
-            if (Keyboard.current == null) return;
+            HandleLook();
 
-            float inputX = 0f;
-            float inputZ = 0f;
-
-            if (Keyboard.current.aKey.isPressed) inputX -= 1f;
-            if (Keyboard.current.dKey.isPressed) inputX += 1f;
-            if (Keyboard.current.sKey.isPressed) inputZ -= 1f;
-            if (Keyboard.current.wKey.isPressed) inputZ += 1f;
-
-            Vector3 moveInput = new Vector3(inputX, 0f, inputZ).normalized;
-            bool isMoving = moveInput.magnitude > 0.01f;
-
-            bool wantsToSprint = Keyboard.current.leftShiftKey.isPressed && !_isCrouching && inputZ > 0.1f;
-            bool isSprinting = wantsToSprint && _currentStamina > 0f && isMoving;
-
-            if (isSprinting)
+            if (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight())
             {
-                _currentStamina = Mathf.Max(0f, _currentStamina - staminaDrainRate * Time.deltaTime);
-                _regenTimer = regenDelay;
+                if (wallRunPromptUI != null) wallRunPromptUI.SetActive(false);
+                return;
+            }
+
+            // Track Space key hold duration
+            if (Input.GetKey(KeyCode.Space))
+            {
+                _spaceHoldTimer += Time.deltaTime;
             }
             else
             {
-                if (_regenTimer > 0f)
-                {
-                    _regenTimer -= Time.deltaTime;
-                }
-                else
-                {
-                    _currentStamina = Mathf.Min(maxStamina, _currentStamina + staminaRegenRate * Time.deltaTime);
-                }
+                _spaceHoldTimer = 0f;
             }
 
-            if (CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
-            }
-
-            float targetMaxSpeed = _isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
-            Vector3 targetVelocity = (transform.right * moveInput.x + transform.forward * moveInput.z) * targetMaxSpeed;
-
-            float rate = isMoving ? acceleration : deceleration;
-            if (!_isGrounded) rate *= airControlMultiplier;
-
-            _currentHorizontalVelocity = Vector3.MoveTowards(_currentHorizontalVelocity, targetVelocity, rate * Time.deltaTime);
-            _characterController.Move(_currentHorizontalVelocity * Time.deltaTime);
+            CheckGroundedStatus();
+            CheckWallRun();
+            UpdateWallRunPromptUI();
+            HandleSlideInput();
+            HandleJumpInput();
+            CalculateMovement();
+            ApplyCameraTiltAndFOV();
         }
 
-        private void HandleFootsteps()
+        #region Kantenwissel & Netcode
+
+        [ClientRpc]
+        public void TeleportClientRpc(Vector3 newPosition, Quaternion newRotation)
         {
-            // Geen voetstappen als we in de lucht zijn, bukken of stilstaan
-            if (!_isGrounded || _isCrouching || _currentHorizontalVelocity.magnitude < 1.2f)
+            if (controller == null) controller = GetComponent<CharacterController>();
+
+            controller.enabled = false;
+            transform.position = newPosition;
+            transform.rotation = newRotation;
+            controller.enabled = true;
+
+            _velocity = Vector3.zero;
+            _horizontalVelocity = Vector3.zero;
+            _currRotationX = 0f;
+            _isSliding = false;
+            _isWallRunning = false;
+            _spaceHoldTimer = 0f;
+        }
+
+        #endregion
+
+        #region Sniper ADS & Recoil Hooks
+
+        public void SetScopeState(bool scoped, float targetScopedFov, float sensitivityMult)
+        {
+            _isScoped = scoped;
+            _scopedFov = targetScopedFov;
+            _sensitivityMultiplier = sensitivityMult;
+        }
+
+        public void AddRecoil(float pitch, float yaw)
+        {
+            _recoilPitch += pitch;
+            _recoilYaw += yaw;
+        }
+
+        #endregion
+
+        #region Look & Camera
+
+        private void HandleLook()
+        {
+            float currentSensitivity = lookSensitivity * _sensitivityMultiplier;
+
+            _currRotationX -= (Input.GetAxis("Mouse Y") * currentSensitivity) + _recoilPitch;
+            _currRotationX = Mathf.Clamp(_currRotationX, -lookXLimit, lookXLimit);
+            _recoilPitch = Mathf.MoveTowards(_recoilPitch, 0f, Time.deltaTime * 18f);
+
+            float mouseX = (Input.GetAxis("Mouse X") * currentSensitivity) + _recoilYaw;
+            _recoilYaw = Mathf.MoveTowards(_recoilYaw, 0f, Time.deltaTime * 18f);
+
+            transform.rotation *= Quaternion.Euler(0, mouseX, 0);
+
+            if (cameraTransform != null)
             {
+                cameraTransform.localRotation = Quaternion.Euler(_currRotationX, 0f, _currentTilt);
+            }
+        }
+
+        private void ApplyCameraTiltAndFOV()
+        {
+            float targetTilt = 0f;
+            if (_isWallRunning)
+            {
+                targetTilt = _wallIsOnRight ? wallRunCameraLean : -wallRunCameraLean;
+            }
+            else if (_isSliding)
+            {
+                targetTilt = slideCameraLean;
+            }
+
+            _currentTilt = Mathf.Lerp(_currentTilt, targetTilt, Time.deltaTime * cameraTiltSpeed);
+
+            if (_cameraComponent != null)
+            {
+                float targetFOV = baseFOV;
+
+                if (_isScoped)
+                {
+                    targetFOV = _scopedFov;
+                }
+                else if (_isSliding)
+                {
+                    targetFOV = baseFOV + slideFovIncrease;
+                }
+                else if (Input.GetKey(KeyCode.LeftShift) && _horizontalVelocity.magnitude > 10f)
+                {
+                    targetFOV = baseFOV + runFovIncrease;
+                }
+
+                _cameraComponent.fieldOfView = Mathf.Lerp(_cameraComponent.fieldOfView, targetFOV, Time.deltaTime * fovChangeSpeed);
+            }
+        }
+
+        #endregion
+
+        #region UI Prompt & Detection
+
+        private bool IsValidWallRunObject(GameObject obj)
+        {
+            if (obj == null) return false;
+
+            // If wallHold layer exists, strictly enforce it
+            if (_wallHoldLayerIndex != -1)
+            {
+                return obj.layer == _wallHoldLayerIndex;
+            }
+
+            // Fallback to wallRunMask
+            return (wallRunMask.value & (1 << obj.layer)) != 0;
+        }
+
+        private void UpdateWallRunPromptUI()
+        {
+            if (wallRunPromptUI == null) return;
+
+            // Hide UI while actively wall running or standing on ground
+            if (_isWallRunning || _isGrounded)
+            {
+                wallRunPromptUI.SetActive(false);
                 return;
             }
 
-            bool isSprinting = _currentHorizontalVelocity.magnitude > (walkSpeed + 0.5f);
-            float currentInterval = isSprinting ? sprintStepInterval : walkStepInterval;
-
-            _stepTimer += Time.deltaTime;
-
-            if (_stepTimer >= currentInterval)
+            bool lookingAtWallHold = false;
+            if (cameraTransform != null)
             {
-                _stepTimer = 0f;
-                TriggerFootstep();
-            }
-        }
-
-        private void TriggerFootstep()
-        {
-            if (footstepClips == null || footstepClips.Length == 0) return;
-
-            // Kies een willekeurige clip, maar nooit dezelfde twee keer achter elkaar
-            int selectedIndex = 0;
-            if (footstepClips.Length > 1)
-            {
-                do
+                if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out RaycastHit hit, lookAtWallDistance, wallRunMask, QueryTriggerInteraction.Ignore))
                 {
-                    selectedIndex = Random.Range(0, footstepClips.Length);
-                } while (selectedIndex == _lastClipIndex);
+                    // Must be vertical surface AND match the wallHold layer
+                    if (Mathf.Abs(hit.normal.y) < 0.25f && !hit.collider.transform.IsChildOf(transform) && IsValidWallRunObject(hit.collider.gameObject))
+                    {
+                        lookingAtWallHold = true;
+                    }
+                }
             }
-            _lastClipIndex = selectedIndex;
 
-            float randomPitch = Random.Range(0.92f, 1.08f);
-
-            // 1. Speel lokaal direct af zonder vertraging
-            PlayFootstepAudio(selectedIndex, randomPitch);
-
-            // 2. Synchroniseer via Server naar de tegenstander
-            PlayFootstepServerRpc(selectedIndex, randomPitch);
-        }
-
-        private void PlayFootstepAudio(int clipIndex, float pitch)
-        {
-            if (footstepAudioSource == null || footstepClips == null || clipIndex >= footstepClips.Length) return;
-
-            AudioClip clip = footstepClips[clipIndex];
-            if (clip != null)
+            bool shouldShow = lookingAtWallHold || _canWallRunNear;
+            if (wallRunPromptUI.activeSelf != shouldShow)
             {
-                footstepAudioSource.pitch = pitch;
-                footstepAudioSource.PlayOneShot(clip, footstepVolume);
+                wallRunPromptUI.SetActive(shouldShow);
             }
         }
 
-        [ServerRpc]
-        private void PlayFootstepServerRpc(int clipIndex, float pitch)
-        {
-            // Stuur door naar alle andere clients (niet naar de eigenaar zelf, die hoort het lokaal al)
-            PlayFootstepClientRpc(clipIndex, pitch);
-        }
+        #endregion
 
-        [ClientRpc]
-        private void PlayFootstepClientRpc(int clipIndex, float pitch)
-        {
-            if (IsOwner) return; // Dubbele audio bij de schutter voorkomen
-            PlayFootstepAudio(clipIndex, pitch);
-        }
+        #region Ground & Movement
 
-        private void HandleJumpAndGravity()
+        private void CheckGroundedStatus()
         {
-            if (Keyboard.current == null) return;
+            _isGrounded = controller.isGrounded;
 
-            if (_isGrounded && !_isCrouching && Keyboard.current.spaceKey.wasPressedThisFrame)
+            if (_isGrounded)
             {
-                _verticalVelocity = jumpForce;
-            }
+                _lastGroundedTime = Time.time;
+                _hasDoubleJump = true;
 
-            float appliedGravity = baseGravity;
-            if (_verticalVelocity < 0f)
-            {
-                appliedGravity *= fallGravityMultiplier;
+                if (_velocity.y < 0f)
+                {
+                    _velocity.y = -2f;
+                }
             }
-
-            _verticalVelocity += appliedGravity * Time.deltaTime;
-            _characterController.Move(new Vector3(0f, _verticalVelocity, 0f) * Time.deltaTime);
         }
 
-        private void HandleCrouch()
+        private void CalculateMovement()
         {
-            if (Keyboard.current == null) return;
+            float inputX = Input.GetAxisRaw("Horizontal");
+            float inputZ = Input.GetAxisRaw("Vertical");
 
-            bool crouchInput = Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed;
+            Vector3 wishDir = (transform.forward * inputZ + transform.right * inputX).normalized;
 
-            if (crouchInput != _isCrouching)
+            if (_isSliding)
             {
-                _isCrouching = crouchInput;
+                _slideTimer -= Time.deltaTime;
+                _horizontalVelocity = Vector3.MoveTowards(_horizontalVelocity, wishDir * crouchSpeed, slideFriction * Time.deltaTime);
 
-                _characterController.height = _isCrouching ? crouchHeight : standingHeight;
-                _characterController.center = new Vector3(0f, _characterController.height / 2f, 0f);
+                if (_slideTimer <= 0f || _horizontalVelocity.magnitude < crouchSpeed)
+                {
+                    StopSlide();
+                }
+            }
+            else if (_isWallRunning)
+            {
+                Vector3 wallNormal = _wallHit.normal;
+                Vector3 wallForward = Vector3.Cross(wallNormal, Vector3.up);
+
+                if (Vector3.Dot(wallForward, transform.forward) < 0f)
+                {
+                    wallForward = -wallForward;
+                }
+
+                Vector3 forwardMovement = wallForward * wallRunSpeed;
+                Vector3 stickToWall = -wallNormal * wallStickForce;
+
+                _horizontalVelocity = forwardMovement + stickToWall;
+                _velocity.y = -wallRunDownwardDrift;
+            }
+            else
+            {
+                bool isRunning = Input.GetKey(KeyCode.LeftShift) && !_isScoped;
+                bool isCrouching = Input.GetKey(KeyCode.LeftControl);
+
+                float targetSpeed = walkSpeed;
+                if (isCrouching) targetSpeed = crouchSpeed;
+                else if (isRunning && inputZ > 0.1f) targetSpeed = runSpeed;
+
+                Vector3 targetVelocity = wishDir * targetSpeed;
+                float currentAccel = _isGrounded ? acceleration : acceleration * airControl;
+
+                _horizontalVelocity = Vector3.Lerp(_horizontalVelocity, targetVelocity, currentAccel * Time.deltaTime);
+
+                if (!_isGrounded)
+                {
+                    _velocity.y -= gravity * Time.deltaTime;
+                }
+            }
+
+            Vector3 finalMove = (_horizontalVelocity + Vector3.up * _velocity.y) * Time.deltaTime;
+            controller.Move(finalMove);
+
+            HandleFootstepSounds();
+        }
+
+        #endregion
+
+        #region Jumping & Wall Run
+
+        private void HandleJumpInput()
+        {
+            // Releasing Space while wall running initiates the wall jump
+            if (_isWallRunning && Input.GetKeyUp(KeyCode.Space))
+            {
+                ExecuteWallJump();
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                _lastJumpPressedTime = Time.time;
+            }
+
+            bool wantsToJump = (Time.time - _lastJumpPressedTime) <= jumpBufferTime;
+
+            if (wantsToJump)
+            {
+                if (Time.time - _lastGroundedTime <= coyoteTime)
+                {
+                    _lastJumpPressedTime = -10f;
+                    _lastGroundedTime = -10f;
+
+                    if (_isSliding)
+                    {
+                        _velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
+                        StopSlide();
+                    }
+                    else
+                    {
+                        _velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
+                    }
+
+                    PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
+                }
+                else if (_hasDoubleJump && !_isWallRunning)
+                {
+                    _lastJumpPressedTime = -10f;
+                    _hasDoubleJump = false;
+
+                    _velocity.y = Mathf.Sqrt(doubleJumpHeight * 2f * gravity);
+                    PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
+                }
             }
         }
 
-        private void SmoothCameraHeight()
+        private void ExecuteWallJump()
         {
-            if (cameraHolder == null) return;
+            _isWallRunning = false;
+            _lastJumpPressedTime = -10f;
+            _spaceHoldTimer = 0f;
 
-            float targetY = _isCrouching ? crouchCameraY : standingCameraY;
-            Vector3 currentPos = cameraHolder.localPosition;
-            float smoothedY = Mathf.Lerp(currentPos.y, targetY, Time.deltaTime * crouchSmoothSpeed);
+            Vector3 jumpAway = _wallHit.normal * wallJumpSideForce + Vector3.up * wallJumpUpForce + transform.forward * (runSpeed * 0.75f);
+            _horizontalVelocity = new Vector3(jumpAway.x, 0, jumpAway.z);
+            _velocity.y = jumpAway.y;
 
-            cameraHolder.localPosition = new Vector3(currentPos.x, smoothedY, currentPos.z);
+            _hasDoubleJump = true;
+            PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
         }
 
-        [ClientRpc]
-        public void TeleportClientRpc(Vector3 targetPosition, Quaternion targetRotation)
+        private void CheckWallRun()
         {
-            if (_characterController != null) _characterController.enabled = false;
-
-            transform.position = targetPosition;
-            transform.rotation = targetRotation;
-
-            _currentHorizontalVelocity = Vector3.zero;
-            _verticalVelocity = 0f;
-            _stepTimer = 0f;
-            _currentStamina = maxStamina;
-
-            if (CombatHUD.Instance != null)
+            if (_isGrounded)
             {
-                CombatHUD.Instance.UpdateStamina(_currentStamina, maxStamina);
+                _isWallRunning = false;
+                _canWallRunNear = false;
+                return;
             }
 
-            if (cameraHolder != null) cameraHolder.localRotation = Quaternion.identity;
-            if (_characterController != null) _characterController.enabled = true;
+            float checkDistance = controller.radius + 0.65f;
+            Vector3 center = transform.position + Vector3.up * (controller.height * 0.5f);
+
+            bool hitRight = Physics.Raycast(center, transform.right, out RaycastHit hitR, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore)
+                         || Physics.Raycast(center, (transform.right + transform.forward * 0.5f).normalized, out hitR, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore);
+
+            bool hitLeft = Physics.Raycast(center, -transform.right, out RaycastHit hitL, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore)
+                        || Physics.Raycast(center, (-transform.right + transform.forward * 0.5f).normalized, out hitL, checkDistance, wallRunMask, QueryTriggerInteraction.Ignore);
+
+            RaycastHit candidateHit = hitRight ? hitR : hitL;
+            bool hitWall = (hitRight || hitLeft) && IsValidWallRunObject(candidateHit.collider.gameObject);
+
+            _canWallRunNear = hitWall;
+
+            float forwardInput = Input.GetAxisRaw("Vertical");
+
+            // Wall run condition:
+            // 1. Next to a valid wallHold object
+            // 2. Moving forward
+            // 3. Space held down for AT LEAST wallRunHoldTime (prevents accidental tap triggers)
+            bool isHoldingSpaceLongEnough = _spaceHoldTimer >= wallRunHoldTime;
+
+            if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? Input.GetKey(KeyCode.Space) : isHoldingSpaceLongEnough))
+            {
+                if (Mathf.Abs(candidateHit.normal.y) < 0.2f)
+                {
+                    if (!_isWallRunning)
+                    {
+                        _velocity.y = 0f;
+                    }
+
+                    _wallHit = candidateHit;
+                    _wallIsOnRight = hitRight;
+                    _isWallRunning = true;
+                    _hasDoubleJump = true;
+                    return;
+                }
+            }
+
+            _isWallRunning = false;
         }
+
+        #endregion
+
+        #region Sliding
+
+        private void HandleSlideInput()
+        {
+            bool slidePressed = Input.GetKeyDown(slideKey) || (Input.GetKeyDown(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift));
+
+            if (slidePressed && !_isSliding && _isGrounded && (Time.time >= _lastSlideEndTime + slideCooldown))
+            {
+                StartSlide();
+            }
+
+            if (_isSliding && (Input.GetKeyUp(slideKey) || Input.GetKeyUp(KeyCode.LeftControl)))
+            {
+                StopSlide();
+            }
+        }
+
+        private void StartSlide()
+        {
+            _isSliding = true;
+            _slideTimer = slideDuration;
+
+            Vector3 inputDir = (transform.forward * Input.GetAxisRaw("Vertical") + transform.right * Input.GetAxisRaw("Horizontal")).normalized;
+            _slideDirection = inputDir.magnitude > 0.1f ? inputDir : transform.forward;
+
+            _horizontalVelocity = _slideDirection * Mathf.Max(_horizontalVelocity.magnitude + 4f, slideBoostSpeed);
+
+            controller.height = _defaultHeight * 0.5f;
+            controller.center = new Vector3(0, _defaultHeight * 0.25f, 0);
+
+            if (cameraTransform != null)
+            {
+                cameraTransform.localPosition = new Vector3(_defaultCamPos.x, _defaultCamPos.y - 0.55f, _defaultCamPos.z);
+            }
+
+            PlaySound(soundPlayer != null ? soundPlayer.slidingSound : null);
+        }
+
+        private void StopSlide()
+        {
+            if (!_isSliding) return;
+            _isSliding = false;
+            _lastSlideEndTime = Time.time;
+
+            controller.height = _defaultHeight;
+            controller.center = _defaultCenter;
+
+            if (cameraTransform != null)
+            {
+                cameraTransform.localPosition = _defaultCamPos;
+            }
+        }
+
+        #endregion
+
+        #region Audio Feedback
+
+        private void HandleFootstepSounds()
+        {
+            if (soundPlayer == null) return;
+
+            if (_isGrounded && _horizontalVelocity.magnitude > 1.5f && !_isSliding)
+            {
+                bool isRunning = _horizontalVelocity.magnitude > 10f;
+                AudioClip clipToPlay = isRunning ? soundPlayer.runningSound : soundPlayer.walkingSound;
+
+                if (!soundPlayer.isPlaying || soundPlayer.clip != clipToPlay)
+                {
+                    soundPlayer.PlaySound(clipToPlay, loop: true, volume: isRunning ? 0.8f : 0.5f);
+                }
+            }
+            else if (soundPlayer.isPlaying && (soundPlayer.clip == soundPlayer.runningSound || soundPlayer.clip == soundPlayer.walkingSound))
+            {
+                soundPlayer.Stop();
+            }
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (soundPlayer != null && clip != null)
+            {
+                soundPlayer.PlaySound(clip, loop: false, volume: 0.7f);
+            }
+        }
+
+        #endregion
     }
 }

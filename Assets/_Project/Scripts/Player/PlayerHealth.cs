@@ -18,10 +18,9 @@ namespace SniperGame.Player
         );
 
         [Header("Components to Disable on Death")]
-        [SerializeField] private CharacterController characterController;
-        [Tooltip("Sleep hier het 'Player character' of 'Low poly soldier' GameObject in")]
+        [Tooltip("Sleep hier het 3D-lichaamsmodel van de soldaat in")]
         [SerializeField] private GameObject visualsRoot;
-        [SerializeField] private PlayerLook playerLook;
+        [SerializeField] private PlayerMovement playerMovement;
 
         public override void OnNetworkSpawn()
         {
@@ -29,7 +28,7 @@ namespace SniperGame.Player
 
             CurrentHealth.OnValueChanged += OnHealthChanged;
 
-            // Voor de lokale speler: model op Shadows Only zetten zodat je niet in je eigen helm kijkt
+            // Voor de lokale speler: model op Shadows Only zetten zodat je niet in je eigen lichaam kijkt
             if (IsOwner && visualsRoot != null)
             {
                 var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
@@ -95,21 +94,21 @@ namespace SniperGame.Player
                 CombatHUD.Instance.TriggerDamageFlash();
             }
 
-            if (playerLook != null)
+            if (playerMovement != null)
             {
-                playerLook.AddRecoil(Random.Range(2.5f, 4.5f), Random.Range(-2.5f, 2.5f));
+                playerMovement.AddRecoil(Random.Range(2.5f, 4.5f), Random.Range(-2.5f, 2.5f));
             }
         }
 
         private void HandleDeath()
         {
-            if (characterController != null) characterController.enabled = false;
+            if (playerMovement != null) playerMovement.enabled = false;
             if (visualsRoot != null) visualsRoot.SetActive(false);
         }
 
         private void HandleRevive()
         {
-            if (characterController != null) characterController.enabled = true;
+            if (playerMovement != null) playerMovement.enabled = true;
             if (visualsRoot != null) visualsRoot.SetActive(true);
         }
 

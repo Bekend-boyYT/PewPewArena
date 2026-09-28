@@ -49,7 +49,7 @@ namespace SniperGame.Weapons
         [Header("References")]
         [SerializeField] private Camera playerCamera;
         [SerializeField] private Transform firePoint;
-        [SerializeField] private PlayerLook playerLook;
+        [SerializeField] private PlayerMovement playerMovement;
 
         [Header("Effects, Bullets & Tracers")]
         [Tooltip("Your 3D bullet prefab that flies from the barrel")]
@@ -207,9 +207,9 @@ namespace SniperGame.Weapons
                 CombatHUD.Instance.SetScopeActive(true);
             }
 
-            if (playerLook != null)
+            if (playerMovement != null)
             {
-                playerLook.SetSensitivityMultiplier(scopedSensitivityMultiplier);
+                playerMovement.SetScopeState(_isFullyScoped, scopedFOV, scopedSensitivityMultiplier);
             }
         }
 
@@ -229,9 +229,9 @@ namespace SniperGame.Weapons
                 CombatHUD.Instance.SetScopeActive(false);
             }
 
-            if (playerLook != null)
+            if (playerMovement != null)
             {
-                playerLook.SetSensitivityMultiplier(1.0f);
+                playerMovement.SetScopeState(false, scopedFOV, 1.0f);
             }
         }
 
@@ -261,9 +261,9 @@ namespace SniperGame.Weapons
 
             SetWeaponVisualsVisible(true);
 
-            if (playerLook != null)
+            if (playerMovement != null)
             {
-                playerLook.SetSensitivityMultiplier(1.0f);
+                playerMovement.SetScopeState(false, scopedFOV, 1.0f);
             }
 
             if (CombatHUD.Instance != null)
@@ -325,11 +325,11 @@ namespace SniperGame.Weapons
                 direction = transform.forward;
             }
 
-            if (playerLook != null)
+            if (playerMovement != null)
             {
                 float pitch = _isFullyScoped ? scopedRecoilPitch : hipRecoilPitch;
                 float yaw = Random.Range(-1f, 1f) * (_isFullyScoped ? scopedRecoilYaw : hipRecoilYaw);
-                playerLook.AddRecoil(pitch, yaw);
+                playerMovement.AddRecoil(pitch, yaw);
             }
 
             PlayShootEffects();

@@ -1,58 +1,75 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
-
-/*
-    Script to handle player cursor and mouse state.
-
-    Please read How_To_Use.pdf in the asset folder.
-
-    Credit to snon200,
-    For any questions: snon200@gmail.com
-*/
+using SniperGame.UI;
 
 namespace ParkourFPS
 {
-    public class CursorState : MonoBehaviour
+    public class CursorState : NetworkBehaviour
     {
         [Header("Mouse")]
-        [Tooltip("if mouse is locked to the middle of the screen")]
         [SerializeField] private bool mouseLocked = true;
-        [Tooltip("the mouse texture, leave empty for default mouse")]
         [SerializeField] private Texture2D mouseTexture;
 
         [Header("Cursor")]
-        [Tooltip("if the cursor is visible")]
         [SerializeField] private bool cursorVisible = true;
-        [Tooltip("the cursor sprite, leave empty for no cursor")]
         [SerializeField] private Sprite cursorSprite;
-        [Tooltip("the cursor image object")]
         [SerializeField] private Image cursorImage;
-        [Tooltip("the cursor size")]
         [SerializeField] private Vector2 cursorSize = new Vector2(10, 10);
 
-        // Start is called before the first frame update
-        private void Start()
+        public override void OnNetworkSpawn()
         {
+            base.OnNetworkSpawn();
+
+            if (!IsOwner)
+            {
+                if (cursorImage != null) cursorImage.gameObject.SetActive(false);
+                enabled = false;
+                return;
+            }
+
             SetCursor(mouseLocked, cursorVisible);
         }
 
-        // set cursor state
-        public void SetCursor(bool mouseLocked, bool cursorVisible)
+        private void Update()
         {
-            Cursor.lockState = mouseLocked ? CursorLockMode.Locked : CursorLockMode.None; // make cursor locked / unlocked
+            if (!IsOwner) return;
 
-            if (mouseTexture != null) // if mouse texture is set
-                Cursor.SetCursor(mouseTexture, Vector2.zero, CursorMode.Auto); // set mouse texture
-
-            if (cursorSprite != null && cursorImage != null && cursorVisible) // if cursor sprite is set and cursor is visible
+            // Als het menu of pauzescherm open is, cursor vrijgeven zodat je knoppen kunt indrukken
+            if (PauseMenu.IsPaused)
             {
-                cursorImage.gameObject.SetActive(true); // enable cursor
-
-                cursorImage.sprite = cursorSprite; // set cursor sprite
-                cursorImage.rectTransform.sizeDelta = cursorSize; // set cursor size
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                if (cursorImage != null) cursorImage.gameObject.SetActive(false);
             }
             else
-                cursorImage.gameObject.SetActive(false); // disable cursor
+            {
+                Cursor.lockState = mouseLocked ? CursorLockMode.Locked : CursorLockMode.None;
+                Cursor.visible = !mouseLocked;
+                if (cursorImage != null && cursorVisible) cursorImage.gameObject.SetActive(true);
+            }
+        }
+
+        public void SetCursor(bool locked, bool visible)
+        {
+            mouseLocked = locked;
+            cursorVisible = visible;
+
+            Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+
+            if (mouseTexture != null)
+                Cursor.SetCursor(mouseTexture, Vector2.zero, CursorMode.Auto);
+
+            if (cursorSprite != null && cursorImage != null && visible)
+            {
+                cursorImage.gameObject.SetActive(true);
+                cursorImage.sprite = cursorSprite;
+                cursorImage.rectTransform.sizeDelta = cursorSize;
+            }
+            else if (cursorImage != null)
+            {
+                cursorImage.gameObject.SetActive(false);
+            }
         }
     }
 }
