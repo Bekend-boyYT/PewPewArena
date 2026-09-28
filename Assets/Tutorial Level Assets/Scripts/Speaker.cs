@@ -2,15 +2,26 @@ using UnityEngine;
 
 public class Speaker : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private Transform player;
+
+    void Awake()
     {
-        
+        GameObject playerObject = GameObject.Find("Player Controller");
+        if (playerObject != null)
+        {
+            player = playerObject.transform;
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
-        
+        if (player == null)
+        {
+            return;
+        }
+
+        Vector3 position = transform.position;
+        position.z = player.position.z;
+        transform.position = position;
     }
 }

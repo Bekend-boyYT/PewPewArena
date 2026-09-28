@@ -1313,6 +1313,7 @@ GameObject:
   - component: {fileID: 337636551}
   - component: {fileID: 337636554}
   - component: {fileID: 337636560}
+  - component: {fileID: 337636561}
   m_Layer: 0
   m_Name: Speaker
   m_TagString: Untagged
@@ -1534,6 +1535,18 @@ MonoBehaviour:
   subtitleCanvasGroup: {fileID: 1799207903}
   subtitleText: {fileID: 124832340}
   subtitleFadeDuration: 0.3
+--- !u!114 &337636561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 337636549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6439ef04bb09e7f53b932a8b6fd4d7db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Speaker
 --- !u!1 &379274552
 GameObject:
   m_ObjectHideFlags: 0
