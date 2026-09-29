@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 1138764926869581731}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.022, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -522,14 +522,14 @@ MonoBehaviour:
   weaponAudioSource: {fileID: 3570139252239378147}
   gunshotClip: {fileID: 8300000, guid: 5ba52a3d687d41446b3747bc59e7a896, type: 3}
   reloadClip: {fileID: 0}
-  hipFOV: 60
+  hipFOV: 80
   scopedFOV: 18
-  zoomSpeed: 16
+  zoomSpeed: 18
   scopedSensitivityMultiplier: 0.35
   weaponAnimator: {fileID: 5832424543925260710}
   weaponVisuals: {fileID: 7436968914139455019}
-  scopeInDuration: 0.25
-  scopeOverlayLeadTime: 0.08
+  scopeInDuration: 0.2
+  scopeOverlayLeadTime: 0.05
   isScopedParam: IsScoped
   hipRecoilPitch: 0.63
   hipRecoilYaw: 0.46
@@ -1041,7 +1041,7 @@ Transform:
   m_GameObject: {fileID: 8012650194189158886}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.05, z: -0.038}
+  m_LocalPosition: {x: 0, y: 0.046, z: -0.038}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

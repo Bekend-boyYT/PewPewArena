@@ -25,9 +25,9 @@ namespace SniperGame.Weapons
         [SerializeField] private AudioClip reloadClip;
 
         [Header("Scope / ADS Settings")]
-        [SerializeField] private float hipFOV = 60f;
+        [SerializeField] private float hipFOV = 80f;
         [SerializeField] private float scopedFOV = 18f;
-        [SerializeField] private float zoomSpeed = 16f;
+        [SerializeField] private float zoomSpeed = 22f;
         [SerializeField] private float scopedSensitivityMultiplier = 0.35f;
 
         [Header("Weapon Model & Scope Animation")]
@@ -35,9 +35,9 @@ namespace SniperGame.Weapons
         [Tooltip("The GameObject holding the sniper mesh/renderers (e.g. WeaponHolder or the Sniper Model)")]
         [SerializeField] private GameObject weaponVisuals;
         [Tooltip("Time in seconds for the ScopedIn animation to complete")]
-        [SerializeField] private float scopeInDuration = 0.25f;
+        [SerializeField] private float scopeInDuration = 0.20f;
         [Tooltip("How many seconds before the animation completely finishes the overlay should appear")]
-        [SerializeField] private float scopeOverlayLeadTime = 0.08f;
+        [SerializeField] private float scopeOverlayLeadTime = 0.05f;
         [SerializeField] private string isScopedParam = "IsScoped";
 
         [Header("Recoil Kick Settings")]
@@ -176,74 +176,56 @@ namespace SniperGame.Weapons
             }
             else if (!rmbPressed && _wantsToScope)
             {
-                _wantsToScope = false;
-
-                if (_scopeCoroutine != null) StopCoroutine(_scopeCoroutine);
                 ScopeOut();
             }
         }
 
         private IEnumerator ScopeInRoutine()
         {
+            // 1. Immediately start raising the 3D sniper weapon
             if (weaponAnimator != null)
             {
                 weaponAnimator.SetBool(isScopedParam, true);
             }
 
+            // 2. Ensure weapon visuals are visible while raising
             SetWeaponVisualsVisible(true);
+
+            // 3. Immediately start camera FOV zoom and sensitivity scaling
+            if (playerMovement != null)
+            {
+                playerMovement.SetScopeState(true, scopedFOV, scopedSensitivityMultiplier);
+            }
+
+            // 4. Ensure overlay is hidden while weapon is raising
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(false);
             }
 
-            float waitTime = Mathf.Max(0.01f, scopeInDuration - scopeOverlayLeadTime);
-            yield return new WaitForSeconds(waitTime);
+            // 5. Wait until exactly 0.05s before the scoped-in animation finishes
+            float overlayDelay = Mathf.Max(0.01f, scopeInDuration - scopeOverlayLeadTime);
+            yield return new WaitForSeconds(overlayDelay);
 
-            _isFullyScoped = true;
-            SetWeaponVisualsVisible(false);
+            if (!_wantsToScope) yield break;
 
+            // 6. Overlay appears 0.05s before the sniper scoped-in animation is done
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(true);
             }
 
-            if (playerMovement != null)
-            {
-                playerMovement.SetScopeState(_isFullyScoped, scopedFOV, scopedSensitivityMultiplier);
-            }
+            // 7. Wait the remaining 0.05s for the 3D animation to complete
+            yield return new WaitForSeconds(scopeOverlayLeadTime);
+
+            if (!_wantsToScope) yield break;
+
+            // 8. Fully scoped: cleanly hide 3D model so it doesn't clip through the overlay reticle
+            _isFullyScoped = true;
+            SetWeaponVisualsVisible(false);
         }
 
         private void ScopeOut()
-        {
-            _isFullyScoped = false;
-
-            if (weaponAnimator != null)
-            {
-                weaponAnimator.SetBool(isScopedParam, false);
-            }
-
-            SetWeaponVisualsVisible(true);
-
-            if (CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.SetScopeActive(false);
-            }
-
-            if (playerMovement != null)
-            {
-                playerMovement.SetScopeState(false, scopedFOV, 1.0f);
-            }
-        }
-
-        private void UpdateCameraZoom()
-        {
-            if (playerCamera == null) return;
-
-            float targetFOV = _isFullyScoped ? scopedFOV : hipFOV;
-            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
-        }
-
-        private void ResetAimingState()
         {
             _wantsToScope = false;
             _isFullyScoped = false;
@@ -254,22 +236,39 @@ namespace SniperGame.Weapons
                 _scopeCoroutine = null;
             }
 
+            // 1. Instantly restore 3D weapon mesh so it lowers cleanly into hip position
+            SetWeaponVisualsVisible(true);
+
+            // 2. Immediately lower the weapon
             if (weaponAnimator != null)
             {
                 weaponAnimator.SetBool(isScopedParam, false);
             }
 
-            SetWeaponVisualsVisible(true);
-
+            // 3. Immediately reverse camera FOV zoom and restore sensitivity
             if (playerMovement != null)
             {
                 playerMovement.SetScopeState(false, scopedFOV, 1.0f);
             }
 
+            // 4. Immediately fade out the 2D scope overlay
             if (CombatHUD.Instance != null)
             {
                 CombatHUD.Instance.SetScopeActive(false);
             }
+        }
+
+        private void UpdateCameraZoom()
+        {
+            if (playerCamera == null || playerMovement != null) return;
+
+            float targetFOV = _isFullyScoped ? scopedFOV : hipFOV;
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
+        }
+
+        private void ResetAimingState()
+        {
+            ScopeOut();
         }
 
         private void SetWeaponVisualsVisible(bool visible)
@@ -327,8 +326,8 @@ namespace SniperGame.Weapons
 
             if (playerMovement != null)
             {
-                float pitch = _isFullyScoped ? scopedRecoilPitch : hipRecoilPitch;
-                float yaw = Random.Range(-1f, 1f) * (_isFullyScoped ? scopedRecoilYaw : hipRecoilYaw);
+                float pitch = (_wantsToScope || _isFullyScoped) ? scopedRecoilPitch : hipRecoilPitch;
+                float yaw = Random.Range(-1f, 1f) * ((_wantsToScope || _isFullyScoped) ? scopedRecoilYaw : hipRecoilYaw);
                 playerMovement.AddRecoil(pitch, yaw);
             }
 
@@ -514,6 +513,11 @@ namespace SniperGame.Weapons
             {
                 weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
                 weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+            }
+
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.TriggerScopeRecoil(1.0f);
             }
 
             PlayShootEffectsClientRpc();

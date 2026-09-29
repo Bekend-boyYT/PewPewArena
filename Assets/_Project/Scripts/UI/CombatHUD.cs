@@ -18,6 +18,8 @@ namespace SniperGame.UI
         [SerializeField] private GameObject hudContainer;
         [SerializeField] private GameObject hipCrosshair;
         [SerializeField] private GameObject scopeOverlay;
+        [Tooltip("Attach the SniperScopeOverlay component from ScopeOverlay here")]
+        [SerializeField] private SniperScopeOverlay sniperScopeOverlay;
         [SerializeField] private GameObject hitmarker;
         [SerializeField] private TextMeshProUGUI hitmarkerText;
 
@@ -107,7 +109,6 @@ namespace SniperGame.UI
             SetupDefaultGradients();
 
             if (hitmarker != null) hitmarker.SetActive(false);
-            if (scopeOverlay != null) scopeOverlay.SetActive(false);
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
             if (cooldownBarRoot != null) cooldownBarRoot.SetActive(false);
             if (announcementText != null) announcementText.gameObject.SetActive(false);
@@ -118,6 +119,25 @@ namespace SniperGame.UI
 
             if (normalHealthBorder != null) normalHealthBorder.SetActive(true);
             if (lowHealthBorder != null) lowHealthBorder.SetActive(false);
+
+            // Auto-resolve sniperScopeOverlay if left unassigned
+            if (sniperScopeOverlay == null && scopeOverlay != null)
+            {
+                sniperScopeOverlay = scopeOverlay.GetComponent<SniperScopeOverlay>();
+            }
+
+            if (sniperScopeOverlay != null)
+            {
+                sniperScopeOverlay.SetScoped(false);
+            }
+            else if (scopeOverlay != null)
+            {
+                Animator anim = scopeOverlay.GetComponent<Animator>();
+                if (anim != null)
+                {
+                    anim.SetBool("IsScoped", false);
+                }
+            }
 
             if (restartButton != null)
             {
@@ -149,7 +169,7 @@ namespace SniperGame.UI
 
         private void Update()
         {
-            // Keeps the cursor free and visible whenever match end or rematch prompt is open
+            // Keeps cursor free and visible whenever match end or rematch screen is open
             if (IsMatchEndActive)
             {
                 if (Cursor.lockState != CursorLockMode.None)
@@ -233,6 +253,32 @@ namespace SniperGame.UI
             }
         }
 
+public void SetScopeActive(bool isScoped)
+        {
+            if (sniperScopeOverlay != null)
+            {
+                sniperScopeOverlay.SetScoped(isScoped);
+            }
+            else if (scopeOverlay != null)
+            {
+                Animator anim = scopeOverlay.GetComponent<Animator>();
+                if (anim != null)
+                {
+                    anim.SetBool("IsScoped", isScoped);
+                }
+            }
+
+            if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
+        }
+
+        public void TriggerScopeRecoil(float kick = 1f)
+        {
+            if (sniperScopeOverlay != null)
+            {
+                sniperScopeOverlay.TriggerFireRecoil(kick);
+            }
+        }
+
         public void SetWallRunPrompt(bool visible, float progress)
         {
             if (wallRunPrompt != null)
@@ -241,26 +287,9 @@ namespace SniperGame.UI
             }
         }
 
-        public void SetScopeActive(bool isScoped)
-        {
-            if (scopeOverlay != null) scopeOverlay.SetActive(isScoped);
-            if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
-
-            if (isScoped && cooldownBarRoot != null)
-            {
-                cooldownBarRoot.SetActive(false);
-            }
-        }
-
         public void UpdateCooldownBar(float progress, bool isReloading)
         {
             if (cooldownBarRoot == null || cooldownFillImage == null) return;
-
-            if (scopeOverlay != null && scopeOverlay.activeSelf)
-            {
-                if (cooldownBarRoot.activeSelf) cooldownBarRoot.SetActive(false);
-                return;
-            }
 
             bool isCoolingDown = progress < 1.0f;
 

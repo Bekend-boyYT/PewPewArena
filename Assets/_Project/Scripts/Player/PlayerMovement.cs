@@ -347,7 +347,8 @@ namespace SniperGame.Player
                     targetFOV = baseFOV + runFovIncrease;
                 }
 
-                _cameraComponent.fieldOfView = Mathf.Lerp(_cameraComponent.fieldOfView, targetFOV, Time.deltaTime * fovChangeSpeed);
+                float fovSpeed = (_isScoped || _cameraComponent.fieldOfView < (baseFOV - 1f)) ? 22f : fovChangeSpeed;
+                _cameraComponent.fieldOfView = Mathf.Lerp(_cameraComponent.fieldOfView, targetFOV, Time.deltaTime * fovSpeed);
             }
         }
 
