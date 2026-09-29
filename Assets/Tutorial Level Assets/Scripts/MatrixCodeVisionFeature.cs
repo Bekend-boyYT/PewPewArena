@@ -24,7 +24,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
 
     public static bool SetVision(bool active, float reveal, float speed)
     {
-        if (instance == null) return false;
+        if (instance == null || instance.visionMaterial == null || !instance.visionMaterial.shader.isSupported) return false;
         instance.visionActive = active;
         instance.revealProgress = Mathf.Clamp01(reveal);
         instance.rainSpeed = Mathf.Max(0.01f, speed);
@@ -71,6 +71,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
         private static readonly int NodeDensityId = Shader.PropertyToID("_MatrixNodeDensity");
         private static readonly int EntityBoostId = Shader.PropertyToID("_MatrixEntityBoost");
         private static readonly int FrameId = Shader.PropertyToID("_MatrixFrame");
+        private static readonly int HasNormalsId = Shader.PropertyToID("_MatrixHasNormals");
         private static readonly List<ShaderTagId> ShaderTags = new List<ShaderTagId>
         {
             new ShaderTagId("UniversalForward"),
@@ -129,7 +130,9 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
             UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
             UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
             UniversalLightData lightData = frameData.Get<UniversalLightData>();
-            if (!resources.activeColorTexture.IsValid() || !resources.activeDepthTexture.IsValid() || !resources.cameraNormalsTexture.IsValid()) return;
+            if (!resources.activeColorTexture.IsValid() || !resources.activeDepthTexture.IsValid()) return;
+            TextureHandle depthTexture = resources.cameraDepthTexture.IsValid() ? resources.cameraDepthTexture : resources.activeDepthTexture;
+            bool hasNormals = resources.cameraNormalsTexture.IsValid();
 
             TextureDesc colorDescriptor = renderGraph.GetTextureDesc(resources.activeColorTexture);
             colorDescriptor.name = "Matrix Code Vision Source";
@@ -170,7 +173,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
             {
                 passData.sourceColor = sourceColor;
                 passData.entityMask = entityMask;
-                passData.depth = resources.cameraDepthTexture;
+                passData.depth = depthTexture;
                 passData.normals = resources.cameraNormalsTexture;
                 passData.destination = resources.activeColorTexture;
                 passData.material = visionMaterial;
@@ -185,7 +188,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
                 builder.UseTexture(sourceColor);
                 builder.UseTexture(entityMask);
                 builder.UseTexture(passData.depth);
-                builder.UseTexture(passData.normals);
+                if (passData.normals.IsValid()) builder.UseTexture(passData.normals);
                 builder.SetRenderAttachment(resources.activeColorTexture, 0, AccessFlags.Write);
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderFunc(static (VisionPassData data, RasterGraphContext context) =>
@@ -201,6 +204,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
                     context.cmd.SetGlobalFloat(NodeDensityId, data.nodeDensity);
                     context.cmd.SetGlobalFloat(EntityBoostId, data.entityBoost);
                     context.cmd.SetGlobalFloat(FrameId, data.frame);
+                    context.cmd.SetGlobalFloat(HasNormalsId, data.normals.IsValid() ? 1f : 0f);
                     context.cmd.DrawProcedural(Matrix4x4.identity, data.material, 0, MeshTopology.Triangles, 3, 1);
                 });
             }

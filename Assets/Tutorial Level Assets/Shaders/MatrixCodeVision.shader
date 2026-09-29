@@ -33,6 +33,7 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
             float _MatrixNodeDensity;
             float _MatrixEntityBoost;
             float _MatrixFrame;
+            float _MatrixHasNormals;
 
             float Hash21(float2 p)
             {
@@ -54,13 +55,13 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 float c = step(0.46, Hash21(float2(seed, 4.1)));
                 float d = step(0.58, Hash21(float2(seed, 5.9)));
                 float stroke = 0.0;
-                stroke = max(stroke, a * Segment(p, float2(0.5, 0.16), float2(0.24, 0.035)));
-                stroke = max(stroke, b * Segment(p, float2(0.5, 0.5), float2(0.21, 0.03)));
-                stroke = max(stroke, c * Segment(p, float2(0.5, 0.84), float2(0.24, 0.035)));
-                stroke = max(stroke, Segment(p, float2(0.23, 0.32), float2(0.035, 0.14)));
-                stroke = max(stroke, d * Segment(p, float2(0.77, 0.32), float2(0.035, 0.14)));
-                stroke = max(stroke, Segment(p, float2(0.23, 0.68), float2(0.035, 0.14)));
-                stroke = max(stroke, Segment(p, float2(0.77, 0.68), float2(0.035, 0.14)));
+                stroke = max(stroke, a * Segment(p, float2(0.5, 0.16), float2(0.28, 0.075)));
+                stroke = max(stroke, b * Segment(p, float2(0.5, 0.5), float2(0.25, 0.065)));
+                stroke = max(stroke, c * Segment(p, float2(0.5, 0.84), float2(0.28, 0.075)));
+                stroke = max(stroke, Segment(p, float2(0.23, 0.32), float2(0.075, 0.16)));
+                stroke = max(stroke, d * Segment(p, float2(0.77, 0.32), float2(0.075, 0.16)));
+                stroke = max(stroke, Segment(p, float2(0.23, 0.68), float2(0.075, 0.16)));
+                stroke = max(stroke, Segment(p, float2(0.77, 0.68), float2(0.075, 0.16)));
                 return stroke;
             }
 
@@ -75,8 +76,9 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 float glyph = Glyph(local, Hash21(cell + axisSeed));
                 float head = frac(-cell.y * 0.071 + _MatrixFrame * _MatrixRainSpeed * 0.09 + columnSeed);
                 float tail = exp(-head * lerp(2.8, 5.0, columnSeed));
-                float stream = step(0.74, Hash21(float2(cell.x + axisSeed, axisSeed + 9.1)));
-                return glyph * stream * tail * (0.38 + 0.62 * columnSeed);
+                float stream = step(0.52, Hash21(float2(cell.x + axisSeed, axisSeed + 9.1)));
+                float streak = step(0.88, Hash21(float2(cell.x + axisSeed, axisSeed + 4.6))) * smoothstep(0.0, 0.8, tail) * 0.35;
+                return max(glyph * tail, streak) * stream * (0.55 + 0.45 * columnSeed);
             }
 
             float WorldRain(float3 worldPosition, float3 normalWS)
@@ -95,10 +97,14 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 float depthX = LinearEyeDepth(SampleSceneDepth(uv + float2(texel.x, 0)), _ZBufferParams);
                 float depthY = LinearEyeDepth(SampleSceneDepth(uv + float2(0, texel.y)), _ZBufferParams);
                 float eyeDepth = LinearEyeDepth(centerDepth, _ZBufferParams);
-                float3 normalX = SampleSceneNormals(uv + float2(texel.x, 0));
-                float3 normalY = SampleSceneNormals(uv + float2(0, texel.y));
                 float depthEdge = max(abs(depthX - eyeDepth), abs(depthY - eyeDepth)) / max(eyeDepth, 0.1);
-                float normalEdge = max(length(normalX - centerNormal), length(normalY - centerNormal));
+                float normalEdge = 0.0;
+                if (_MatrixHasNormals > 0.5)
+                {
+                    float3 normalX = SampleSceneNormals(uv + float2(texel.x, 0));
+                    float3 normalY = SampleSceneNormals(uv + float2(0, texel.y));
+                    normalEdge = max(length(normalX - centerNormal), length(normalY - centerNormal));
+                }
                 return saturate(depthEdge * 18.0 + normalEdge * 1.5);
             }
 
@@ -121,14 +127,17 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 if (sky) return float4(0, 0, 0, 1);
 
                 float3 worldPosition = ComputeWorldSpacePosition(uv, rawDepth, _MatrixInvViewProj);
-                float3 normalWS = normalize(SampleSceneNormals(uv));
+                float3 normalWS = _MatrixHasNormals > 0.5
+                    ? normalize(SampleSceneNormals(uv))
+                    : normalize(cross(ddx(worldPosition), ddy(worldPosition)));
                 float rain = WorldRain(worldPosition, normalWS);
                 float edge = GeometryEdge(uv, rawDepth, normalWS);
                 float3 nodeCell = floor(worldPosition * _MatrixNodeDensity);
                 float nodeHash = Hash21(nodeCell);
                 float node = step(0.992, nodeHash) * exp(-length(frac(worldPosition * _MatrixNodeDensity) - 0.5) * 9.0);
                 float entityCode = saturate(entity) * _MatrixEntityBoost;
-                float emission = rain * 1.2 + edge * 1.35 + node * 4.5 + entityCode * 5.5;
+                float worldCode = step(0.82, Hash21(floor(worldPosition * 11.0))) * 0.22;
+                float emission = rain * 2.2 + edge * 1.5 + node * 5.0 + worldCode + entityCode * 6.5;
                 float3 green = float3(0.42, 1.0, 0.54) * emission;
                 float3 whiteGreen = float3(1.8, 2.5, 1.9) * saturate(node * 0.8 + entityCode);
                 return float4(green + whiteGreen, 1.0);
