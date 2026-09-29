@@ -99,7 +99,7 @@ public class SpeakerDialogue : MonoBehaviour
     {
         AudioClip clip = Resources.Load<AudioClip>(clipResourcePath);
         List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(text, out float lineDuration);
-        float playDuration = clip != null ? clip.length : lineDuration;
+        float playDuration = Mathf.Max(clip != null ? clip.length : 0f, lineDuration);
 
         audioSource.clip = clip;
         audioSource.Play();

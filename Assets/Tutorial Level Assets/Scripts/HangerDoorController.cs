@@ -14,7 +14,7 @@ public class HangerDoorController : MonoBehaviour
     [Header("Confirmation Line")]
     [SerializeField, TextArea(2, 4)]
     private string confirmationLine = "Good job, you can walk, now lets see if you can run AND jump at the same time. Use SPACE to jump.";
-    [SerializeField] private string confirmationClipResourcePath = "Voice/run_jump_confirmation";
+    [SerializeField] private string confirmationClipResourcePath = "Voice/run_jump_confirmation_v2";
 
     [Header("Door Audio")]
     [SerializeField] private string doorClipResourcePath = "Door/hangar_door_move";
