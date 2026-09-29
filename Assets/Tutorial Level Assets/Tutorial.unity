@@ -3723,7 +3723,7 @@ MonoBehaviour:
   moveDuration: 3
   postLineDelay: 1
   confirmationLine: Good job, you can walk, now lets see if you can run AND jump
-    at the same time.
+    at the same time. Use SPACE to jump.
   confirmationClipResourcePath: Voice/run_jump_confirmation
   doorClipResourcePath: Door/hangar_door_move
 --- !u!1001 &790691081
