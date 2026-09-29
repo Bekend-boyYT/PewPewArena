@@ -33,6 +33,8 @@ internal static class StartupAudioGenerator
         createdAny |= CreateIfMissing(directory, "glitch.wav", 0.16f, CreateGlitch);
         createdAny |= CreateIfMissing(directory, "erase_sweep.wav", 0.9f, CreateEraseSweep);
         createdAny |= CreateIfMissing(directory, "reveal_chime.wav", 1.15f, CreateRevealChime);
+        createdAny |= CreateIfMissing(directory, "diagnostic_lock.wav", 0.32f, CreateDiagnosticLock);
+        createdAny |= CreateIfMissing(directory, "scar_tear.wav", 0.75f, CreateScarTear);
 
         if (createdAny) AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
     }
@@ -107,6 +109,25 @@ internal static class StartupAudioGenerator
         float attack = Mathf.Clamp01(index / 400f);
         float envelope = attack * Mathf.Exp(-2.8f * time);
         return 0.13f * envelope * (Mathf.Sin(2f * Mathf.PI * 660f * time) + 0.55f * Mathf.Sin(2f * Mathf.PI * 990f * time) + 0.25f * Mathf.Sin(2f * Mathf.PI * 1320f * time));
+    }
+
+    private static float CreateDiagnosticLock(int index, int count)
+    {
+        float time = index / (float)SampleRate;
+        float envelope = Mathf.Exp(-12f * time) * Mathf.Clamp01(index / 80f);
+        float mechanical = Mathf.Sin(2f * Mathf.PI * 96f * time) * 0.35f;
+        float confirmation = Mathf.Sin(2f * Mathf.PI * 740f * time) + 0.45f * Mathf.Sin(2f * Mathf.PI * 1110f * time);
+        return 0.18f * envelope * (mechanical + confirmation);
+    }
+
+    private static float CreateScarTear(int index, int count)
+    {
+        float time = index / (float)SampleRate;
+        float progress = index / (float)count;
+        float envelope = Mathf.Sin(Mathf.PI * progress);
+        float noise = Mathf.PerlinNoise(index * 0.19f, 0.61f) * 2f - 1f;
+        float scrape = Mathf.Sin(2f * Mathf.PI * (160f + progress * 1300f) * time);
+        return 0.2f * envelope * (noise * 0.7f + scrape * 0.3f);
     }
 
     private static void WritePcmWave(string path, float[] samples)
