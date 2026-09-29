@@ -8932,11 +8932,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1f9e052186823fdeb9320c6ba03d6ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialBootSequence
-  terminalDuration: 14
-  codeLineInterval: 0.14
-  distortionDuration: 3
-  eraseDuration: 1.8
-  blackHoldDuration: 2
+  terminalDuration: 24
+  codeLineInterval: 0.6
+  distortionDuration: 4.5
+  eraseDuration: 2.2
+  blackHoldDuration: 4
   overlayFadeDuration: 5
   focusRecoveryDuration: 5
   initialBlurRadius: 1.5
@@ -8947,6 +8947,8 @@ MonoBehaviour:
   bootCanvasGroup: {fileID: 562459329}
   background: {fileID: 547692198}
   terminalText: {fileID: 1293376093}
+  scarOpacity: 0.8
+  worldFractureStrength: 0.65
 --- !u!1001 &1923499490
 PrefabInstance:
   m_ObjectHideFlags: 0
