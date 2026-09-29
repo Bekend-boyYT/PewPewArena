@@ -35,8 +35,16 @@ public class TutorialBootSequence : MonoBehaviour
     [SerializeField] private CanvasGroup bootCanvasGroup;
     [SerializeField] private Image background;
     [SerializeField] private Text terminalText;
-    [SerializeField, Range(0f, 1f)] private float scarOpacity = 0.8f;
+    [SerializeField, Min(0f)] private float codeVisionHoldDuration = 3f;
+    [SerializeField, Range(0f, 1f)] private float codeVisionOpacity = 0.85f;
+    [SerializeField, Min(0.1f)] private float codeRainSpeed = 90f;
+    [SerializeField, Range(8, 64)] private int revealColumns = 24;
+    [SerializeField, Range(5, 36)] private int revealRows = 14;
+    [SerializeField, Min(0.1f)] private float pixelRevealDuration = 4.5f;
     [SerializeField, Range(0f, 1f)] private float worldFractureStrength = 0.65f;
+    [SerializeField, Min(0f)] private float matrixBloomThreshold = 0.35f;
+    [SerializeField, Min(0f)] private float matrixBloomIntensity = 2.6f;
+    [SerializeField, Range(0f, 1f)] private float matrixBloomScatter = 0.88f;
 
     private static bool isRunning;
     public static bool IsRunning => isRunning;
@@ -61,7 +69,17 @@ public class TutorialBootSequence : MonoBehaviour
     private bool previousRadiusOverride;
     private float previousGaussianRadius;
     private float previousTimeScale;
+    private Bloom bloom;
+    private bool addedBloom;
+    private bool previousBloomActive;
+    private bool previousBloomThresholdOverride;
+    private float previousBloomThreshold;
+    private bool previousBloomIntensityOverride;
+    private float previousBloomIntensity;
+    private bool previousBloomScatterOverride;
+    private float previousBloomScatter;
     private bool sequenceStarted;
+    private bool worldVisionUsed;
     private AudioSource ambienceSource;
     private AudioSource cueSource;
     private AudioSource musicSource;
@@ -73,9 +91,12 @@ public class TutorialBootSequence : MonoBehaviour
     private AudioClip eraseSweepClip;
     private AudioClip revealChimeClip;
     private AudioClip diagnosticLockClip;
-    private AudioClip scarTearClip;
     private AudioClip tutorialMusicClip;
-    private readonly List<RealityScarPiece> realityScars = new List<RealityScarPiece>();
+    private readonly List<CodeColumn> codeColumns = new List<CodeColumn>();
+    private readonly List<RevealCell> revealCells = new List<RevealCell>();
+    private GameObject codeVisionRoot;
+    private CanvasGroup codeVisionGroup;
+    private Image codeVeil;
     private Camera fractureCamera;
     private Vector3 previousCameraLocalPosition;
     private Quaternion previousCameraLocalRotation;
@@ -97,18 +118,26 @@ public class TutorialBootSequence : MonoBehaviour
         "> REALITY CHECK / DO NOT TRUST ...... FLAGGED"
     };
 
-    private sealed class RealityScarPiece
+    private sealed class CodeColumn
     {
-        public Image glow;
-        public Image core;
-        public float decayStart;
+        public RectTransform rect;
+        public Text text;
+        public float speed;
+        public float resetY;
+        public float baseAlpha;
+    }
+
+    private sealed class RevealCell
+    {
+        public Image image;
+        public float order;
         public float phase;
     }
 
     private void Awake()
     {
         if (bootCanvas == null) BuildBootUI();
-        EnsureScarOverlay();
+        EnsureCodeVisionOverlay();
         if (!Application.isPlaying) return;
 
         BeginSequence();
@@ -147,7 +176,6 @@ public class TutorialBootSequence : MonoBehaviour
         eraseSweepClip = Resources.Load<AudioClip>("Startup/erase_sweep");
         revealChimeClip = Resources.Load<AudioClip>("Startup/reveal_chime");
         diagnosticLockClip = Resources.Load<AudioClip>("Startup/diagnostic_lock");
-        scarTearClip = Resources.Load<AudioClip>("Startup/scar_tear");
         tutorialMusicClip = Resources.Load<AudioClip>("Music/TutorialLevelMusic");
 
         ambienceSource = CreateAudioSource("Boot Ambience");
@@ -298,7 +326,11 @@ public class TutorialBootSequence : MonoBehaviour
         PlayCue(eraseSweepClip, 0.65f);
         yield return EraseTerminalText();
         terminalText.text = string.Empty;
-        yield return DecayRealityScars();
+        if (blackHoldDuration > 0f) yield return new WaitForSecondsRealtime(blackHoldDuration);
+        yield return ShowCodeVision();
+        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
+        RestoreMatrixBloom();
+        if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
 
         PlayCue(revealChimeClip, 0.7f);
         HandControlBackToPlayer();
@@ -308,7 +340,7 @@ public class TutorialBootSequence : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float overlayProgress = overlayFadeDuration <= 0f ? 1f : Mathf.Clamp01(elapsed / overlayFadeDuration);
-            bootCanvasGroup.alpha = 1f - overlayProgress;
+            bootCanvasGroup.alpha = worldVisionUsed ? 0f : 1f - overlayProgress;
 
             if (depthOfField != null)
             {
@@ -370,39 +402,137 @@ public class TutorialBootSequence : MonoBehaviour
         }
     }
 
-    private IEnumerator DecayRealityScars()
+    private IEnumerator ShowCodeVision()
     {
-        EnsureScarOverlay();
-        SetScarsVisible(true);
-        PlayCue(scarTearClip, 0.7f);
-        float elapsed = 0f;
-        float scarDuration = Mathf.Max(0.1f, blackHoldDuration);
-
-        while (elapsed < scarDuration)
+        if (MatrixCodeVisionFeature.SetVision(true, 0f, codeRainSpeed / 90f))
         {
-            elapsed += Time.unscaledDeltaTime;
-            float progress = Mathf.Clamp01(elapsed / scarDuration);
-            float pulse = 0.72f + 0.28f * Mathf.Sin(elapsed * 11f);
-            float alpha = scarOpacity * (1f - progress) * pulse;
-            for (int index = 0; index < realityScars.Count; index++)
+            worldVisionUsed = true;
+            PrepareMatrixBloom();
+            bootCanvasGroup.alpha = 0f;
+            codeVisionRoot.SetActive(false);
+            float elapsed = 0f;
+            while (elapsed < codeVisionHoldDuration)
             {
-                RealityScarPiece scar = realityScars[index];
-                if (scar == null || scar.core == null || scar.glow == null) continue;
-
-                float destruction = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(scar.decayStart, 1f, progress));
-                float flicker = 0.72f + 0.28f * Mathf.Sin(elapsed * 18f + scar.phase);
-                float pieceAlpha = alpha * (1f - destruction) * flicker;
-                scar.core.color = new Color(0.7f, 0.98f, 1f, pieceAlpha);
-                scar.glow.color = new Color(0.05f, 0.48f, 1f, pieceAlpha * 0.24f);
-                scar.core.rectTransform.localScale = new Vector3(1f - destruction * 0.9f, 1f, 1f);
-                scar.glow.rectTransform.localScale = new Vector3(1f - destruction * 0.82f, 1f, 1f);
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
             }
 
-            ApplyCameraFracture(distortionDuration + eraseDuration + elapsed, distortionDuration + eraseDuration + scarDuration);
+            yield return RevealMatrixWorld();
+            yield break;
+        }
+
+        Debug.LogError("MatrixCodeVisionFeature is missing from the active URP renderer. Using the UI fallback.", this);
+        EnsureCodeVisionOverlay();
+        codeVisionRoot.SetActive(true);
+        codeVisionGroup.alpha = 1f;
+        codeVeil.color = new Color(0f, 0.08f, 0.025f, codeVisionOpacity);
+        background.color = new Color(0f, 0f, 0f, 0.2f);
+        SetRevealCellsVisible(true);
+
+        float fallbackElapsed = 0f;
+        float visionDuration = Mathf.Max(0.1f, codeVisionHoldDuration);
+
+        while (fallbackElapsed < visionDuration)
+        {
+            fallbackElapsed += Time.unscaledDeltaTime;
+            UpdateCodeVision(fallbackElapsed);
             yield return null;
         }
 
-        SetScarsVisible(false);
+        yield return RevealNormalView();
+    }
+
+    private IEnumerator RevealMatrixWorld()
+    {
+        float elapsed = 0f;
+        while (elapsed < pixelRevealDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            MatrixCodeVisionFeature.SetVision(true, Mathf.Clamp01(elapsed / pixelRevealDuration), codeRainSpeed / 90f);
+            yield return null;
+        }
+
+        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
+        RestoreFractureCamera();
+    }
+
+    private void PrepareMatrixBloom()
+    {
+        if (runtimeProfile == null)
+        {
+            tutorialVolume = FindFirstObjectByType<Volume>();
+            runtimeProfile = tutorialVolume != null ? tutorialVolume.profile : null;
+        }
+        if (runtimeProfile == null) return;
+
+        if (!runtimeProfile.TryGet(out bloom))
+        {
+            bloom = runtimeProfile.Add<Bloom>(true);
+            addedBloom = true;
+        }
+
+        previousBloomActive = bloom.active;
+        previousBloomThreshold = bloom.threshold.value;
+        previousBloomThresholdOverride = bloom.threshold.overrideState;
+        previousBloomIntensity = bloom.intensity.value;
+        previousBloomIntensityOverride = bloom.intensity.overrideState;
+        previousBloomScatter = bloom.scatter.value;
+        previousBloomScatterOverride = bloom.scatter.overrideState;
+
+        bloom.active = true;
+        bloom.threshold.overrideState = true;
+        bloom.threshold.value = matrixBloomThreshold;
+        bloom.intensity.overrideState = true;
+        bloom.intensity.value = matrixBloomIntensity;
+        bloom.scatter.overrideState = true;
+        bloom.scatter.value = matrixBloomScatter;
+    }
+
+    private void RestoreMatrixBloom()
+    {
+        if (bloom == null) return;
+        if (addedBloom)
+        {
+            if (runtimeProfile != null) runtimeProfile.Remove<Bloom>();
+        }
+        else
+        {
+            bloom.active = previousBloomActive;
+            bloom.threshold.value = previousBloomThreshold;
+            bloom.threshold.overrideState = previousBloomThresholdOverride;
+            bloom.intensity.value = previousBloomIntensity;
+            bloom.intensity.overrideState = previousBloomIntensityOverride;
+            bloom.scatter.value = previousBloomScatter;
+            bloom.scatter.overrideState = previousBloomScatterOverride;
+        }
+
+        bloom = null;
+        addedBloom = false;
+    }
+
+    private IEnumerator RevealNormalView()
+    {
+        float elapsed = 0f;
+        while (elapsed < pixelRevealDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float progress = Mathf.Clamp01(elapsed / pixelRevealDuration);
+            for (int index = 0; index < revealCells.Count; index++)
+            {
+                RevealCell cell = revealCells[index];
+                float cellProgress = Mathf.Clamp01((progress - cell.order * 0.82f) / 0.18f);
+                float flicker = 0.88f + 0.12f * Mathf.Sin(elapsed * 28f + cell.phase);
+                cell.image.color = new Color(0f, 0.015f, 0.006f, (1f - cellProgress) * flicker);
+            }
+
+            codeVisionGroup.alpha = Mathf.Lerp(1f, 0f, Mathf.SmoothStep(0f, 1f, progress));
+            background.color = new Color(0f, 0f, 0f, Mathf.Lerp(0.2f, 0f, progress));
+            UpdateCodeVision(elapsed + codeVisionHoldDuration);
+            yield return null;
+        }
+
+        SetRevealCellsVisible(false);
+        codeVisionRoot.SetActive(false);
         RestoreFractureCamera();
     }
 
@@ -474,73 +604,112 @@ public class TutorialBootSequence : MonoBehaviour
         return line + result;
     }
 
-    private void EnsureScarOverlay()
+    private void EnsureCodeVisionOverlay()
     {
-        if (bootCanvas == null || realityScars.Count > 0) return;
+        if (bootCanvas == null || codeVisionRoot != null) return;
 
-        Vector2[][] scarPaths =
-        {
-            new[] { new Vector2(-40f, 20f), new Vector2(-180f, 120f), new Vector2(-310f, 180f), new Vector2(-510f, 330f) },
-            new[] { new Vector2(10f, 10f), new Vector2(150f, 95f), new Vector2(290f, 170f), new Vector2(520f, 250f) },
-            new[] { new Vector2(0f, 0f), new Vector2(-20f, -130f), new Vector2(-60f, -260f), new Vector2(-120f, -430f) },
-            new[] { new Vector2(30f, -20f), new Vector2(170f, -105f), new Vector2(300f, -200f), new Vector2(470f, -330f) }
-        };
+        codeVisionRoot = new GameObject("Code Vision", typeof(RectTransform), typeof(CanvasGroup));
+        codeVisionRoot.transform.SetParent(bootCanvas.transform, false);
+        RectTransform codeVisionRect = codeVisionRoot.GetComponent<RectTransform>();
+        StretchFull(codeVisionRect);
+        codeVisionGroup = codeVisionRoot.GetComponent<CanvasGroup>();
+        codeVisionGroup.interactable = false;
+        codeVisionGroup.blocksRaycasts = false;
 
-        for (int pathIndex = 0; pathIndex < scarPaths.Length; pathIndex++)
-        {
-            AddScarPath(scarPaths[pathIndex], pathIndex);
-        }
+        codeVeil = CreateImage("Code Vision Veil", codeVisionRoot.transform, new Color(0f, 0.08f, 0.025f, 0f));
+        StretchFull(codeVeil.rectTransform);
+        codeVeil.raycastTarget = false;
 
-        AddScarPath(new[] { new Vector2(-180f, 120f), new Vector2(-270f, 45f), new Vector2(-390f, 20f) }, 7);
-        AddScarPath(new[] { new Vector2(150f, 95f), new Vector2(210f, -10f), new Vector2(350f, -80f) }, 9);
-        AddScarPath(new[] { new Vector2(-20f, -130f), new Vector2(80f, -220f), new Vector2(180f, -275f) }, 11);
-        SetScarsVisible(false);
+        CreateCodeColumns(0.18f, 13, 0.55f, 0.85f, 0.7f);
+        CreateCodeColumns(0.38f, 18, 0.8f, 1.15f, 0.52f);
+        CreateCodeColumns(0.7f, 12, 1.2f, 1.6f, 0.36f);
+        CreateRevealCells();
+        SetRevealCellsVisible(false);
+        codeVisionRoot.SetActive(false);
     }
 
-    private void AddScarPath(Vector2[] points, int pathIndex)
+    private void CreateCodeColumns(float depth, int count, float minSpeed, float maxSpeed, float alpha)
     {
-        int segmentCount = Mathf.Max(1, points.Length - 1);
-        for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
+        System.Random random = new System.Random(Mathf.RoundToInt(depth * 1000f) + count);
+        for (int index = 0; index < count; index++)
         {
-            Vector2 start = points[segmentIndex];
-            Vector2 end = points[segmentIndex + 1];
-            float progress = segmentIndex / (float)segmentCount;
-            float width = 2.2f + ((pathIndex + segmentIndex) % 3) * 0.8f;
-            RealityScarPiece scar = new RealityScarPiece
+            GameObject columnObject = new GameObject("Code Stream", typeof(RectTransform), typeof(Text));
+            columnObject.transform.SetParent(codeVisionRoot.transform, false);
+            Text text = columnObject.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = Mathf.RoundToInt(Mathf.Lerp(14f, 27f, depth));
+            text.fontStyle = FontStyle.Bold;
+            text.alignment = TextAnchor.UpperCenter;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.color = new Color(0.08f, 1f, 0.25f, alpha);
+            text.raycastTarget = false;
+
+            StringBuilder glyphs = new StringBuilder();
+            const string alphabet = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}|+-*/";
+            int glyphCount = Mathf.RoundToInt(Mathf.Lerp(18f, 32f, depth));
+            for (int glyphIndex = 0; glyphIndex < glyphCount; glyphIndex++)
             {
-                decayStart = Mathf.Clamp01(0.8f - progress * 0.65f + pathIndex * 0.012f),
-                phase = pathIndex * 1.7f + segmentIndex * 0.9f,
-                glow = CreateScarSegment("Reality Scar Glow", start, end, width * 4.5f, new Color(0.05f, 0.48f, 1f, 0f)),
-                core = CreateScarSegment("Reality Scar Core", start, end, width, new Color(0.7f, 0.98f, 1f, 0f))
-            };
-            realityScars.Add(scar);
+                glyphs.Append(alphabet[random.Next(alphabet.Length)]).Append('\n');
+            }
+            text.text = glyphs.ToString();
+
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(-880f + index * (1760f / Mathf.Max(1, count - 1)), random.Next(-900, 80));
+            rect.sizeDelta = new Vector2(Mathf.Lerp(25f, 44f, depth), 1000f);
+            codeColumns.Add(new CodeColumn { rect = rect, text = text, speed = codeRainSpeed * Mathf.Lerp(minSpeed, maxSpeed, (float)random.NextDouble()), resetY = -980f, baseAlpha = alpha });
         }
     }
 
-    private Image CreateScarSegment(string objectName, Vector2 start, Vector2 end, float width, Color color)
+    private void CreateRevealCells()
     {
-        Image segment = CreateImage(objectName, bootCanvas.transform, color);
-        RectTransform rect = segment.rectTransform;
-        Vector2 direction = end - start;
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = (start + end) * 0.5f;
-        rect.sizeDelta = new Vector2(direction.magnitude, width);
-        rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
-        rect.localScale = Vector3.one;
-        segment.raycastTarget = false;
-        return segment;
+        System.Random random = new System.Random(7331);
+        for (int row = 0; row < revealRows; row++)
+        {
+            for (int column = 0; column < revealColumns; column++)
+            {
+                Image cell = CreateImage("Code Reveal Cell", codeVisionRoot.transform, new Color(0f, 0.015f, 0.006f, 0f));
+                RectTransform rect = cell.rectTransform;
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 0f);
+                rect.pivot = new Vector2(0f, 0f);
+                rect.anchoredPosition = new Vector2(column * (1920f / revealColumns) - 960f, row * (1080f / revealRows) - 540f);
+                rect.sizeDelta = new Vector2(1920f / revealColumns + 1f, 1080f / revealRows + 1f);
+                cell.raycastTarget = false;
+                revealCells.Add(new RevealCell { image = cell, order = Mathf.Clamp01((float)random.NextDouble()), phase = (float)random.NextDouble() * 6.28f });
+            }
+        }
     }
 
-    private void SetScarsVisible(bool visible)
+    private void SetRevealCellsVisible(bool visible)
     {
-        for (int index = 0; index < realityScars.Count; index++)
+        for (int index = 0; index < revealCells.Count; index++)
         {
-            RealityScarPiece scar = realityScars[index];
-            if (scar == null) continue;
-            if (scar.glow != null) scar.glow.gameObject.SetActive(visible);
-            if (scar.core != null) scar.core.gameObject.SetActive(visible);
+            if (revealCells[index].image == null) continue;
+            revealCells[index].image.gameObject.SetActive(visible);
+            Color color = revealCells[index].image.color;
+            revealCells[index].image.color = new Color(color.r, color.g, color.b, visible ? 1f : 0f);
+        }
+    }
+
+    private void UpdateCodeVision(float elapsed)
+    {
+        if (codeVisionRoot == null) return;
+
+        for (int index = 0; index < codeColumns.Count; index++)
+        {
+            CodeColumn column = codeColumns[index];
+            Vector2 position = column.rect.anchoredPosition;
+            position.y -= column.speed * Time.unscaledDeltaTime;
+            if (position.y < column.resetY) position.y = 80f + index * 13f;
+            column.rect.anchoredPosition = position;
+
+            Color color = column.text.color;
+            float depthFade = 0.7f + 0.3f * Mathf.Sin(elapsed * 2.2f + index * 0.77f);
+            column.text.color = new Color(color.r, color.g, color.b, column.baseAlpha * depthFade);
         }
     }
 
@@ -589,7 +758,10 @@ public class TutorialBootSequence : MonoBehaviour
 
     private void FinishSequence()
     {
-        SetScarsVisible(false);
+        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
+        RestoreMatrixBloom();
+        SetRevealCellsVisible(false);
+        if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
         RestoreFractureCamera();
         RestoreDepthOfField();
         StopAndReleaseAudio();
@@ -654,7 +826,10 @@ public class TutorialBootSequence : MonoBehaviour
         if (!Application.isPlaying || !sequenceStarted) return;
 
         StopAllCoroutines();
-        SetScarsVisible(false);
+        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
+        RestoreMatrixBloom();
+        SetRevealCellsVisible(false);
+        if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
         RestoreFractureCamera();
         RestoreDepthOfField();
         Time.timeScale = previousTimeScale;

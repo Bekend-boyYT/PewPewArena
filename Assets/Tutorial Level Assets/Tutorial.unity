@@ -8947,8 +8947,16 @@ MonoBehaviour:
   bootCanvasGroup: {fileID: 562459329}
   background: {fileID: 547692198}
   terminalText: {fileID: 1293376093}
-  scarOpacity: 0.8
+  codeVisionHoldDuration: 3
+  codeVisionOpacity: 0.85
+  codeRainSpeed: 90
+  revealColumns: 24
+  revealRows: 14
+  pixelRevealDuration: 4.5
   worldFractureStrength: 0.65
+  matrixBloomThreshold: 0.35
+  matrixBloomIntensity: 2.6
+  matrixBloomScatter: 0.88
 --- !u!1001 &1923499490
 PrefabInstance:
   m_ObjectHideFlags: 0
