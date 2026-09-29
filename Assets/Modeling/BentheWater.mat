@@ -108,27 +108,27 @@ Material:
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SpecSize: 7.89
-    - _SpecSpeed: 1.58
-    - _SpecThick: 6.13
+    - _SpecSize: 3.6
+    - _SpecSpeed: 0.13
+    - _SpecThick: 3.29
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _Water: 0.5
-    - _WaveFeq: 0.69
+    - _Water: 3.5
+    - _WaveFeq: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
-    - _waveamp: 0.39
-    - _wavespeed: 0.06
+    - _waveamp: 0
+    - _wavespeed: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Deep_Kleur: {r: 0, g: 0.7058824, b: 0.84705883, a: 1}
+    - _Deep_Kleur: {r: 0.29816297, g: 0.34912366, b: 0.3735848, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Shallow_Kleur: {r: 0.4862745, g: 0.9098039, b: 1, a: 1}
-    - _SpecColor: {r: 0.4660377, g: 0.83360624, b: 1, a: 1}
+    - _Shallow_Kleur: {r: 0.2194731, g: 0.26672506, b: 0.28301886, a: 1}
+    - _SpecColor: {r: 0.2552865, g: 0.34337837, b: 0.381132, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &640219080945744569

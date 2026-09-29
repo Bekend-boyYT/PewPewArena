@@ -45,7 +45,7 @@ Light:
   m_Type: 2
   m_Color: {r: 0.4943396, g: 0.41663364, b: 0.15576358, a: 1}
   m_Intensity: 1.23
-  m_Range: 1.87
+  m_Range: 5.01
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -195,7 +195,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -447484956927764693, guid: 3f513b5eda027ce4ea60d382415fdfbd, type: 3}
+  - {fileID: 2100000, guid: 65f0c383287fde24a8fabb533666f97b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
