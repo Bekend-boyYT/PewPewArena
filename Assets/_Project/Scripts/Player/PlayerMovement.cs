@@ -42,13 +42,17 @@ namespace SniperGame.Player
 
         [Header("Jumping & Gravity")]
         [SerializeField] private float jumpHeight = 2.4f;
-        [SerializeField] private float doubleJumpHeight = 2.0f;
         [SerializeField] private float gravity = 28f;
         [SerializeField] private float jumpBufferTime = 0.15f;
         [SerializeField] private float coyoteTime = 0.15f;
 
-        [Header("Sliding")]
-        [SerializeField] private KeyCode slideKey = KeyCode.C;
+        [Header("Crouching & Sliding")]
+        [SerializeField] private KeyCode crouchSlideKey = KeyCode.C;
+        [Tooltip("How long C must be held to start sliding while moving. Quicker presses toggle crouch.")]
+        [SerializeField] private float slideHoldThreshold = 0.2f;
+        [SerializeField] private float crouchHeight = 1.0f;
+        [SerializeField] private float crouchCamOffsetY = 0.55f;
+        [SerializeField] private float crouchTransitionSpeed = 11f;
         [SerializeField] private float slideBoostSpeed = 20f;
         [SerializeField] private float slideDuration = 0.75f;
         [SerializeField] private float slideFriction = 12f;
@@ -82,7 +86,6 @@ namespace SniperGame.Player
         private Camera _cameraComponent;
 
         private bool _isGrounded;
-        private bool _hasDoubleJump;
         private float _lastGroundedTime;
         private float _lastJumpPressedTime;
         private float _spaceHoldTimer;
@@ -92,11 +95,16 @@ namespace SniperGame.Player
         private float _lastSprintTime;
         private bool _isExhausted;
 
-        // Slide variables
+        // Crouch & Slide runtime variables
+        private bool _isCrouched;
         private bool _isSliding;
         private Vector3 _slideDirection;
         private float _slideTimer;
         private float _lastSlideEndTime = -10f;
+        private float _crouchKeyTimer;
+        private bool _crouchKeyHeld;
+        private bool _didSlideThisPress;
+
         private float _defaultHeight;
         private Vector3 _defaultCenter;
         private Vector3 _defaultCamPos;
@@ -207,7 +215,6 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            // Release cursor in menus, when game is paused, or when Match End / Rematch screen is open
             bool isMatchEnd = CombatHUD.Instance != null && CombatHUD.Instance.IsMatchEndActive;
 
             if (SceneManager.GetActiveScene().name != "Maintestgameplay" || PauseMenu.IsPaused || isMatchEnd)
@@ -242,9 +249,10 @@ namespace SniperGame.Player
             CheckGroundedStatus();
             CheckWallRun();
             UpdateWallRunPromptUI();
-            HandleSlideInput();
+            HandleCrouchAndSlideInput();
             HandleJumpInput();
             CalculateMovement();
+            UpdateCrouchTransition();
             ApplyCameraTiltAndFOV();
         }
 
@@ -264,6 +272,7 @@ namespace SniperGame.Player
             _horizontalVelocity = Vector3.zero;
             _currRotationX = 0f;
             _isSliding = false;
+            _isCrouched = false;
             _isWallRunning = false;
             _spaceHoldTimer = 0f;
 
@@ -285,6 +294,11 @@ namespace SniperGame.Player
             _isScoped = scoped;
             _scopedFov = targetScopedFov;
             _sensitivityMultiplier = sensitivityMult;
+
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.SetScopeActive(scoped);
+            }
         }
 
         public void AddRecoil(float pitch, float yaw)
@@ -418,7 +432,6 @@ namespace SniperGame.Player
             if (_isGrounded)
             {
                 _lastGroundedTime = Time.time;
-                _hasDoubleJump = true;
 
                 if (_velocity.y < 0f)
                 {
@@ -462,8 +475,8 @@ namespace SniperGame.Player
             }
             else
             {
-                bool wantsToRun = Input.GetKey(KeyCode.LeftShift) && !_isScoped && inputZ > 0.1f && !_isSliding;
-                bool isCrouching = Input.GetKey(KeyCode.LeftControl);
+                bool isCrouching = (_isCrouched || Input.GetKey(KeyCode.LeftControl)) && !_isSliding;
+                bool wantsToRun = Input.GetKey(KeyCode.LeftShift) && !_isScoped && inputZ > 0.1f && !_isSliding && !isCrouching;
 
                 if (_isExhausted && _currentStamina >= minStaminaToSprint)
                 {
@@ -552,14 +565,7 @@ namespace SniperGame.Player
                         _velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
                     }
 
-                    PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
-                }
-                else if (_hasDoubleJump && !_isWallRunning)
-                {
-                    _lastJumpPressedTime = -10f;
-                    _hasDoubleJump = false;
-
-                    _velocity.y = Mathf.Sqrt(doubleJumpHeight * 2f * gravity);
+                    _isCrouched = false;
                     PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
                 }
             }
@@ -575,7 +581,6 @@ namespace SniperGame.Player
             _horizontalVelocity = new Vector3(jumpAway.x, 0, jumpAway.z);
             _velocity.y = jumpAway.y;
 
-            _hasDoubleJump = true;
             PlaySound(soundPlayer != null ? soundPlayer.jumpSound : null);
         }
 
@@ -617,7 +622,6 @@ namespace SniperGame.Player
                     _wallHit = candidateHit;
                     _wallIsOnRight = hitRight;
                     _isWallRunning = true;
-                    _hasDoubleJump = true;
                     return;
                 }
             }
@@ -627,18 +631,67 @@ namespace SniperGame.Player
 
         #endregion
 
-        #region Sliding
+        #region Crouching & Sliding
 
-        private void HandleSlideInput()
+        private void HandleCrouchAndSlideInput()
         {
-            bool slidePressed = Input.GetKeyDown(slideKey) || (Input.GetKeyDown(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift));
+            float inputZ = Input.GetAxisRaw("Vertical");
 
-            if (slidePressed && !_isSliding && _isGrounded && (Time.time >= _lastSlideEndTime + slideCooldown))
+            // Sprinting breaks crouch immediately
+            if (Input.GetKey(KeyCode.LeftShift) && inputZ > 0.1f && _isCrouched)
             {
-                StartSlide();
+                _isCrouched = false;
             }
 
-            if (_isSliding && (Input.GetKeyUp(slideKey) || Input.GetKeyUp(KeyCode.LeftControl)))
+            // Key Down: Start hold timer
+            if (Input.GetKeyDown(crouchSlideKey))
+            {
+                _crouchKeyTimer = 0f;
+                _crouchKeyHeld = true;
+                _didSlideThisPress = false;
+            }
+
+            // Key Held: Evaluate whether we transition into a slide
+            if (_crouchKeyHeld && Input.GetKey(crouchSlideKey))
+            {
+                _crouchKeyTimer += Time.deltaTime;
+
+                if (_crouchKeyTimer >= slideHoldThreshold && !_didSlideThisPress && !_isSliding)
+                {
+                    bool hasForwardMovement = inputZ > 0.1f || _horizontalVelocity.magnitude > (walkSpeed * 0.75f);
+                    bool canSlide = _isGrounded && hasForwardMovement && (Time.time >= _lastSlideEndTime + slideCooldown);
+
+                    if (canSlide)
+                    {
+                        _didSlideThisPress = true;
+                        _isCrouched = false;
+                        StartSlide();
+                    }
+                }
+            }
+
+            // Key Up: Resolve tap vs hold release
+            if (Input.GetKeyUp(crouchSlideKey))
+            {
+                if (_isSliding)
+                {
+                    StopSlide();
+                }
+                else if (!_didSlideThisPress && _crouchKeyTimer < (slideHoldThreshold + 0.08f))
+                {
+                    // It was a quick tap: toggle crouch
+                    if (_isGrounded)
+                    {
+                        _isCrouched = !_isCrouched;
+                    }
+                }
+
+                _crouchKeyHeld = false;
+                _crouchKeyTimer = 0f;
+                _didSlideThisPress = false;
+            }
+
+            if (Input.GetKeyUp(KeyCode.LeftControl) && _isSliding)
             {
                 StopSlide();
             }
@@ -654,14 +707,6 @@ namespace SniperGame.Player
 
             _horizontalVelocity = _slideDirection * Mathf.Max(_horizontalVelocity.magnitude + 4f, slideBoostSpeed);
 
-            controller.height = _defaultHeight * 0.5f;
-            controller.center = new Vector3(0, _defaultHeight * 0.25f, 0);
-
-            if (cameraTransform != null)
-            {
-                cameraTransform.localPosition = new Vector3(_defaultCamPos.x, _defaultCamPos.y - 0.55f, _defaultCamPos.z);
-            }
-
             PlaySound(soundPlayer != null ? soundPlayer.slidingSound : null);
         }
 
@@ -671,12 +716,35 @@ namespace SniperGame.Player
             _isSliding = false;
             _lastSlideEndTime = Time.time;
 
-            controller.height = _defaultHeight;
-            controller.center = _defaultCenter;
+            // If still holding C when the slide ends, seamlessly stay in crouch
+            if (Input.GetKey(crouchSlideKey))
+            {
+                _isCrouched = true;
+            }
+        }
+
+        private void UpdateCrouchTransition()
+        {
+            bool isCrouchedOrSliding = _isSliding || _isCrouched || Input.GetKey(KeyCode.LeftControl);
+
+            float targetHeight = isCrouchedOrSliding ? crouchHeight : _defaultHeight;
+            float halfHeightDiff = (_defaultHeight - targetHeight) * 0.5f;
+
+            Vector3 targetCenter = isCrouchedOrSliding
+                ? new Vector3(_defaultCenter.x, _defaultCenter.y - halfHeightDiff, _defaultCenter.z)
+                : _defaultCenter;
+
+            Vector3 targetCamPos = isCrouchedOrSliding
+                ? new Vector3(_defaultCamPos.x, _defaultCamPos.y - crouchCamOffsetY, _defaultCamPos.z)
+                : _defaultCamPos;
+
+            float t = crouchTransitionSpeed * Time.deltaTime;
+            controller.height = Mathf.Lerp(controller.height, targetHeight, t);
+            controller.center = Vector3.Lerp(controller.center, targetCenter, t);
 
             if (cameraTransform != null)
             {
-                cameraTransform.localPosition = _defaultCamPos;
+                cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, targetCamPos, t);
             }
         }
 
@@ -714,4 +782,4 @@ namespace SniperGame.Player
 
         #endregion
     }
-} 
+}
