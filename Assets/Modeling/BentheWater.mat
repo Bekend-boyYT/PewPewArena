@@ -108,9 +108,9 @@ Material:
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SpecSize: 3.6
-    - _SpecSpeed: 0.13
-    - _SpecThick: 3.29
+    - _SpecSize: 8.34
+    - _SpecSpeed: 2.36
+    - _SpecThick: 6.57
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
