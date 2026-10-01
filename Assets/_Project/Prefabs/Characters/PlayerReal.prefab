@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 5542764710180273911}
   - component: {fileID: 3570139252239378147}
   - component: {fileID: 1930027797558389158}
+  - component: {fileID: 1930027797558389159}
   - component: {fileID: 1929936526607197833}
   - component: {fileID: 6758972497625613032}
   m_Layer: 0
@@ -435,6 +436,7 @@ MonoBehaviour:
   fovChangeSpeed: 8
   runFovIncrease: 15
   slideFovIncrease: 3
+  soundPlayer: {fileID: 1930027797558389159}
 --- !u!114 &6650333325785518552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -742,6 +744,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1930027797558389159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6795404076253420896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64207660d286a5c48afe376fa189a381, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  walkingSound: {fileID: 8300000, guid: b6c627d49bcbfb545a359443e8489c04, type: 3}
+  runningSound: {fileID: 8300000, guid: 08f13cdb6bb488c42b5d51dd35bdbcc1, type: 3}
+  jumpSound: {fileID: 8300000, guid: 8c0f96a4f55fa1d4e991f767535fca9c, type: 3}
+  landingSound: {fileID: 8300000, guid: eb5538ba5937f634588a35283b5d8211, type: 3}
+  slidingSound: {fileID: 8300000, guid: 38d948eef0c18c0408c334549f66d223, type: 3}
 --- !u!136 &1929936526607197833
 CapsuleCollider:
   m_ObjectHideFlags: 0

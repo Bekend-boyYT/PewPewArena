@@ -89,6 +89,11 @@ namespace SniperGame.UI
                 canvasGroup = GetComponent<CanvasGroup>();
             }
 
+            if (canvasGroup != null && !_isScoped)
+            {
+                canvasGroup.alpha = 0f;
+            }
+
             ResolveTransforms();
         }
 
@@ -131,6 +136,11 @@ namespace SniperGame.UI
         public void SetScoped(bool scoped)
         {
             _isScoped = scoped;
+
+            if (scoped && !gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
 
             if (scopeAnimator == null)
             {

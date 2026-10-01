@@ -66,6 +66,16 @@ namespace SniperGame.UI
         /// </summary>
         public void SetPromptState(bool visible, float holdProgress)
         {
+            if (visible && !gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
+
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = GetComponent<CanvasGroup>();
+            }
+
             _isVisible = visible;
             _currentProgress = Mathf.Clamp01(holdProgress);
             ApplyVisualProgress(_currentProgress);

@@ -40,6 +40,7 @@ namespace SniperGame.UI
             IsPaused = false;
 
             // Zorg dat de sub-panelen standaard dicht staan
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (mainPausePanel != null) mainPausePanel.SetActive(false);
             if (settingsPanel != null) settingsPanel.SetActive(false);
 
@@ -109,6 +110,7 @@ namespace SniperGame.UI
         {
             IsPaused = true;
 
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (mainPausePanel != null) mainPausePanel.SetActive(true);
             if (settingsPanel != null) settingsPanel.SetActive(false);
 
@@ -118,12 +120,14 @@ namespace SniperGame.UI
 
         public void OpenSettings()
         {
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (mainPausePanel != null) mainPausePanel.SetActive(false);
             if (settingsPanel != null) settingsPanel.SetActive(true);
         }
 
         public void BackToMainPause()
         {
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (mainPausePanel != null) mainPausePanel.SetActive(true);
         }
@@ -156,18 +160,24 @@ namespace SniperGame.UI
             SceneManager.LoadScene("01_MainMenu");
         }
 
+        private float _lastAudioPreviewTime = 0f;
+
         private void LoadSavedSettings()
         {
-            float savedSensitivity = PlayerPrefs.GetFloat(SensitivityPrefKey, 0.15f);
+            float savedSensitivity = PlayerPrefs.GetFloat(SensitivityPrefKey, 2.0f);
+            if (savedSensitivity < 0.2f) savedSensitivity = 2.0f;
+
             if (sensitivitySlider != null)
             {
-                sensitivitySlider.minValue = 0.02f;
-                sensitivitySlider.maxValue = 0.60f;
+                sensitivitySlider.minValue = 0.2f;
+                sensitivitySlider.maxValue = 5.0f;
                 sensitivitySlider.value = savedSensitivity;
             }
             OnSensitivityChanged(savedSensitivity);
 
             float savedVolume = PlayerPrefs.GetFloat(VolumePrefKey, 0.8f);
+            if (savedVolume <= 0.001f && !PlayerPrefs.HasKey(VolumePrefKey)) savedVolume = 0.8f;
+
             if (volumeSlider != null)
             {
                 volumeSlider.minValue = 0f;
@@ -195,6 +205,13 @@ namespace SniperGame.UI
             {
                 volumeValueText.text = $"{Mathf.RoundToInt(value * 100)}%";
             }
+
+            // Real-time audio preview while adjusting volume in settings menu
+            if (Time.unscaledTime - _lastAudioPreviewTime > 0.12f && SniperGame.Audio.AudioManager.Instance != null && IsPaused)
+            {
+                _lastAudioPreviewTime = Time.unscaledTime;
+                SniperGame.Audio.AudioManager.Instance.PlayHitmarker(false);
+            }
         }
 
         private void ApplyVolume(float volume)
@@ -204,7 +221,13 @@ namespace SniperGame.UI
 
         public static float GetSensitivity()
         {
-            return PlayerPrefs.GetFloat(SensitivityPrefKey, 0.15f);
+            float sens = PlayerPrefs.GetFloat(SensitivityPrefKey, 2.0f);
+            return sens < 0.2f ? 2.0f : sens;
+        }
+
+        public static float GetVolume()
+        {
+            return PlayerPrefs.GetFloat(VolumePrefKey, 0.8f);
         }
     }
 }

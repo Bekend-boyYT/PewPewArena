@@ -27,15 +27,23 @@ namespace ParkourFPS
 
         public AudioClip clip { get { return audioSource.clip; } } // current audio clip being played
 
+        private void Awake()
+        {
+            if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        }
+
         // Start is called before the first frame update
         private void Start()
         {
-            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null) audioSource = GetComponent<AudioSource>();
         }
 
         // play a selected audio clip with parameters
         public void PlaySound(AudioClip clip, bool loop = false, float volume = 1, float pitch = 1)
         {
+            if (audioSource == null) audioSource = GetComponent<AudioSource>();
+            if (audioSource == null || clip == null) return;
+
             // set parameters
             audioSource.clip = clip;
             audioSource.volume = volume;

@@ -108,6 +108,22 @@ namespace SniperGame.UI
 
             SetupDefaultGradients();
 
+            // Ensure container and persistent HUD elements are active regardless of Inspector state
+            if (hudContainer != null && !hudContainer.activeSelf) hudContainer.SetActive(true);
+            if (healthSlider != null && !healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
+            if (staminaSlider != null && !staminaSlider.gameObject.activeSelf) staminaSlider.gameObject.SetActive(true);
+            if (ammoText != null && !ammoText.gameObject.activeSelf) ammoText.gameObject.SetActive(true);
+            if (scoreText != null && !scoreText.gameObject.activeSelf) scoreText.gameObject.SetActive(true);
+            if (timerText != null && !timerText.gameObject.activeSelf) timerText.gameObject.SetActive(true);
+            if (damageVignetteGroup != null && !damageVignetteGroup.gameObject.activeSelf) damageVignetteGroup.gameObject.SetActive(true);
+
+            // Auto-activate PauseMenuRoot if it was saved inactive in the Inspector
+            var pauseMenu = GetComponentInChildren<PauseMenu>(true);
+            if (pauseMenu != null && !pauseMenu.gameObject.activeSelf)
+            {
+                pauseMenu.gameObject.SetActive(true);
+            }
+
             if (hitmarker != null) hitmarker.SetActive(false);
             if (hipCrosshair != null) hipCrosshair.SetActive(true);
             if (cooldownBarRoot != null) cooldownBarRoot.SetActive(false);
@@ -255,6 +271,11 @@ namespace SniperGame.UI
 
 public void SetScopeActive(bool isScoped)
         {
+            if (scopeOverlay != null && isScoped && !scopeOverlay.activeSelf)
+            {
+                scopeOverlay.SetActive(true);
+            }
+
             if (sniperScopeOverlay != null)
             {
                 sniperScopeOverlay.SetScoped(isScoped);
@@ -283,6 +304,10 @@ public void SetScopeActive(bool isScoped)
         {
             if (wallRunPrompt != null)
             {
+                if (visible && !wallRunPrompt.gameObject.activeSelf)
+                {
+                    wallRunPrompt.gameObject.SetActive(true);
+                }
                 wallRunPrompt.SetPromptState(visible, progress);
             }
         }
@@ -335,6 +360,7 @@ public void SetScopeActive(bool isScoped)
         public void TriggerDamageFlash()
         {
             if (damageVignetteGroup == null) return;
+            if (!damageVignetteGroup.gameObject.activeSelf) damageVignetteGroup.gameObject.SetActive(true);
 
             if (_damageFlashCoroutine != null) StopCoroutine(_damageFlashCoroutine);
             _damageFlashCoroutine = StartCoroutine(DamageFlashRoutine());

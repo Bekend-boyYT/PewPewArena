@@ -14,7 +14,7 @@ namespace SniperGame.Player
     {
         #region Components
         private CharacterController controller;
-        private SoundPlayer soundPlayer;
+        [SerializeField] private SoundPlayer soundPlayer;
         #endregion
 
         [Header("Camera & Visuals")]
@@ -140,7 +140,7 @@ namespace SniperGame.Player
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
-            soundPlayer = GetComponent<SoundPlayer>();
+            if (soundPlayer == null) soundPlayer = GetComponent<SoundPlayer>();
 
             _defaultHeight = controller.height;
             _defaultCenter = controller.center;
@@ -313,7 +313,9 @@ namespace SniperGame.Player
 
         private void HandleLook()
         {
-            float currentSensitivity = lookSensitivity * _sensitivityMultiplier;
+            float liveSensitivity = PauseMenu.GetSensitivity();
+            if (liveSensitivity <= 0f) liveSensitivity = lookSensitivity;
+            float currentSensitivity = liveSensitivity * _sensitivityMultiplier;
 
             _currRotationX -= (Input.GetAxis("Mouse Y") * currentSensitivity) + _recoilPitch;
             _currRotationX = Mathf.Clamp(_currRotationX, -lookXLimit, lookXLimit);
