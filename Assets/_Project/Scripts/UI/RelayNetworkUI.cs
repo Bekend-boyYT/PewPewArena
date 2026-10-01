@@ -175,6 +175,31 @@ namespace SniperGame.UI
             ShowScreen(mainScreen);
         }
 
+        /// <summary>
+        /// Closes the application. Hook this up to a Button's OnClick event in the Inspector.
+        /// </summary>
+        public void QuitGame()
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+            #else
+            Application.Quit();
+            #endif
+        }
+
+        /// <summary>
+        /// Alias for QuitGame to allow selecting 'Quit' in the Inspector.
+        /// </summary>
+        public void Quit()
+        {
+            QuitGame();
+        }
+
         #endregion
 
         #region Relay Host & Join
