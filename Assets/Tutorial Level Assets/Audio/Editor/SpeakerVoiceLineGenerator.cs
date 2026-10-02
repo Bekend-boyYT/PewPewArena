@@ -16,6 +16,8 @@ internal static class SpeakerVoiceLineGenerator
         ("run_jump_confirmation_v2.wav", "Good job, you can walk, now lets see if you can run AND jump at the same time. Use SPACE to jump."),
         ("stupid.wav", "Stupid"),
         ("now_wallrun.wav", "Now wallrun"),
+        ("shoot_intro.wav", "So congrats, you can move. Now lets see if you can shoot"),
+        ("shoot_outro.wav", "Wow you're not completely incompetent, good luck, you're gonna need it"),
     };
 
     static SpeakerVoiceLineGenerator()

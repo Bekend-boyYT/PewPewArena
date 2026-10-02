@@ -80,11 +80,11 @@ public class SpeakerDialogue : MonoBehaviour
     }
 
     // Public entry point for other systems (e.g. HangerDoorController) to make the speaker say an arbitrary line.
-    public void SayLine(string text, string clipResourcePath)
+    public void SayLine(string text, string clipResourcePath, Action onFinished = null)
     {
         if (!Application.isPlaying) return;
         if (playbackRoutine != null) StopCoroutine(playbackRoutine);
-        playbackRoutine = StartCoroutine(PlaySubtitleLine(text, clipResourcePath));
+        playbackRoutine = StartCoroutine(PlaySubtitleLine(text, clipResourcePath, onFinished));
     }
 
     private IEnumerator PlayGreeting()
@@ -95,7 +95,7 @@ public class SpeakerDialogue : MonoBehaviour
         OnGreetingFinished?.Invoke();
     }
 
-    private IEnumerator PlaySubtitleLine(string text, string clipResourcePath)
+    private IEnumerator PlaySubtitleLine(string text, string clipResourcePath, Action onFinished = null)
     {
         AudioClip clip = Resources.Load<AudioClip>(clipResourcePath);
         List<SpeakerVoiceLineTiming.WordTiming> timeline = SpeakerVoiceLineTiming.BuildTimeline(text, out float lineDuration);
@@ -126,6 +126,7 @@ public class SpeakerDialogue : MonoBehaviour
 
         transform.localScale = baseScale;
         playbackRoutine = null;
+        onFinished?.Invoke();
     }
 
     private void UpdateSubtitleText(List<SpeakerVoiceLineTiming.WordTiming> timeline, int revealedWordCount)
