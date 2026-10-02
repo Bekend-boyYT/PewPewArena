@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f6f31fa26b868604483df4f19c00a991
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156234
+  packageName: TextMesh Pro Effect
+  packageVersion: 1.63
+  assetPath: Assets/TextMesh Pro Effect/TextMeshProEffect.cs
+  uploadId: 755994

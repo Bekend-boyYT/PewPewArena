@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b0f48d9d99c22c8468e45c63949f6113
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 156234
+  packageName: TextMesh Pro Effect
+  packageVersion: 1.63
+  assetPath: Assets/TextMesh Pro Effect/Examples/KomikaDemo.asset
+  uploadId: 755994
