@@ -15,6 +15,7 @@ internal static class SpeakerVoiceLineGenerator
         ("wake_up_greeting.wav", "Welcome to Pew Pew Arena, in this short tutorial we will go over the basics of how to play. Press W A S D to walk"),
         ("run_jump_confirmation_v2.wav", "Good job, you can walk, now lets see if you can run AND jump at the same time. Use SPACE to jump."),
         ("stupid.wav", "Stupid"),
+        ("now_wallrun.wav", "Now wallrun"),
     };
 
     static SpeakerVoiceLineGenerator()
