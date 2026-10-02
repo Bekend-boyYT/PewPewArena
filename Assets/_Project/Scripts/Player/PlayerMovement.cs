@@ -242,7 +242,7 @@ namespace SniperGame.Player
                 return;
             }
 
-            bool isPressingSpace = Input.GetKey(KeyCode.Space);
+            bool isPressingSpace = UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.WallJump) || Input.GetKey(KeyCode.Space);
             float targetTimer = isPressingSpace ? wallRunHoldTime : 0f;
             _spaceHoldTimer = Mathf.MoveTowards(_spaceHoldTimer, targetTimer, Time.deltaTime);
 
@@ -293,7 +293,9 @@ namespace SniperGame.Player
         {
             _isScoped = scoped;
             _scopedFov = targetScopedFov;
-            _sensitivityMultiplier = sensitivityMult;
+            float adsMult = UI.Settings.SettingsManager.ADSSensitivity;
+            if (adsMult <= 0.05f) adsMult = 0.8f;
+            _sensitivityMultiplier = scoped ? (sensitivityMult * adsMult) : 1f;
 
             if (CombatHUD.Instance != null)
             {
@@ -313,11 +315,13 @@ namespace SniperGame.Player
 
         private void HandleLook()
         {
-            float liveSensitivity = PauseMenu.GetSensitivity();
+            float liveSensitivity = UI.Settings.SettingsManager.MouseSensitivity;
+            if (liveSensitivity <= 0f) liveSensitivity = PauseMenu.GetSensitivity();
             if (liveSensitivity <= 0f) liveSensitivity = lookSensitivity;
             float currentSensitivity = liveSensitivity * _sensitivityMultiplier;
 
-            _currRotationX -= (Input.GetAxis("Mouse Y") * currentSensitivity) + _recoilPitch;
+            float pitchFactor = UI.Settings.SettingsManager.InvertY ? -1f : 1f;
+            _currRotationX -= (Input.GetAxis("Mouse Y") * currentSensitivity * pitchFactor) + _recoilPitch;
             _currRotationX = Mathf.Clamp(_currRotationX, -lookXLimit, lookXLimit);
             _recoilPitch = Mathf.MoveTowards(_recoilPitch, 0f, Time.deltaTime * 18f);
 
@@ -348,7 +352,8 @@ namespace SniperGame.Player
 
             if (_cameraComponent != null)
             {
-                float targetFOV = baseFOV;
+                float effectiveBaseFOV = UI.Settings.SettingsManager.FOV > 10f ? UI.Settings.SettingsManager.FOV : baseFOV;
+                float targetFOV = effectiveBaseFOV;
 
                 if (_isScoped)
                 {
@@ -356,14 +361,14 @@ namespace SniperGame.Player
                 }
                 else if (_isSliding)
                 {
-                    targetFOV = baseFOV + slideFovIncrease;
+                    targetFOV = effectiveBaseFOV + slideFovIncrease;
                 }
                 else if (Input.GetKey(KeyCode.LeftShift) && _horizontalVelocity.magnitude > 10f)
                 {
-                    targetFOV = baseFOV + runFovIncrease;
+                    targetFOV = effectiveBaseFOV + runFovIncrease;
                 }
 
-                float fovSpeed = (_isScoped || _cameraComponent.fieldOfView < (baseFOV - 1f)) ? 22f : fovChangeSpeed;
+                float fovSpeed = (_isScoped || _cameraComponent.fieldOfView < (effectiveBaseFOV - 1f)) ? 22f : fovChangeSpeed;
                 _cameraComponent.fieldOfView = Mathf.Lerp(_cameraComponent.fieldOfView, targetFOV, Time.deltaTime * fovSpeed);
             }
         }
@@ -543,7 +548,7 @@ namespace SniperGame.Player
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Jump) || Input.GetKeyDown(KeyCode.Space))
             {
                 _lastJumpPressedTime = Time.time;
             }
@@ -646,7 +651,7 @@ namespace SniperGame.Player
             }
 
             // Key Down: Start hold timer
-            if (Input.GetKeyDown(crouchSlideKey))
+            if (UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Crouch) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Slide) || Input.GetKeyDown(crouchSlideKey))
             {
                 _crouchKeyTimer = 0f;
                 _crouchKeyHeld = true;
@@ -654,7 +659,7 @@ namespace SniperGame.Player
             }
 
             // Key Held: Evaluate whether we transition into a slide
-            if (_crouchKeyHeld && Input.GetKey(crouchSlideKey))
+            if (_crouchKeyHeld && (UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Crouch) || UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Slide) || Input.GetKey(crouchSlideKey)))
             {
                 _crouchKeyTimer += Time.deltaTime;
 
@@ -673,7 +678,7 @@ namespace SniperGame.Player
             }
 
             // Key Up: Resolve tap vs hold release
-            if (Input.GetKeyUp(crouchSlideKey))
+            if (UI.Settings.KeybindManager.GetKeyUp(UI.Settings.KeyAction.Crouch) || UI.Settings.KeybindManager.GetKeyUp(UI.Settings.KeyAction.Slide) || Input.GetKeyUp(crouchSlideKey))
             {
                 if (_isSliding)
                 {

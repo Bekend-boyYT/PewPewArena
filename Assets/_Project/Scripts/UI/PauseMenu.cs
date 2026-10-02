@@ -42,7 +42,14 @@ namespace SniperGame.UI
             // Zorg dat de sub-panelen standaard dicht staan
             if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (mainPausePanel != null) mainPausePanel.SetActive(false);
-            if (settingsPanel != null) settingsPanel.SetActive(false);
+            if (settingsPanel != null)
+            {
+                settingsPanel.SetActive(false);
+                if (settingsPanel.GetComponent<Settings.SettingsUIController>() == null)
+                {
+                    settingsPanel.AddComponent<Settings.SettingsUIController>();
+                }
+            }
 
             SetupButtonListeners();
             LoadSavedSettings();
@@ -123,6 +130,12 @@ namespace SniperGame.UI
             if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (mainPausePanel != null) mainPausePanel.SetActive(false);
             if (settingsPanel != null) settingsPanel.SetActive(true);
+
+            if (Settings.SettingsUIController.Instance != null)
+            {
+                Settings.SettingsUIController.Instance.SwitchTab(0);
+                Settings.SettingsUIController.Instance.RefreshAllUI();
+            }
         }
 
         public void BackToMainPause()
@@ -221,13 +234,12 @@ namespace SniperGame.UI
 
         public static float GetSensitivity()
         {
-            float sens = PlayerPrefs.GetFloat(SensitivityPrefKey, 2.0f);
-            return sens < 0.2f ? 2.0f : sens;
+            return Settings.SettingsManager.MouseSensitivity;
         }
 
         public static float GetVolume()
         {
-            return PlayerPrefs.GetFloat(VolumePrefKey, 0.8f);
+            return Settings.SettingsManager.MasterVolume;
         }
     }
 }

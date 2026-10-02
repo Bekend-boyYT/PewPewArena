@@ -120,7 +120,8 @@ namespace SniperGame.Weapons
                 return;
             }
 
-            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !_isReloading && _currentAmmo < maxClipAmmo)
+            bool reloadPressed = (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Reload);
+            if (reloadPressed && !_isReloading && _currentAmmo < maxClipAmmo)
             {
                 StartReload();
             }
@@ -137,7 +138,8 @@ namespace SniperGame.Weapons
             UpdateCameraZoom();
             UpdateCooldownIndicator();
 
-            if (Input.GetMouseButtonDown(0))
+            bool shootPressed = Input.GetMouseButtonDown(0) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Shoot);
+            if (shootPressed)
             {
                 TryShoot();
             }
@@ -165,7 +167,7 @@ namespace SniperGame.Weapons
 
         private void HandleAimingInput()
         {
-            bool rmbPressed = Input.GetMouseButton(1);
+            bool rmbPressed = Input.GetMouseButton(1) || UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Aim);
 
             if (rmbPressed && !_wantsToScope)
             {
@@ -430,7 +432,7 @@ namespace SniperGame.Weapons
                     {
                         Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { shooterClientId } }
                     };
-                    ConfirmHitClientRpc(hitType, clientRpcParams);
+                    ConfirmHitClientRpc(hitType, appliedDamage, hitPoint, clientRpcParams);
                 }
 
                 break;
@@ -441,16 +443,29 @@ namespace SniperGame.Weapons
         }
 
         [ClientRpc]
-        private void ConfirmHitClientRpc(HitboxType hitboxType, ClientRpcParams clientRpcParams = default)
+        private void ConfirmHitClientRpc(HitboxType hitboxType, int damage, Vector3 hitPosition, ClientRpcParams clientRpcParams = default)
         {
-            if (CombatHUD.Instance != null)
+            if (UI.Settings.SettingsManager.ShowHitmarkers)
             {
-                CombatHUD.Instance.ShowHitmarker(hitboxType);
+                if (CombatHUD.Instance != null)
+                {
+                    CombatHUD.Instance.ShowHitmarker(hitboxType);
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayHitmarker(hitboxType == HitboxType.Head);
+                }
             }
 
-            if (AudioManager.Instance != null)
+            if (UI.Settings.SettingsManager.ShowDamageNumbers)
             {
-                AudioManager.Instance.PlayHitmarker(hitboxType == HitboxType.Head);
+                if (UI.DamageNumbers.DamageNumberManager.Instance == null)
+                {
+                    var dnmGo = new GameObject("DamageNumberManager");
+                    dnmGo.AddComponent<UI.DamageNumbers.DamageNumberManager>();
+                }
+                UI.DamageNumbers.DamageNumberManager.Instance.SpawnDamageNumber(damage, hitPosition, hitboxType == HitboxType.Head);
             }
         }
 

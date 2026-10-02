@@ -125,7 +125,14 @@ namespace SniperGame.UI
             }
 
             if (hitmarker != null) hitmarker.SetActive(false);
-            if (hipCrosshair != null) hipCrosshair.SetActive(true);
+            if (hipCrosshair != null) hipCrosshair.SetActive(Settings.SettingsManager.ShowCrosshair);
+            Settings.SettingsManager.OnCrosshairToggled += (show) =>
+            {
+                if (hipCrosshair != null && (scopeOverlay == null || !scopeOverlay.activeSelf))
+                {
+                    hipCrosshair.SetActive(show);
+                }
+            };
             if (cooldownBarRoot != null) cooldownBarRoot.SetActive(false);
             if (announcementText != null) announcementText.gameObject.SetActive(false);
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
@@ -289,7 +296,7 @@ public void SetScopeActive(bool isScoped)
                 }
             }
 
-            if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped);
+            if (hipCrosshair != null) hipCrosshair.SetActive(!isScoped && Settings.SettingsManager.ShowCrosshair);
         }
 
         public void TriggerScopeRecoil(float kick = 1f)
@@ -332,7 +339,7 @@ public void SetScopeActive(bool isScoped)
 
         public void ShowHitmarker(HitboxType hitboxType)
         {
-            if (hitmarker == null) return;
+            if (hitmarker == null || !Settings.SettingsManager.ShowHitmarkers) return;
 
             if (_hitmarkerCoroutine != null) StopCoroutine(_hitmarkerCoroutine);
             _hitmarkerCoroutine = StartCoroutine(HitmarkerFlashRoutine(hitboxType));
