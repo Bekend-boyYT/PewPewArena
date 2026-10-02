@@ -692,6 +692,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ConnectionCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 2632361963944688967, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4678785426493915700, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_Pivot.x
       value: 0

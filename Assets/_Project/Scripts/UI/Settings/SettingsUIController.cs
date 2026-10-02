@@ -107,6 +107,9 @@ namespace SniperGame.UI.Settings
 
         private void OnEnable()
         {
+            AutoResolveReferences();
+            RegisterUIEvents();
+            SwitchTab(_currentTabIndex);
             RefreshAllUI();
         }
 
@@ -120,6 +123,7 @@ namespace SniperGame.UI.Settings
             if (graphicsTabBtn == null) graphicsTabBtn = FindButton(settingsPanelTr, "Graphics");
             if (audioTabBtn == null) audioTabBtn = FindButton(settingsPanelTr, "Audio");
             if (controlsTabBtn == null) controlsTabBtn = FindButton(settingsPanelTr, "Controls");
+            if (controlsTabBtn == null) controlsTabBtn = FindButton(settingsPanelTr, "Control");
 
             _tabButtons = new Button[] { generalTabBtn, gameTabBtn, graphicsTabBtn, audioTabBtn, controlsTabBtn };
 
@@ -131,6 +135,35 @@ namespace SniperGame.UI.Settings
             if (controlsPanel == null) controlsPanel = FindChildRelaxed(settingsPanelTr, "Controls Panel");
 
             _panels = new GameObject[] { generalPanel, gamePanel, graphicsPanel, audioPanel, controlsPanel };
+
+            // Ensure panel containers never block clicks
+            foreach (var p in _panels)
+            {
+                if (p != null)
+                {
+                    var img = p.GetComponent<Image>();
+                    if (img != null) img.raycastTarget = false;
+                }
+            }
+
+            // Ensure Back button is on top and wired
+            var backBtnGo = FindChildRelaxed(settingsPanelTr, "SettingsBackButton");
+            if (backBtnGo != null)
+            {
+                backBtnGo.transform.SetAsLastSibling();
+                var btn = backBtnGo.GetComponentInChildren<Button>(true);
+                if (btn != null)
+                {
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(() =>
+                    {
+                        if (PauseMenu.Instance != null)
+                        {
+                            PauseMenu.Instance.BackToMainPause();
+                        }
+                    });
+                }
+            }
 
             // Find Keybinds side panel & buttons
             if (keybindsSidePanel == null)
@@ -246,7 +279,10 @@ namespace SniperGame.UI.Settings
         private Button FindButton(Transform parent, string targetName)
         {
             var go = FindChildRelaxed(parent, targetName);
-            return go != null ? go.GetComponent<Button>() : null;
+            if (go == null) return null;
+            var btn = go.GetComponent<Button>();
+            if (btn != null) return btn;
+            return go.GetComponentInChildren<Button>(true);
         }
 
         private TextMeshProUGUI FindValueTextNextTo(Slider slider)
@@ -516,6 +552,8 @@ namespace SniperGame.UI.Settings
                 if (_panels[i] != null)
                 {
                     _panels[i].SetActive(i == _currentTabIndex);
+                    var img = _panels[i].GetComponent<Image>();
+                    if (img != null) img.raycastTarget = false;
                 }
 
                 if (_tabButtons[i] != null)
@@ -526,6 +564,10 @@ namespace SniperGame.UI.Settings
                     _tabButtons[i].colors = colors;
                 }
             }
+
+            // Ensure Back button is on top of active panel
+            var backBtnGo = FindChildRelaxed(transform, "SettingsBackButton");
+            if (backBtnGo != null) backBtnGo.transform.SetAsLastSibling();
 
             // Close Keybinds side panel when leaving Controls tab
             if (_currentTabIndex != 4 && keybindsSidePanel != null)

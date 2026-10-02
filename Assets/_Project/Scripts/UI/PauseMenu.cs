@@ -131,10 +131,16 @@ namespace SniperGame.UI
             if (mainPausePanel != null) mainPausePanel.SetActive(false);
             if (settingsPanel != null) settingsPanel.SetActive(true);
 
-            if (Settings.SettingsUIController.Instance != null)
+            var controller = settingsPanel != null ? settingsPanel.GetComponent<Settings.SettingsUIController>() : null;
+            if (controller == null && settingsPanel != null)
             {
-                Settings.SettingsUIController.Instance.SwitchTab(0);
-                Settings.SettingsUIController.Instance.RefreshAllUI();
+                controller = settingsPanel.AddComponent<Settings.SettingsUIController>();
+            }
+
+            if (controller != null)
+            {
+                controller.SwitchTab(0);
+                controller.RefreshAllUI();
             }
         }
 
