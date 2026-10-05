@@ -171,7 +171,7 @@ namespace SniperGame.UI.Settings
                     if (buttonText != null)
                     {
                         buttonText.text = originalText;
-                        buttonText.color = Color.black;
+                        buttonText.color = new Color(1f, 0.85f, 0.2f, 1f); // Cyber Gold
                     }
                     IsRebinding = false;
                     onDone?.Invoke();
@@ -226,7 +226,7 @@ namespace SniperGame.UI.Settings
             if (buttonText != null)
             {
                 buttonText.text = FormatKeyCode(newKey);
-                buttonText.color = Color.black;
+                buttonText.color = new Color(1f, 0.85f, 0.2f, 1f); // Cyber Gold
             }
         }
     }

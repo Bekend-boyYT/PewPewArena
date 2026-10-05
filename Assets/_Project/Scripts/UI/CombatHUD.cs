@@ -480,7 +480,7 @@ public void SetScopeActive(bool isScoped)
         private void OnRestartButtonClicked()
         {
             if (restartButton != null) restartButton.interactable = false;
-            if (rematchStatusText != null) rematchStatusText.text = "Waiting for opponent...";
+            if (rematchStatusText != null) rematchStatusText.text = "<color=#FFCC00>Waiting for opponent...</color>";
 
             if (RoundManager.Instance != null)
             {

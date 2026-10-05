@@ -21,12 +21,31 @@ namespace SniperGame.UI
 
         [Header("Screens / Panels")]
         [SerializeField] private GameObject mainScreen;
+        [SerializeField] private GameObject playPanel;
+        [SerializeField] private GameObject loadoutPanel;
+        [SerializeField] private GameObject settingsPanel;
         [SerializeField] private GameObject createScreen;
         [SerializeField] private GameObject joinScreen;
 
-        [Header("Main Screen Elements")]
+        [Header("Main Menu Buttons")]
+        [SerializeField] private Button playButton;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private Button quitButton;
+
+        [Header("Play Menu Buttons")]
         [SerializeField] private Button openCreateScreenButton;
         [SerializeField] private Button openJoinScreenButton;
+        [SerializeField] private Button loadoutButton;
+        [SerializeField] private Button tutorialButton;
+        [SerializeField] private Button playBackButton;
+
+        [Header("Loadout Menu Buttons")]
+        [SerializeField] private Button sniper1Button;
+        [SerializeField] private Button sniper2Button;
+        [SerializeField] private Button loadoutBackButton;
+
+        [Header("Settings Screen Elements")]
+        [SerializeField] private Button settingsBackButton;
 
         [Header("Create Screen Elements")]
         [SerializeField] private TextMeshProUGUI gameCodeDisplay;
@@ -46,18 +65,91 @@ namespace SniperGame.UI
         {
             ForceUnlockCursor();
 
-            if (openCreateScreenButton != null) openCreateScreenButton.onClick.AddListener(OnOpenCreateScreen);
-            if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
-
-            if (createBackButton != null) createBackButton.onClick.AddListener(OnCreateBackClicked);
-            if (createStartButton != null) createStartButton.onClick.AddListener(OnStartGameClicked);
-
-            if (joinBackButton != null) joinBackButton.onClick.AddListener(OnJoinBackClicked);
-            if (joinConfirmButton != null) joinConfirmButton.onClick.AddListener(OnJoinConfirmClicked);
+            AutoFindReferences();
+            SetupButtonListeners();
+            RefreshLoadoutVisuals();
 
             ShowScreen(mainScreen);
 
             await InitializeUnityServicesAsync();
+        }
+
+        private void AutoFindReferences()
+        {
+            if (mainScreen == null) mainScreen = transform.Find("MainMenuPanel")?.gameObject;
+            if (playPanel == null) playPanel = transform.Find("PlayPanel")?.gameObject;
+            if (loadoutPanel == null) loadoutPanel = transform.Find("LoadoutPanel")?.gameObject;
+            if (settingsPanel == null)
+            {
+                settingsPanel = transform.Find("SettingsPanel")?.gameObject
+                    ?? (transform.parent != null ? transform.parent.Find("SettingsPanel")?.gameObject : null)
+                    ?? GameObject.Find("SettingsPanel");
+            }
+            if (createScreen == null) createScreen = transform.Find("CreateScreen")?.gameObject;
+            if (joinScreen == null) joinScreen = transform.Find("JoinScreen")?.gameObject;
+
+            if (playButton == null && mainScreen != null)
+                playButton = mainScreen.transform.Find("PlayButton")?.GetComponent<Button>();
+            if (settingsButton == null && mainScreen != null)
+                settingsButton = mainScreen.transform.Find("SettingsButton")?.GetComponent<Button>();
+            if (quitButton == null && mainScreen != null)
+                quitButton = mainScreen.transform.Find("QuitGame")?.GetComponent<Button>() ?? mainScreen.transform.Find("QuitButton")?.GetComponent<Button>();
+
+            if (settingsBackButton == null && settingsPanel != null)
+                settingsBackButton = settingsPanel.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+
+            if (openCreateScreenButton == null && playPanel != null)
+                openCreateScreenButton = playPanel.transform.Find("CreateGameButton")?.GetComponent<Button>();
+            if (openJoinScreenButton == null && playPanel != null)
+                openJoinScreenButton = playPanel.transform.Find("JoinGameButton")?.GetComponent<Button>();
+            if (loadoutButton == null && playPanel != null)
+                loadoutButton = playPanel.transform.Find("LoadoutButton")?.GetComponent<Button>();
+            if (tutorialButton == null && playPanel != null)
+                tutorialButton = playPanel.transform.Find("TutorialButton")?.GetComponent<Button>();
+            if (playBackButton == null && playPanel != null)
+                playBackButton = playPanel.transform.Find("PlayBackButton")?.GetComponent<Button>();
+
+            if (loadoutBackButton == null && loadoutPanel != null)
+                loadoutBackButton = loadoutPanel.transform.Find("LoadoutBackButton")?.GetComponent<Button>();
+            if (sniper1Button == null && loadoutPanel != null)
+                sniper1Button = loadoutPanel.transform.Find("WeaponCardsContainer/Sniper1Card")?.GetComponent<Button>();
+            if (sniper2Button == null && loadoutPanel != null)
+                sniper2Button = loadoutPanel.transform.Find("WeaponCardsContainer/Sniper2Card")?.GetComponent<Button>();
+
+            if (createBackButton == null && createScreen != null)
+                createBackButton = createScreen.transform.Find("CreateBackButton")?.GetComponent<Button>();
+            if (createStartButton == null && createScreen != null)
+                createStartButton = createScreen.transform.Find("CreateStartButton")?.GetComponent<Button>();
+
+            if (joinBackButton == null && joinScreen != null)
+                joinBackButton = joinScreen.transform.Find("JoinBackButton")?.GetComponent<Button>();
+            if (joinConfirmButton == null && joinScreen != null)
+                joinConfirmButton = joinScreen.transform.Find("JoinConfirmButton")?.GetComponent<Button>();
+        }
+
+        private void SetupButtonListeners()
+        {
+            if (playButton != null) playButton.onClick.AddListener(OnOpenPlayScreen);
+            if (playBackButton != null) playBackButton.onClick.AddListener(OnPlayBackClicked);
+
+            if (settingsButton != null) settingsButton.onClick.AddListener(OnOpenSettingsScreen);
+            if (settingsBackButton != null) settingsBackButton.onClick.AddListener(OnSettingsBackClicked);
+
+            if (openCreateScreenButton != null) openCreateScreenButton.onClick.AddListener(OnOpenCreateScreen);
+            if (createBackButton != null) createBackButton.onClick.AddListener(OnCreateBackClicked);
+            if (createStartButton != null) createStartButton.onClick.AddListener(OnStartGameClicked);
+
+            if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
+            if (joinBackButton != null) joinBackButton.onClick.AddListener(OnJoinBackClicked);
+            if (joinConfirmButton != null) joinConfirmButton.onClick.AddListener(OnJoinConfirmClicked);
+
+            if (loadoutButton != null) loadoutButton.onClick.AddListener(OnOpenLoadoutScreen);
+            if (loadoutBackButton != null) loadoutBackButton.onClick.AddListener(OnLoadoutBackClicked);
+
+            if (sniper1Button != null) sniper1Button.onClick.AddListener(() => OnSelectSniper(0));
+            if (sniper2Button != null) sniper2Button.onClick.AddListener(() => OnSelectSniper(1));
+
+            if (quitButton != null) quitButton.onClick.AddListener(QuitGame);
         }
 
         private void Update()
@@ -124,16 +216,111 @@ namespace SniperGame.UI
 
         #region Screen Navigation
 
-        private void ShowScreen(GameObject screenToShow)
+        public void ShowScreen(GameObject screenToShow)
         {
             ForceUnlockCursor();
 
             if (mainScreen != null) mainScreen.SetActive(screenToShow == mainScreen);
+            if (playPanel != null) playPanel.SetActive(screenToShow == playPanel);
+            if (settingsPanel != null) settingsPanel.SetActive(screenToShow == settingsPanel);
             if (createScreen != null) createScreen.SetActive(screenToShow == createScreen);
             if (joinScreen != null) joinScreen.SetActive(screenToShow == joinScreen);
+            if (loadoutPanel != null) loadoutPanel.SetActive(screenToShow == loadoutPanel);
 
             if (openCreateScreenButton != null) openCreateScreenButton.interactable = true;
             if (openJoinScreenButton != null) openJoinScreenButton.interactable = true;
+        }
+
+        public void OnOpenPlayScreen()
+        {
+            ShowScreen(playPanel != null ? playPanel : mainScreen);
+        }
+
+        public void OnPlayBackClicked()
+        {
+            ShowScreen(mainScreen);
+        }
+
+        public void OnOpenSettingsScreen()
+        {
+            if (settingsPanel == null)
+            {
+                AutoFindReferences();
+            }
+
+            ShowScreen(settingsPanel != null ? settingsPanel : mainScreen);
+
+            if (settingsPanel != null)
+            {
+                var controller = settingsPanel.GetComponent<Settings.SettingsUIController>();
+                if (controller == null)
+                {
+                    controller = settingsPanel.AddComponent<Settings.SettingsUIController>();
+                }
+                if (controller != null)
+                {
+                    controller.SwitchTab(0);
+                    controller.RefreshAllUI();
+                }
+
+                if (settingsBackButton == null)
+                {
+                    settingsBackButton = settingsPanel.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+                }
+
+                if (settingsBackButton != null)
+                {
+                    settingsBackButton.onClick.RemoveListener(OnSettingsBackClicked);
+                    settingsBackButton.onClick.AddListener(OnSettingsBackClicked);
+                }
+            }
+        }
+
+        public void OnSettingsBackClicked()
+        {
+            ShowScreen(mainScreen);
+        }
+
+        public void OnOpenLoadoutScreen()
+        {
+            ShowScreen(loadoutPanel != null ? loadoutPanel : playPanel);
+            RefreshLoadoutVisuals();
+        }
+
+        public void OnLoadoutBackClicked()
+        {
+            ShowScreen(playPanel != null ? playPanel : mainScreen);
+        }
+
+        public void OnSelectSniper(int index)
+        {
+            PlayerPrefs.SetInt("SelectedLoadout", index);
+            PlayerPrefs.Save();
+            RefreshLoadoutVisuals();
+            Debug.Log($"[RelayUI] Selected Sniper loadout: {index + 1}");
+        }
+
+        private void RefreshLoadoutVisuals()
+        {
+            int selected = PlayerPrefs.GetInt("SelectedLoadout", 0);
+            if (sniper1Button != null)
+            {
+                var outline = sniper1Button.GetComponent<Outline>();
+                if (outline != null)
+                {
+                    outline.effectColor = selected == 0 ? new Color(0f, 0.83f, 1f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
+                    outline.effectDistance = selected == 0 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
+                }
+            }
+            if (sniper2Button != null)
+            {
+                var outline = sniper2Button.GetComponent<Outline>();
+                if (outline != null)
+                {
+                    outline.effectColor = selected == 1 ? new Color(1f, 0.69f, 0.23f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
+                    outline.effectDistance = selected == 1 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
+                }
+            }
         }
 
         private async void OnOpenCreateScreen()
@@ -163,7 +350,7 @@ namespace SniperGame.UI
             {
                 NetworkManager.Singleton.Shutdown();
             }
-            ShowScreen(mainScreen);
+            ShowScreen(playPanel != null ? playPanel : mainScreen);
         }
 
         private void OnJoinBackClicked()
@@ -172,7 +359,7 @@ namespace SniperGame.UI
             {
                 NetworkManager.Singleton.Shutdown();
             }
-            ShowScreen(mainScreen);
+            ShowScreen(playPanel != null ? playPanel : mainScreen);
         }
 
         /// <summary>
@@ -226,7 +413,7 @@ namespace SniperGame.UI
                 _currentJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
 
                 if (gameCodeDisplay != null) gameCodeDisplay.text = _currentJoinCode;
-                if (createStatusText != null) createStatusText.text = "Lobby ready! Waiting for Player 2 to join...";
+                if (createStatusText != null) createStatusText.text = "Lobby ready! Waiting for <color=#00D4FF>Player 2</color> to join...";
                 if (createStartButton != null) createStartButton.interactable = true;
 
                 var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
@@ -245,8 +432,8 @@ namespace SniperGame.UI
             }
             catch (Exception e)
             {
-                if (gameCodeDisplay != null) gameCodeDisplay.text = "ERROR";
-                if (createStatusText != null) createStatusText.text = "Relay connection failed!";
+                if (gameCodeDisplay != null) gameCodeDisplay.text = "<color=#FF4444>ERROR</color>";
+                if (createStatusText != null) createStatusText.text = "<color=#FF4444>Relay connection failed!</color>";
                 if (createBackButton != null) createBackButton.interactable = true;
                 Debug.LogError($"[RelayUI] Error during CreateAllocation: {e.Message}");
             }
@@ -269,7 +456,7 @@ namespace SniperGame.UI
 
             if (string.IsNullOrEmpty(code))
             {
-                if (joinStatusText != null) joinStatusText.text = "Please enter a code first!";
+                if (joinStatusText != null) joinStatusText.text = "<color=#FFCC00>Please enter a code first!</color>";
                 return;
             }
 
@@ -297,7 +484,7 @@ namespace SniperGame.UI
             }
             catch (Exception e)
             {
-                if (joinStatusText != null) joinStatusText.text = "Invalid code or host unreachable!";
+                if (joinStatusText != null) joinStatusText.text = "<color=#FF4444>Invalid code or host unreachable!</color>";
                 if (joinConfirmButton != null) joinConfirmButton.interactable = true;
                 Debug.LogError($"[RelayUI] JoinAllocation failed: {e.Message}");
             }
@@ -339,7 +526,7 @@ namespace SniperGame.UI
         {
             if (!NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.LocalClientId)
             {
-                if (joinStatusText != null) joinStatusText.text = "Disconnected from host!";
+                if (joinStatusText != null) joinStatusText.text = "<color=#FF4444>Disconnected from host!</color>";
                 if (joinConfirmButton != null) joinConfirmButton.interactable = true;
             }
         }
