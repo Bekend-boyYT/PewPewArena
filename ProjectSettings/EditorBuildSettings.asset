@@ -11,6 +11,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Maintestgameplay.unity
     guid: 427a1929a513ad644858e7ad16954c5e
+  - enabled: 1
+    path: Assets/Tutorial Level Assets/Tutorial.unity
+    guid: e6131fc39e8a19219b93af7f1de2b185
+  - enabled: 1
+    path: Assets/Scenes/Map2Test.unity
+    guid: de9ed5b47d6e5784aabcaa60f012f988
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 9e7be553448fa2546aea5752021cbcf7, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

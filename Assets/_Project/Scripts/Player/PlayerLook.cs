@@ -55,11 +55,31 @@ namespace SniperGame.Player
             CheckActiveScene();
         }
 
+        private bool IsGameplayScene()
+        {
+            string activeScene = SceneManager.GetActiveScene().name;
+            string objectScene = gameObject.scene.name;
+
+            if (activeScene == "Map2Test" || activeScene == "Maintestgameplay" ||
+                objectScene == "Map2Test" || objectScene == "Maintestgameplay")
+            {
+                return true;
+            }
+
+            if ((!string.IsNullOrEmpty(activeScene) && (activeScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || activeScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)) ||
+                (!string.IsNullOrEmpty(objectScene) && (objectScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || objectScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)))
+            {
+                return true;
+            }
+
+            return activeScene != "01_MainMenu" && !string.IsNullOrEmpty(activeScene);
+        }
+
         private void CheckActiveScene()
         {
             if (!IsOwner) return;
 
-            if (SceneManager.GetActiveScene().name == "Maintestgameplay")
+            if (IsGameplayScene())
             {
                 SetCursorState(true);
             }
@@ -73,7 +93,7 @@ namespace SniperGame.Player
         {
             if (!IsOwner) return;
 
-            if (SceneManager.GetActiveScene().name != "Maintestgameplay") return;
+            if (!IsGameplayScene()) return;
 
             // Als pauzemenu open staat of match is afgelopen: blokkeer rondkijken
             if (PauseMenu.IsPaused || (RoundManager.Instance != null && RoundManager.Instance.CurrentState.Value == MatchState.MatchEnded))
