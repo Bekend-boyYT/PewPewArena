@@ -166,6 +166,7 @@ namespace SniperGame.UI
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (mainPausePanel != null)
             {
+                LoadSavedSettings();
                 mainPausePanel.SetActive(true);
                 ApplyPauseMenuTheme();
 

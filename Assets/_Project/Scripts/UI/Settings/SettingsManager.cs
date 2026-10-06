@@ -42,7 +42,7 @@ namespace SniperGame.UI.Settings
         #region Properties
         // General
         public static int DisplayModeIndex { get; private set; } = 0; // 0 = Fullscreen, 1 = Borderless, 2 = Windowed
-        public static int ResolutionIndex { get; private set; } = 0;
+        public static int ResolutionIndex { get; private set; } = 1;
         public static int FpsLimitIndex { get; private set; } = 4; // 0=60, 1=120, 2=165, 3=240, 4=Unlimited
         public static bool ShowFps { get; private set; } = false;
 
@@ -81,11 +81,22 @@ namespace SniperGame.UI.Settings
 
         private static readonly int[] FpsCaps = { 60, 120, 165, 240, -1 };
         private static readonly Vector2Int[] SupportedResolutions = {
+            new Vector2Int(1280, 720),
             new Vector2Int(1920, 1080),
             new Vector2Int(2560, 1440),
-            new Vector2Int(3840, 2160),
-            new Vector2Int(1280, 720)
+            new Vector2Int(3840, 2160)
         };
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void AutoInitialize()
+        {
+            if (Instance == null)
+            {
+                var go = new GameObject("SettingsManager");
+                Instance = go.AddComponent<SettingsManager>();
+                DontDestroyOnLoad(go);
+            }
+        }
 
         private void Awake()
         {
@@ -107,7 +118,7 @@ namespace SniperGame.UI.Settings
         {
             // General
             DisplayModeIndex = PlayerPrefs.GetInt(KeyDisplayMode, 0);
-            ResolutionIndex = PlayerPrefs.GetInt(KeyResolution, 0);
+            ResolutionIndex = PlayerPrefs.GetInt(KeyResolution, 1);
             FpsLimitIndex = PlayerPrefs.GetInt(KeyFpsLimit, 4);
             ShowFps = PlayerPrefs.GetInt(KeyShowFps, 0) == 1;
 
@@ -163,7 +174,7 @@ namespace SniperGame.UI.Settings
         public static void ResetToDefaults()
         {
             SetDisplayMode(0);
-            SetResolution(0);
+            SetResolution(1);
             SetFpsLimit(4);
             SetShowFps(false);
 
@@ -368,6 +379,10 @@ namespace SniperGame.UI.Settings
         private static void ApplyFOV(float fov)
         {
             OnFOVChanged?.Invoke(fov);
+            if (Camera.main != null)
+            {
+                Camera.main.fieldOfView = fov;
+            }
         }
 
         public static void SetViewDistance(float distance)

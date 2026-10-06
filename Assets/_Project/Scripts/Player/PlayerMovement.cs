@@ -160,11 +160,41 @@ namespace SniperGame.Player
             _currentStamina = maxStamina;
         }
 
+        private void OnEnable()
+        {
+            UI.Settings.SettingsManager.OnFOVChanged += HandleSettingsFOVChanged;
+            UI.Settings.SettingsManager.OnViewDistanceChanged += HandleSettingsViewDistanceChanged;
+        }
+
+        private void OnDisable()
+        {
+            UI.Settings.SettingsManager.OnFOVChanged -= HandleSettingsFOVChanged;
+            UI.Settings.SettingsManager.OnViewDistanceChanged -= HandleSettingsViewDistanceChanged;
+        }
+
+        private void HandleSettingsFOVChanged(float fov)
+        {
+            if (_cameraComponent != null && !_isScoped)
+            {
+                _cameraComponent.fieldOfView = fov;
+            }
+        }
+
+        private void HandleSettingsViewDistanceChanged(float distance)
+        {
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.farClipPlane = distance;
+            }
+        }
+
         private void Start()
         {
             if (_cameraComponent != null)
             {
-                _cameraComponent.fieldOfView = baseFOV;
+                float savedFOV = UI.Settings.SettingsManager.FOV;
+                _cameraComponent.fieldOfView = savedFOV > 10f ? savedFOV : baseFOV;
+                _cameraComponent.farClipPlane = UI.Settings.SettingsManager.ViewDistance;
             }
 
             if (CombatHUD.Instance != null && staminaEnabled)

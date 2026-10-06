@@ -16904,7 +16904,7 @@ GameObject:
   - component: {fileID: 3817803641057360343}
   - component: {fileID: 7352087232791288035}
   m_Layer: 5
-  m_Name: DisplayModeDropdown
+  m_Name: ResolutionDropdown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
