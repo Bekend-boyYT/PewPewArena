@@ -8976,6 +8976,67 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5465897439555633741, guid: ec99cbde34555e144826e38bfa99f283, type: 3}
   m_PrefabInstance: {fileID: 893791282}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &901977346
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 393598522709011223, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_Name
+      value: Place Holder Houte plank
+      objectReference: {fileID: 0}
+    - target: {fileID: 2830873328458597725, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -876546973899608171, guid: 40cf941bf6cb26a4cb986bd1ed656be4, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -42.795433
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.10000431
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -134.81479
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
 --- !u!1001 &918468600
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10552,8 +10613,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7319726041922772451}
-  - {fileID: 4229390300661242464}
+  - {fileID: 7439292030069386248}
+  - {fileID: 7956079878168062294}
   - {fileID: 232554067}
   - {fileID: 1245372403}
   - {fileID: 1622813255365296249}
@@ -21245,7 +21306,7 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
   m_IsActive: 1
---- !u!1001 &4229390300661242463
+--- !u!1001 &4265109411209254683
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -21253,60 +21314,55 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1042980404}
     m_Modifications:
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 393598522709011223, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+      propertyPath: m_Name
+      value: Place Holder Houte plank
+      objectReference: {fileID: 0}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.6391182
+      value: -7.0176773
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.8551302
+      value: -2.74194
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.28004456
+      value: 5.2660522
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalRotation.y
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
+    - target: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9172591836971997485, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
-      propertyPath: m_Name
-      value: Houte kar placeholder
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
---- !u!4 &4229390300661242464 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6113773310501352201, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
-  m_PrefabInstance: {fileID: 4229390300661242463}
-  m_PrefabAsset: {fileID: 0}
+  m_SourcePrefab: {fileID: 100100000, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
 --- !u!4 &4288841353054036269
 Transform:
   m_ObjectHideFlags: 0
@@ -21737,6 +21793,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1428121102945184923, guid: 6108b388a6dfc054284b9911274c1c37, type: 3}
   m_PrefabInstance: {fileID: 5513366276075675029}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5602351271161440086
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1042980404}
+    m_Modifications:
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -3.6391182
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.8551302
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.555
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9035929976856690854, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+      propertyPath: m_Name
+      value: Houte kar placeholder
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
 --- !u!1001 &5777759191304941662
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22275,67 +22388,10 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1477372354333298496, guid: 69785c00424f75a4f9cf5286d817b689, type: 3}
   m_PrefabInstance: {fileID: 7244474010858888906}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &7319726041922772450
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1042980404}
-    m_Modifications:
-    - target: {fileID: 826854103488905805, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_Name
-      value: Place Holder Houte plank
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -7.0176773
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -2.74194
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 5.2660522
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
---- !u!4 &7319726041922772451 stripped
+--- !u!4 &7439292030069386248 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 6769465754037025773, guid: 580509d848bfa14488237a43daeeefaf, type: 3}
-  m_PrefabInstance: {fileID: 7319726041922772450}
+  m_CorrespondingSourceObject: {fileID: 6632987267246045971, guid: 04e453000995b254f80c995e50cfbdf5, type: 3}
+  m_PrefabInstance: {fileID: 4265109411209254683}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7546206755722574267
 PrefabInstance:
@@ -22530,6 +22586,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2192160550997299836}
   m_Mesh: {fileID: -5567886253863183492, guid: 13ee4f6017394354f964d6e8c9289f63, type: 3}
+--- !u!4 &7956079878168062294 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3796786536251049834, guid: 5bf2bd02aa7a1d0409321245040c0029, type: 3}
+  m_PrefabInstance: {fileID: 5602351271161440086}
+  m_PrefabAsset: {fileID: 0}
 --- !u!33 &8141599206340294833
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -22792,3 +22853,4 @@ SceneRoots:
   - {fileID: 985421130}
   - {fileID: 186422839}
   - {fileID: 1042980404}
+  - {fileID: 901977346}
