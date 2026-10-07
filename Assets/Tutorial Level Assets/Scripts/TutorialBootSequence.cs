@@ -37,15 +37,12 @@ public class TutorialBootSequence : MonoBehaviour
     [SerializeField] private Text terminalText;
     private Text skipHint;
     [SerializeField, Min(0f)] private float codeVisionHoldDuration = 3f;
-    [SerializeField, Range(0f, 1f)] private float codeVisionOpacity = 0.85f;
+    [SerializeField, Range(0f, 1f)] private float codeVisionOpacity = 0.38f;
     [SerializeField, Min(0.1f)] private float codeRainSpeed = 90f;
     [SerializeField, Range(8, 64)] private int revealColumns = 24;
     [SerializeField, Range(5, 36)] private int revealRows = 14;
     [SerializeField, Min(0.1f)] private float pixelRevealDuration = 4.5f;
     [SerializeField, Range(0f, 1f)] private float worldFractureStrength = 0.65f;
-    [SerializeField, Min(0f)] private float matrixBloomThreshold = 0.35f;
-    [SerializeField, Min(0f)] private float matrixBloomIntensity = 2.6f;
-    [SerializeField, Range(0f, 1f)] private float matrixBloomScatter = 0.88f;
 
     private static bool isRunning;
     public static bool IsRunning => isRunning;
@@ -70,17 +67,7 @@ public class TutorialBootSequence : MonoBehaviour
     private bool previousRadiusOverride;
     private float previousGaussianRadius;
     private float previousTimeScale;
-    private Bloom bloom;
-    private bool addedBloom;
-    private bool previousBloomActive;
-    private bool previousBloomThresholdOverride;
-    private float previousBloomThreshold;
-    private bool previousBloomIntensityOverride;
-    private float previousBloomIntensity;
-    private bool previousBloomScatterOverride;
-    private float previousBloomScatter;
     private bool sequenceStarted;
-    private bool worldVisionUsed;
     private bool controlHandedBack;
     private AudioSource ambienceSource;
     private AudioSource cueSource;
@@ -375,9 +362,6 @@ public class TutorialBootSequence : MonoBehaviour
         terminalText.text = string.Empty;
         if (blackHoldDuration > 0f) yield return new WaitForSecondsRealtime(blackHoldDuration);
         yield return ShowCodeVision();
-        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
-        RestoreMatrixBloom();
-        if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
 
         PlayCue(revealChimeClip, 0.7f);
         HandControlBackToPlayer();
@@ -387,7 +371,7 @@ public class TutorialBootSequence : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float overlayProgress = overlayFadeDuration <= 0f ? 1f : Mathf.Clamp01(elapsed / overlayFadeDuration);
-            bootCanvasGroup.alpha = worldVisionUsed ? 0f : 1f - overlayProgress;
+            bootCanvasGroup.alpha = 1f - overlayProgress;
 
             if (depthOfField != null)
             {
@@ -451,28 +435,10 @@ public class TutorialBootSequence : MonoBehaviour
 
     private IEnumerator ShowCodeVision()
     {
-        if (MatrixCodeVisionFeature.SetVision(true, 0f, codeRainSpeed / 90f))
-        {
-            worldVisionUsed = true;
-            PrepareMatrixBloom();
-            bootCanvasGroup.alpha = 0f;
-            codeVisionRoot.SetActive(false);
-            float elapsed = 0f;
-            while (elapsed < codeVisionHoldDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                yield return null;
-            }
-
-            yield return RevealMatrixWorld();
-            yield break;
-        }
-
-        Debug.LogError("MatrixCodeVisionFeature is missing from the active URP renderer. Using the UI fallback.", this);
         EnsureCodeVisionOverlay();
         codeVisionRoot.SetActive(true);
         codeVisionGroup.alpha = 1f;
-        codeVeil.color = new Color(0f, 0.08f, 0.025f, codeVisionOpacity);
+        codeVeil.color = new Color(0f, 0.08f, 0.025f, Mathf.Min(codeVisionOpacity, 0.38f));
         background.color = new Color(0f, 0f, 0f, 0.2f);
         SetRevealCellsVisible(true);
 
@@ -489,74 +455,6 @@ public class TutorialBootSequence : MonoBehaviour
         yield return RevealNormalView();
     }
 
-    private IEnumerator RevealMatrixWorld()
-    {
-        float elapsed = 0f;
-        while (elapsed < pixelRevealDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            MatrixCodeVisionFeature.SetVision(true, Mathf.Clamp01(elapsed / pixelRevealDuration), codeRainSpeed / 90f);
-            yield return null;
-        }
-
-        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
-        RestoreFractureCamera();
-    }
-
-    private void PrepareMatrixBloom()
-    {
-        if (runtimeProfile == null)
-        {
-            tutorialVolume = FindFirstObjectByType<Volume>();
-            runtimeProfile = tutorialVolume != null ? tutorialVolume.profile : null;
-        }
-        if (runtimeProfile == null) return;
-
-        if (!runtimeProfile.TryGet(out bloom))
-        {
-            bloom = runtimeProfile.Add<Bloom>(true);
-            addedBloom = true;
-        }
-
-        previousBloomActive = bloom.active;
-        previousBloomThreshold = bloom.threshold.value;
-        previousBloomThresholdOverride = bloom.threshold.overrideState;
-        previousBloomIntensity = bloom.intensity.value;
-        previousBloomIntensityOverride = bloom.intensity.overrideState;
-        previousBloomScatter = bloom.scatter.value;
-        previousBloomScatterOverride = bloom.scatter.overrideState;
-
-        bloom.active = true;
-        bloom.threshold.overrideState = true;
-        bloom.threshold.value = matrixBloomThreshold;
-        bloom.intensity.overrideState = true;
-        bloom.intensity.value = matrixBloomIntensity;
-        bloom.scatter.overrideState = true;
-        bloom.scatter.value = matrixBloomScatter;
-    }
-
-    private void RestoreMatrixBloom()
-    {
-        if (bloom == null) return;
-        if (addedBloom)
-        {
-            if (runtimeProfile != null) runtimeProfile.Remove<Bloom>();
-        }
-        else
-        {
-            bloom.active = previousBloomActive;
-            bloom.threshold.value = previousBloomThreshold;
-            bloom.threshold.overrideState = previousBloomThresholdOverride;
-            bloom.intensity.value = previousBloomIntensity;
-            bloom.intensity.overrideState = previousBloomIntensityOverride;
-            bloom.scatter.value = previousBloomScatter;
-            bloom.scatter.overrideState = previousBloomScatterOverride;
-        }
-
-        bloom = null;
-        addedBloom = false;
-    }
-
     private IEnumerator RevealNormalView()
     {
         float elapsed = 0f;
@@ -569,7 +467,7 @@ public class TutorialBootSequence : MonoBehaviour
                 RevealCell cell = revealCells[index];
                 float cellProgress = Mathf.Clamp01((progress - cell.order * 0.82f) / 0.18f);
                 float flicker = 0.88f + 0.12f * Mathf.Sin(elapsed * 28f + cell.phase);
-                cell.image.color = new Color(0f, 0.015f, 0.006f, (1f - cellProgress) * flicker);
+                cell.image.color = new Color(0f, 0.035f, 0.012f, 0.24f * (1f - cellProgress) * flicker);
             }
 
             codeVisionGroup.alpha = Mathf.Lerp(1f, 0f, Mathf.SmoothStep(0f, 1f, progress));
@@ -718,7 +616,7 @@ public class TutorialBootSequence : MonoBehaviour
         {
             for (int column = 0; column < revealColumns; column++)
             {
-                Image cell = CreateImage("Code Reveal Cell", codeVisionRoot.transform, new Color(0f, 0.015f, 0.006f, 0f));
+                Image cell = CreateImage("Code Reveal Cell", codeVisionRoot.transform, new Color(0f, 0.035f, 0.012f, 0f));
                 RectTransform rect = cell.rectTransform;
                 rect.anchorMin = new Vector2(0f, 0f);
                 rect.anchorMax = new Vector2(0f, 0f);
@@ -738,7 +636,7 @@ public class TutorialBootSequence : MonoBehaviour
             if (revealCells[index].image == null) continue;
             revealCells[index].image.gameObject.SetActive(visible);
             Color color = revealCells[index].image.color;
-            revealCells[index].image.color = new Color(color.r, color.g, color.b, visible ? 1f : 0f);
+            revealCells[index].image.color = new Color(color.r, color.g, color.b, visible ? 0.24f : 0f);
         }
     }
 
@@ -813,8 +711,6 @@ public class TutorialBootSequence : MonoBehaviour
 
     private void RestoreSequenceState()
     {
-        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
-        RestoreMatrixBloom();
         SetRevealCellsVisible(false);
         if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
         RestoreFractureCamera();
