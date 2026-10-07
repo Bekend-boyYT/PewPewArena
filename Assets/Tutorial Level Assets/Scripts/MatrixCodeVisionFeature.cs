@@ -14,7 +14,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
     [SerializeField, Min(0.1f)] private float nodeDensity = 7.5f;
     [SerializeField, Min(0f)] private float entityBoost = 1f;
 
-    private static MatrixCodeVisionFeature instance;
+    private static readonly List<MatrixCodeVisionFeature> instances = new List<MatrixCodeVisionFeature>();
     private Material visionMaterial;
     private Material entityMaskMaterial;
     private MatrixCodeVisionPass visionPass;
@@ -24,16 +24,34 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
 
     public static bool SetVision(bool active, float reveal, float speed)
     {
-        if (instance == null || instance.visionMaterial == null || !instance.visionMaterial.shader.isSupported) return false;
-        instance.visionActive = active;
-        instance.revealProgress = Mathf.Clamp01(reveal);
-        instance.rainSpeed = Mathf.Max(0.01f, speed);
-        return true;
+        bool available = false;
+        for (int index = instances.Count - 1; index >= 0; index--)
+        {
+            MatrixCodeVisionFeature feature = instances[index];
+            if (feature == null)
+            {
+                instances.RemoveAt(index);
+                continue;
+            }
+
+            if (feature.visionMaterial == null || !feature.visionMaterial.shader.isSupported)
+            {
+                feature.visionActive = false;
+                continue;
+            }
+
+            feature.visionActive = active;
+            feature.revealProgress = Mathf.Clamp01(reveal);
+            feature.rainSpeed = Mathf.Max(0.01f, speed);
+            available = true;
+        }
+
+        return available;
     }
 
     public override void Create()
     {
-        instance = this;
+        if (!instances.Contains(this)) instances.Add(this);
         if (matrixShader == null) matrixShader = Shader.Find("Hidden/PewPewArena/MatrixCodeVision");
         CoreUtils.Destroy(visionMaterial);
         CoreUtils.Destroy(entityMaskMaterial);
@@ -53,7 +71,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
 
     protected override void Dispose(bool disposing)
     {
-        if (instance == this) instance = null;
+        instances.Remove(this);
         CoreUtils.Destroy(visionMaterial);
         CoreUtils.Destroy(entityMaskMaterial);
         visionMaterial = null;
