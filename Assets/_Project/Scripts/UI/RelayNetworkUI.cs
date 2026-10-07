@@ -56,6 +56,11 @@ namespace SniperGame.UI
         [SerializeField] private TextMeshProUGUI createStatusText;
         [SerializeField] private Button mapOptionButton;
         [SerializeField] private TextMeshProUGUI mapOptionText;
+        [SerializeField] private Button weaponToggleButton;
+        [SerializeField] private TextMeshProUGUI weaponToggleText;
+
+        public static bool HostSniper2Allowed = true;
+        public static int HostEquippedSniper = 0;
 
         [System.Serializable]
         public struct MapOption
@@ -88,6 +93,7 @@ namespace SniperGame.UI
             SetupButtonListeners();
             RefreshLoadoutVisuals();
             RefreshMapSelectionVisuals();
+            RefreshWeaponToggleVisuals();
 
             ShowScreen(mainScreen);
 
@@ -144,6 +150,10 @@ namespace SniperGame.UI
                 mapOptionButton = createScreen.transform.Find("MapSelectRow/MapOptionButton")?.GetComponent<Button>();
             if (mapOptionText == null && mapOptionButton != null)
                 mapOptionText = mapOptionButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (weaponToggleButton == null && createScreen != null)
+                weaponToggleButton = createScreen.transform.Find("WeaponSelectRow/WeaponToggleButton")?.GetComponent<Button>();
+            if (weaponToggleText == null && weaponToggleButton != null)
+                weaponToggleText = weaponToggleButton.GetComponentInChildren<TextMeshProUGUI>();
 
             if (joinBackButton == null && joinScreen != null)
                 joinBackButton = joinScreen.transform.Find("JoinBackButton")?.GetComponent<Button>();
@@ -163,6 +173,7 @@ namespace SniperGame.UI
             if (createBackButton != null) createBackButton.onClick.AddListener(OnCreateBackClicked);
             if (createStartButton != null) createStartButton.onClick.AddListener(OnStartGameClicked);
             if (mapOptionButton != null) mapOptionButton.onClick.AddListener(OnCycleMapClicked);
+            if (weaponToggleButton != null) weaponToggleButton.onClick.AddListener(OnToggleWeaponSettingsClicked);
 
             if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
             if (joinBackButton != null) joinBackButton.onClick.AddListener(OnJoinBackClicked);
@@ -334,6 +345,7 @@ namespace SniperGame.UI
         {
             PlayerPrefs.SetInt("SelectedLoadout", index);
             PlayerPrefs.Save();
+            HostEquippedSniper = index;
             RefreshLoadoutVisuals();
             Debug.Log($"[RelayUI] Selected Sniper loadout: {index + 1}");
         }
@@ -341,6 +353,7 @@ namespace SniperGame.UI
         private void RefreshLoadoutVisuals()
         {
             int selected = PlayerPrefs.GetInt("SelectedLoadout", 0);
+            HostEquippedSniper = selected;
             if (sniper1Button != null)
             {
                 var outline = sniper1Button.GetComponent<Outline>();
@@ -361,10 +374,26 @@ namespace SniperGame.UI
             }
         }
 
+        public void OnToggleWeaponSettingsClicked()
+        {
+            HostSniper2Allowed = !HostSniper2Allowed;
+            RefreshWeaponToggleVisuals();
+            Debug.Log($"[RelayUI] Sniper 2 allowed setting changed: {HostSniper2Allowed}");
+        }
+
+        private void RefreshWeaponToggleVisuals()
+        {
+            if (weaponToggleText != null)
+            {
+                weaponToggleText.text = HostSniper2Allowed ? "<color=#00FF88>ENABLED</color>" : "<color=#FF4444>DISABLED</color>";
+            }
+        }
+
         private async void OnOpenCreateScreen()
         {
             ShowScreen(createScreen);
             RefreshMapSelectionVisuals();
+            RefreshWeaponToggleVisuals();
 
             if (createStatusText != null) createStatusText.text = "Generating Relay code...";
             if (gameCodeDisplay != null) gameCodeDisplay.text = "LOADING...";
@@ -502,6 +531,7 @@ namespace SniperGame.UI
         {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
+                HostEquippedSniper = PlayerPrefs.GetInt("SelectedLoadout", 0);
                 if (createStatusText != null) createStatusText.text = "Loading scene...";
                 if (createStartButton != null) createStartButton.interactable = false;
 

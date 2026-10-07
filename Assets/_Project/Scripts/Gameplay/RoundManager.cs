@@ -41,6 +41,19 @@ namespace SniperGame.Gameplay
         public NetworkVariable<int> CurrentRound = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<float> RoundTimeRemaining = new NetworkVariable<float>(60f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+        [Header("Weapon Match Rules (Synchronized)")]
+        public NetworkVariable<bool> IsSniper2Allowed = new NetworkVariable<bool>(
+            true,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+        public NetworkVariable<int> HostSelectedSniper = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -57,6 +70,8 @@ namespace SniperGame.Gameplay
 
             if (IsServer)
             {
+                IsSniper2Allowed.Value = RelayNetworkUI.HostSniper2Allowed;
+                HostSelectedSniper.Value = RelayNetworkUI.HostEquippedSniper;
                 StartCoroutine(InitialMatchStartRoutine());
             }
         }
