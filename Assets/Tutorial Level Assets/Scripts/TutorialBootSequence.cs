@@ -35,6 +35,7 @@ public class TutorialBootSequence : MonoBehaviour
     [SerializeField] private CanvasGroup bootCanvasGroup;
     [SerializeField] private Image background;
     [SerializeField] private Text terminalText;
+    private Text skipHint;
     [SerializeField, Min(0f)] private float codeVisionHoldDuration = 3f;
     [SerializeField, Range(0f, 1f)] private float codeVisionOpacity = 0.85f;
     [SerializeField, Min(0.1f)] private float codeRainSpeed = 90f;
@@ -80,6 +81,7 @@ public class TutorialBootSequence : MonoBehaviour
     private float previousBloomScatter;
     private bool sequenceStarted;
     private bool worldVisionUsed;
+    private bool controlHandedBack;
     private AudioSource ambienceSource;
     private AudioSource cueSource;
     private AudioSource musicSource;
@@ -140,7 +142,52 @@ public class TutorialBootSequence : MonoBehaviour
         EnsureCodeVisionOverlay();
         if (!Application.isPlaying) return;
 
+        EnsureSkipHint();
         BeginSequence();
+    }
+
+    private void Update()
+    {
+        if (sequenceStarted && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            SkipSequence();
+        }
+    }
+
+    private void EnsureSkipHint()
+    {
+        if (bootCanvas == null || skipHint != null) return;
+
+        skipHint = CreateText("Skip Intro Hint", bootCanvas.transform);
+        skipHint.text = "ESC TO SKIP";
+        skipHint.fontSize = 22;
+        skipHint.fontStyle = FontStyle.Bold;
+        skipHint.alignment = TextAnchor.LowerRight;
+        skipHint.color = new Color(0.35f, 1f, 0.52f);
+        skipHint.raycastTarget = false;
+
+        CanvasGroup hintGroup = skipHint.gameObject.AddComponent<CanvasGroup>();
+        hintGroup.ignoreParentGroups = true;
+        hintGroup.interactable = false;
+        hintGroup.blocksRaycasts = false;
+
+        RectTransform hintRect = skipHint.rectTransform;
+        hintRect.anchorMin = new Vector2(1f, 0f);
+        hintRect.anchorMax = new Vector2(1f, 0f);
+        hintRect.pivot = new Vector2(1f, 0f);
+        hintRect.anchoredPosition = new Vector2(-64f, 42f);
+        hintRect.sizeDelta = new Vector2(320f, 42f);
+    }
+
+    private void SkipSequence()
+    {
+        if (!sequenceStarted) return;
+
+        StopAllCoroutines();
+        RestoreSequenceState();
+        StopAndReleaseAudio();
+        HandControlBackToPlayer();
+        FinishSequence();
     }
 
     private void BeginSequence()
@@ -758,22 +805,33 @@ public class TutorialBootSequence : MonoBehaviour
 
     private void FinishSequence()
     {
+        RestoreSequenceState();
+        StopAndReleaseAudio();
+        isRunning = false;
+        sequenceStarted = false;
+    }
+
+    private void RestoreSequenceState()
+    {
         MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
         RestoreMatrixBloom();
         SetRevealCellsVisible(false);
         if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
         RestoreFractureCamera();
         RestoreDepthOfField();
-        StopAndReleaseAudio();
-        isRunning = false;
-        sequenceStarted = false;
+        if (bootCanvasGroup != null) bootCanvasGroup.alpha = 1f;
+        if (bootCanvas != null) bootCanvas.SetActive(false);
     }
 
     private void HandControlBackToPlayer()
     {
         Time.timeScale = previousTimeScale;
         if (playerController != null) playerController.InputEnabled = previousInputEnabled;
-        OnPlayerWokeUp?.Invoke();
+        if (!controlHandedBack)
+        {
+            controlHandedBack = true;
+            OnPlayerWokeUp?.Invoke();
+        }
         StartCoroutine(FadeInTutorialMusic());
     }
 
@@ -781,16 +839,20 @@ public class TutorialBootSequence : MonoBehaviour
     {
         if (musicSource == null || tutorialMusicClip == null) yield break;
 
-        musicSource.clip = tutorialMusicClip;
-        musicSource.loop = true;
-        musicSource.volume = 0f;
-        musicSource.Play();
+        if (musicSource.clip != tutorialMusicClip || !musicSource.isPlaying)
+        {
+            musicSource.clip = tutorialMusicClip;
+            musicSource.loop = true;
+            musicSource.volume = 0f;
+            musicSource.Play();
+        }
 
+        float startingVolume = musicSource.volume;
         float elapsed = 0f;
         while (elapsed < musicFadeInDuration)
         {
             elapsed += Time.unscaledDeltaTime;
-            musicSource.volume = musicVolume * Mathf.Clamp01(elapsed / musicFadeInDuration);
+            musicSource.volume = Mathf.Lerp(startingVolume, musicVolume, Mathf.Clamp01(elapsed / musicFadeInDuration));
             yield return null;
         }
 
@@ -826,16 +888,12 @@ public class TutorialBootSequence : MonoBehaviour
         if (!Application.isPlaying || !sequenceStarted) return;
 
         StopAllCoroutines();
-        MatrixCodeVisionFeature.SetVision(false, 1f, codeRainSpeed / 90f);
-        RestoreMatrixBloom();
-        SetRevealCellsVisible(false);
-        if (codeVisionRoot != null) codeVisionRoot.SetActive(false);
-        RestoreFractureCamera();
-        RestoreDepthOfField();
+        RestoreSequenceState();
         Time.timeScale = previousTimeScale;
         if (playerController != null) playerController.InputEnabled = previousInputEnabled;
         StopAndReleaseAudio();
         isRunning = false;
+        sequenceStarted = false;
     }
 
     private void StopAndReleaseAudio()
