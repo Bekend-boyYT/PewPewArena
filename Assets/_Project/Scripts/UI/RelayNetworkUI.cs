@@ -18,6 +18,8 @@ namespace SniperGame.UI
         [Header("Scene Settings")]
         [Tooltip("Exact name of the gameplay scene in Build Settings.")]
         [SerializeField] private string gameplaySceneName = "Maintestgameplay";
+        [Tooltip("Exact name of the tutorial scene in Build Settings.")]
+        [SerializeField] private string tutorialSceneName = "Tutorial";
 
         [Header("Screens / Panels")]
         [SerializeField] private GameObject mainScreen;
@@ -52,6 +54,23 @@ namespace SniperGame.UI
         [SerializeField] private Button createBackButton;
         [SerializeField] private Button createStartButton;
         [SerializeField] private TextMeshProUGUI createStatusText;
+        [SerializeField] private Button mapOptionButton;
+        [SerializeField] private TextMeshProUGUI mapOptionText;
+
+        [System.Serializable]
+        public struct MapOption
+        {
+            public string displayName;
+            public string sceneName;
+        }
+
+        [SerializeField] private MapOption[] availableMaps = new MapOption[]
+        {
+            new MapOption { displayName = "ARENA", sceneName = "Maintestgameplay" },
+            new MapOption { displayName = "ARENA 2", sceneName = "Map2Test" }
+        };
+
+        private int _selectedMapIndex = 0;
 
         [Header("Join Screen Elements")]
         [SerializeField] private TMP_InputField joinCodeInput;
@@ -68,6 +87,7 @@ namespace SniperGame.UI
             AutoFindReferences();
             SetupButtonListeners();
             RefreshLoadoutVisuals();
+            RefreshMapSelectionVisuals();
 
             ShowScreen(mainScreen);
 
@@ -120,6 +140,10 @@ namespace SniperGame.UI
                 createBackButton = createScreen.transform.Find("CreateBackButton")?.GetComponent<Button>();
             if (createStartButton == null && createScreen != null)
                 createStartButton = createScreen.transform.Find("CreateStartButton")?.GetComponent<Button>();
+            if (mapOptionButton == null && createScreen != null)
+                mapOptionButton = createScreen.transform.Find("MapSelectRow/MapOptionButton")?.GetComponent<Button>();
+            if (mapOptionText == null && mapOptionButton != null)
+                mapOptionText = mapOptionButton.GetComponentInChildren<TextMeshProUGUI>();
 
             if (joinBackButton == null && joinScreen != null)
                 joinBackButton = joinScreen.transform.Find("JoinBackButton")?.GetComponent<Button>();
@@ -138,6 +162,7 @@ namespace SniperGame.UI
             if (openCreateScreenButton != null) openCreateScreenButton.onClick.AddListener(OnOpenCreateScreen);
             if (createBackButton != null) createBackButton.onClick.AddListener(OnCreateBackClicked);
             if (createStartButton != null) createStartButton.onClick.AddListener(OnStartGameClicked);
+            if (mapOptionButton != null) mapOptionButton.onClick.AddListener(OnCycleMapClicked);
 
             if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
             if (joinBackButton != null) joinBackButton.onClick.AddListener(OnJoinBackClicked);
@@ -145,6 +170,8 @@ namespace SniperGame.UI
 
             if (loadoutButton != null) loadoutButton.onClick.AddListener(OnOpenLoadoutScreen);
             if (loadoutBackButton != null) loadoutBackButton.onClick.AddListener(OnLoadoutBackClicked);
+
+            if (tutorialButton != null) tutorialButton.onClick.AddListener(OnTutorialClicked);
 
             if (sniper1Button != null) sniper1Button.onClick.AddListener(() => OnSelectSniper(0));
             if (sniper2Button != null) sniper2Button.onClick.AddListener(() => OnSelectSniper(1));
@@ -241,6 +268,17 @@ namespace SniperGame.UI
             ShowScreen(mainScreen);
         }
 
+        public void OnTutorialClicked()
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(tutorialSceneName);
+        }
+
         public void OnOpenSettingsScreen()
         {
             if (settingsPanel == null)
@@ -326,6 +364,7 @@ namespace SniperGame.UI
         private async void OnOpenCreateScreen()
         {
             ShowScreen(createScreen);
+            RefreshMapSelectionVisuals();
 
             if (createStatusText != null) createStatusText.text = "Generating Relay code...";
             if (gameCodeDisplay != null) gameCodeDisplay.text = "LOADING...";
@@ -333,6 +372,26 @@ namespace SniperGame.UI
             if (createBackButton != null) createBackButton.interactable = true;
 
             await CreateRelayGame();
+        }
+
+        public void OnCycleMapClicked()
+        {
+            if (availableMaps == null || availableMaps.Length == 0) return;
+
+            _selectedMapIndex = (_selectedMapIndex + 1) % availableMaps.Length;
+            RefreshMapSelectionVisuals();
+            Debug.Log($"[RelayUI] Selected map: {availableMaps[_selectedMapIndex].displayName} ({availableMaps[_selectedMapIndex].sceneName})");
+        }
+
+        private void RefreshMapSelectionVisuals()
+        {
+            if (availableMaps == null || availableMaps.Length == 0) return;
+            if (_selectedMapIndex < 0 || _selectedMapIndex >= availableMaps.Length) _selectedMapIndex = 0;
+
+            if (mapOptionText != null)
+            {
+                mapOptionText.text = availableMaps[_selectedMapIndex].displayName;
+            }
         }
 
         private void OnOpenJoinScreen()
@@ -446,7 +505,12 @@ namespace SniperGame.UI
                 if (createStatusText != null) createStatusText.text = "Loading scene...";
                 if (createStartButton != null) createStartButton.interactable = false;
 
-                NetworkManager.Singleton.SceneManager.LoadScene(gameplaySceneName, LoadSceneMode.Single);
+                string targetScene = (availableMaps != null && availableMaps.Length > _selectedMapIndex)
+                    ? availableMaps[_selectedMapIndex].sceneName
+                    : gameplaySceneName;
+
+                Debug.Log($"[RelayUI] Starting game on map scene: {targetScene}");
+                NetworkManager.Singleton.SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
             }
         }
 

@@ -26,7 +26,6 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
             SAMPLER(sampler_MatrixSourceColor);
             TEXTURE2D_X(_MatrixEntityMask);
             SAMPLER(sampler_MatrixEntityMask);
-            float4x4 _MatrixInvViewProj;
             float _MatrixReveal;
             float _MatrixRainSpeed;
             float _MatrixDensity;
@@ -124,13 +123,20 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 #else
                     bool sky = rawDepth >= 0.99999;
                 #endif
-                if (sky) return float4(0, 0, 0, 1);
+                float3 sceneSignal = scene.rgb * float3(0.06, 0.16, 0.08);
+                float screenRain = RainProjection(uv * float2(72.0, 36.0), 12.1, 1.0);
+                float3 matrixBase = float3(0.004, 0.018, 0.008);
+                if (sky) return float4(sceneSignal + matrixBase + float3(0.42, 1.0, 0.54) * screenRain * 1.8, 1.0);
 
-                float3 worldPosition = ComputeWorldSpacePosition(uv, rawDepth, _MatrixInvViewProj);
+                float deviceDepth = rawDepth;
+                #if !UNITY_REVERSED_Z
+                    deviceDepth = deviceDepth * 2.0 - 1.0;
+                #endif
+                float3 worldPosition = ComputeWorldSpacePosition(uv, deviceDepth, unity_MatrixInvVP);
                 float3 normalWS = _MatrixHasNormals > 0.5
                     ? normalize(SampleSceneNormals(uv))
                     : normalize(cross(ddx(worldPosition), ddy(worldPosition)));
-                float rain = WorldRain(worldPosition, normalWS);
+                float rain = max(WorldRain(worldPosition, normalWS), screenRain * 0.3);
                 float edge = GeometryEdge(uv, rawDepth, normalWS);
                 float3 nodeCell = floor(worldPosition * _MatrixNodeDensity);
                 float nodeHash = Hash21(nodeCell);
@@ -140,7 +146,7 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 float emission = rain * 2.2 + edge * 1.5 + node * 5.0 + worldCode + entityCode * 6.5;
                 float3 green = float3(0.42, 1.0, 0.54) * emission;
                 float3 whiteGreen = float3(1.8, 2.5, 1.9) * saturate(node * 0.8 + entityCode);
-                return float4(green + whiteGreen, 1.0);
+                return float4(sceneSignal + matrixBase + green + whiteGreen, 1.0);
             }
             ENDHLSL
         }

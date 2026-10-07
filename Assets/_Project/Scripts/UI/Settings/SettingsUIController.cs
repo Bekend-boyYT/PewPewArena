@@ -136,13 +136,13 @@ namespace SniperGame.UI.Settings
         #region Auto-Resolution
         private void AutoResolveReferences()
         {
-            // Find Sidebar Buttons if unassigned
             Transform settingsPanelTr = transform;
+
+            // 1. Sidebar Buttons
             if (generalTabBtn == null) generalTabBtn = FindButton(settingsPanelTr, "General");
             if (gameTabBtn == null) gameTabBtn = FindButton(settingsPanelTr, "Game");
             if (graphicsTabBtn == null) graphicsTabBtn = FindButton(settingsPanelTr, "Graphics");
             if (audioTabBtn == null) audioTabBtn = FindButton(settingsPanelTr, "Audio");
-            if (controlsTabBtn == null) controlsTabBtn = FindButton(settingsPanelTr, "Controls");
             if (controlsTabBtn == null) controlsTabBtn = FindButton(settingsPanelTr, "Control");
 
             _tabButtons = new Button[] { generalTabBtn, gameTabBtn, graphicsTabBtn, audioTabBtn, controlsTabBtn };
@@ -160,7 +160,7 @@ namespace SniperGame.UI.Settings
                 }
             }
 
-            // Find Panels if unassigned
+            // 2. Panels
             if (generalPanel == null) generalPanel = FindChildRelaxed(settingsPanelTr, "General Panel");
             if (gamePanel == null) gamePanel = FindChildRelaxed(settingsPanelTr, "Game Panel");
             if (graphicsPanel == null) graphicsPanel = FindChildRelaxed(settingsPanelTr, "Graphics Panel");
@@ -179,7 +179,7 @@ namespace SniperGame.UI.Settings
                 }
             }
 
-            // Ensure Back button is on top and wired
+            // 3. Settings Back Button
             var backBtnGo = FindChildRelaxed(settingsPanelTr, "SettingsBackButton");
             if (backBtnGo != null)
             {
@@ -190,15 +190,27 @@ namespace SniperGame.UI.Settings
                     btn.onClick.RemoveAllListeners();
                     btn.onClick.AddListener(() =>
                     {
-                        if (PauseMenu.Instance != null)
+                        if (PauseMenu.Instance != null && PauseMenu.Instance.gameObject.activeInHierarchy)
                         {
                             PauseMenu.Instance.BackToMainPause();
+                        }
+                        else
+                        {
+                            var relayUI = FindAnyObjectByType<RelayNetworkUI>();
+                            if (relayUI != null)
+                            {
+                                relayUI.OnSettingsBackClicked();
+                            }
+                            else
+                            {
+                                gameObject.SetActive(false);
+                            }
                         }
                     });
                 }
             }
 
-            // Find Keybinds side panel & buttons
+            // 4. Keybinds side panel & buttons
             if (keybindsSidePanel == null)
             {
                 keybindsSidePanel = FindChildRelaxed(settingsPanelTr, "KeybindsSidePanel");
@@ -208,91 +220,129 @@ namespace SniperGame.UI.Settings
 
             if (keybindsOpenBtn == null)
             {
-                if (controlsPanel != null)
+                keybindsOpenBtn = FindControlByName<Button>(controlsPanel != null ? controlsPanel.transform : settingsPanelTr, "KeybindsButton");
+                if (keybindsOpenBtn == null && controlsPanel != null)
                     keybindsOpenBtn = controlsPanel.GetComponentInChildren<Button>(true);
             }
 
             if (keybindsCloseBtn == null && keybindsSidePanel != null)
             {
-                var btns = keybindsSidePanel.GetComponentsInChildren<Button>(true);
-                foreach (var b in btns)
+                keybindsCloseBtn = FindControlByName<Button>(keybindsSidePanel.transform, "KeybindsCloseButton");
+                if (keybindsCloseBtn == null)
                 {
-                    if (b.name.Contains("Close") || b.GetComponentInChildren<TextMeshProUGUI>()?.text == "X")
+                    var btns = keybindsSidePanel.GetComponentsInChildren<Button>(true);
+                    foreach (var b in btns)
                     {
-                        keybindsCloseBtn = b;
-                        break;
+                        if (b.name.Contains("Close") || b.GetComponentInChildren<TextMeshProUGUI>()?.text == "X")
+                        {
+                            keybindsCloseBtn = b;
+                            break;
+                        }
                     }
                 }
             }
 
-            // General Elements
+            // 5. General Elements
             if (generalPanel != null)
             {
                 var dropdowns = generalPanel.GetComponentsInChildren<TMP_Dropdown>(true);
-                if (displayModeDropdown == null && dropdowns.Length > 0) displayModeDropdown = dropdowns[0];
-                if (resolutionDropdown == null && dropdowns.Length > 1) resolutionDropdown = dropdowns[1];
-                if (fpsLimitDropdown == null && dropdowns.Length > 2) fpsLimitDropdown = dropdowns[2];
+                foreach (var dd in dropdowns)
+                {
+                    if (dd.name.IndexOf("fps", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        (dd.options.Count > 0 && dd.options[0].text.IndexOf("fps", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                    {
+                        fpsLimitDropdown = dd;
+                    }
+                    else if ((dd.options.Count > 0 && (dd.options[0].text.Contains("720") || dd.options[0].text.Contains("1080"))) ||
+                             dd.name.IndexOf("resolution", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        resolutionDropdown = dd;
+                    }
+                    else if ((dd.options.Count > 0 && dd.options[0].text.IndexOf("fullscreen", System.StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             dd.name.IndexOf("displaymode", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        displayModeDropdown = dd;
+                    }
+                }
 
-                if (showFpsToggle == null) showFpsToggle = generalPanel.GetComponentInChildren<Toggle>(true);
-                if (resetSettingsBtn == null) resetSettingsBtn = generalPanel.GetComponentInChildren<Button>(true);
+                showFpsToggle = FindControlByName<Toggle>(generalPanel.transform, "ShowFPSToggle");
+                resetSettingsBtn = FindControlByName<Button>(generalPanel.transform, "ResetSettingsButton");
             }
 
-            // Game Elements
+            // 6. Game Elements
             if (gamePanel != null)
             {
-                var toggles = gamePanel.GetComponentsInChildren<Toggle>(true);
-                if (crosshairToggle == null && toggles.Length > 0) crosshairToggle = toggles[0];
-                if (hitmarkerToggle == null && toggles.Length > 1) hitmarkerToggle = toggles[1];
-                if (damageNumbersToggle == null && toggles.Length > 2) damageNumbersToggle = toggles[2];
+                crosshairToggle = FindControlByName<Toggle>(gamePanel.transform, "CrosshairToggle");
+                hitmarkerToggle = FindControlByName<Toggle>(gamePanel.transform, "HitmarkerToggle");
+                damageNumbersToggle = FindControlByName<Toggle>(gamePanel.transform, "DamageNumbersToggle");
             }
 
-            // Graphics Elements
+            // 7. Graphics Elements
             if (graphicsPanel != null)
             {
+                qualityDropdown = FindControlByName<TMP_Dropdown>(graphicsPanel.transform, "GraphicsQualityDropdown");
                 if (qualityDropdown == null) qualityDropdown = graphicsPanel.GetComponentInChildren<TMP_Dropdown>(true);
 
-                var toggles = graphicsPanel.GetComponentsInChildren<Toggle>(true);
-                if (vsyncToggle == null && toggles.Length > 0) vsyncToggle = toggles[0];
-                if (shadowsToggle == null && toggles.Length > 1) shadowsToggle = toggles[1];
-                if (antiAliasingToggle == null && toggles.Length > 2) antiAliasingToggle = toggles[2];
+                vsyncToggle = FindControlByName<Toggle>(graphicsPanel.transform, "VSyncToggle");
+                shadowsToggle = FindControlByName<Toggle>(graphicsPanel.transform, "ShadowsToggle");
+                antiAliasingToggle = FindControlByName<Toggle>(graphicsPanel.transform, "AntiAliasingToggle");
 
-                var sliders = graphicsPanel.GetComponentsInChildren<Slider>(true);
-                if (fovSlider == null && sliders.Length > 0) fovSlider = sliders[0];
-                if (viewDistanceSlider == null && sliders.Length > 1) viewDistanceSlider = sliders[1];
+                fovSlider = FindControlByName<Slider>(graphicsPanel.transform, "FOVSlider");
+                viewDistanceSlider = FindControlByName<Slider>(graphicsPanel.transform, "ViewDistanceSlider");
 
-                if (fovSlider != null) fovValueText = FindValueTextNextTo(fovSlider);
-                if (viewDistanceSlider != null) viewDistanceValueText = FindValueTextNextTo(viewDistanceSlider);
+                fovValueText = FindControlByName<TextMeshProUGUI>(graphicsPanel.transform, "FOVValueText");
+                viewDistanceValueText = FindControlByName<TextMeshProUGUI>(graphicsPanel.transform, "ViewDistanceValueText");
             }
 
-            // Audio Elements
+            // 8. Audio Elements
             if (audioPanel != null)
             {
-                var sliders = audioPanel.GetComponentsInChildren<Slider>(true);
-                if (masterVolSlider == null && sliders.Length > 0) masterVolSlider = sliders[0];
-                if (sfxVolSlider == null && sliders.Length > 1) sfxVolSlider = sliders[1];
-                if (musicVolSlider == null && sliders.Length > 2) musicVolSlider = sliders[2];
-                if (voiceVolSlider == null && sliders.Length > 3) voiceVolSlider = sliders[3];
+                masterVolSlider = FindControlByName<Slider>(audioPanel.transform, "MasterVolumeSlider");
+                sfxVolSlider = FindControlByName<Slider>(audioPanel.transform, "SFXVolumeSlider");
+                musicVolSlider = FindControlByName<Slider>(audioPanel.transform, "MusicVolumeSlider");
+                voiceVolSlider = FindControlByName<Slider>(audioPanel.transform, "VoiceVolumeSlider");
 
-                if (masterVolSlider != null) masterVolValueText = FindValueTextNextTo(masterVolSlider);
-                if (sfxVolSlider != null) sfxVolValueText = FindValueTextNextTo(sfxVolSlider);
-                if (musicVolSlider != null) musicVolValueText = FindValueTextNextTo(musicVolSlider);
-                if (voiceVolSlider != null) voiceVolValueText = FindValueTextNextTo(voiceVolSlider);
+                masterVolValueText = FindControlByName<TextMeshProUGUI>(audioPanel.transform, "MasterVolumeValueText");
+                sfxVolValueText = FindControlByName<TextMeshProUGUI>(audioPanel.transform, "SFXVolumeValueText");
+                musicVolValueText = FindControlByName<TextMeshProUGUI>(audioPanel.transform, "MusicVolumeValueText");
+                voiceVolValueText = FindControlByName<TextMeshProUGUI>(audioPanel.transform, "VoiceVolumeValueText");
             }
 
-            // Controls Elements
+            // 9. Controls Elements
             if (controlsPanel != null)
             {
-                var sliders = controlsPanel.GetComponentsInChildren<Slider>(true);
-                if (mouseSensSlider == null && sliders.Length > 0) mouseSensSlider = sliders[0];
-                if (adsSensSlider == null && sliders.Length > 1) adsSensSlider = sliders[1];
+                mouseSensSlider = FindControlByName<Slider>(controlsPanel.transform, "MouseSensitivitySlider");
+                adsSensSlider = FindControlByName<Slider>(controlsPanel.transform, "ADSSensitivitySlider");
+                invertYToggle = FindControlByName<Toggle>(controlsPanel.transform, "InvertYToggle");
 
-                if (invertYToggle == null) invertYToggle = controlsPanel.GetComponentInChildren<Toggle>(true);
-
-                if (mouseSensSlider != null) mouseSensValueText = FindValueTextNextTo(mouseSensSlider);
-                if (adsSensSlider != null) adsSensValueText = FindValueTextNextTo(adsSensSlider);
+                mouseSensValueText = FindControlByName<TextMeshProUGUI>(controlsPanel.transform, "MouseSensitivityValueText");
+                adsSensValueText = FindControlByName<TextMeshProUGUI>(controlsPanel.transform, "ADSSensitivityValueText");
             }
 
             SetupKeybindRows();
+        }
+
+        private T FindControlByName<T>(Transform parent, string partialName) where T : Component
+        {
+            if (parent == null) return null;
+            string target = partialName.Replace(" ", "").ToLowerInvariant();
+            T[] components = parent.GetComponentsInChildren<T>(true);
+            foreach (var c in components)
+            {
+                // Never match dropdown template items
+                if (c.name.Equals("Item", System.StringComparison.OrdinalIgnoreCase) ||
+                    (c.transform.parent != null && c.transform.parent.name.Equals("Content", System.StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                string cName = c.name.Replace(" ", "").ToLowerInvariant();
+                if (cName.Contains(target))
+                {
+                    return c;
+                }
+            }
+            return null;
         }
 
         private GameObject FindChildRelaxed(Transform parent, string targetName)
@@ -321,13 +371,21 @@ namespace SniperGame.UI.Settings
         private TextMeshProUGUI FindValueTextNextTo(Slider slider)
         {
             if (slider == null || slider.transform.parent == null) return null;
+            string sliderRootName = slider.name.Replace("Slider", "").Replace(" ", "").ToLowerInvariant();
             var texts = slider.transform.parent.GetComponentsInChildren<TextMeshProUGUI>(true);
+            foreach (var t in texts)
+            {
+                string tName = t.name.Replace(" ", "").ToLowerInvariant();
+                if (tName.Contains(sliderRootName) && tName.Contains("value"))
+                {
+                    return t;
+                }
+            }
             foreach (var t in texts)
             {
                 if (t.name.ToLowerInvariant().Contains("value") || t.name.ToLowerInvariant().Contains("text"))
                 {
-                    // Check if aligned vertically
-                    if (Mathf.Abs(t.rectTransform.anchoredPosition.y - slider.GetComponent<RectTransform>().anchoredPosition.y) < 15f)
+                    if (Mathf.Abs(t.rectTransform.anchoredPosition.y - slider.GetComponent<RectTransform>().anchoredPosition.y) < 25f)
                     {
                         return t;
                     }
@@ -861,9 +919,9 @@ namespace SniperGame.UI.Settings
             _isUpdatingUI = true;
 
             // General
-            if (displayModeDropdown != null) displayModeDropdown.value = SettingsManager.DisplayModeIndex;
-            if (resolutionDropdown != null) resolutionDropdown.value = SettingsManager.ResolutionIndex;
-            if (fpsLimitDropdown != null) fpsLimitDropdown.value = SettingsManager.FpsLimitIndex;
+            if (displayModeDropdown != null) { displayModeDropdown.value = SettingsManager.DisplayModeIndex; displayModeDropdown.RefreshShownValue(); }
+            if (resolutionDropdown != null) { resolutionDropdown.value = SettingsManager.ResolutionIndex; resolutionDropdown.RefreshShownValue(); }
+            if (fpsLimitDropdown != null) { fpsLimitDropdown.value = SettingsManager.FpsLimitIndex; fpsLimitDropdown.RefreshShownValue(); }
             if (showFpsToggle != null) showFpsToggle.isOn = SettingsManager.ShowFps;
 
             // Game
@@ -872,7 +930,7 @@ namespace SniperGame.UI.Settings
             if (damageNumbersToggle != null) damageNumbersToggle.isOn = SettingsManager.ShowDamageNumbers;
 
             // Graphics
-            if (qualityDropdown != null) qualityDropdown.value = SettingsManager.QualityIndex;
+            if (qualityDropdown != null) { qualityDropdown.value = SettingsManager.QualityIndex; qualityDropdown.RefreshShownValue(); }
             if (vsyncToggle != null) vsyncToggle.isOn = SettingsManager.VSyncEnabled;
             if (shadowsToggle != null) shadowsToggle.isOn = SettingsManager.ShadowsEnabled;
             if (antiAliasingToggle != null) antiAliasingToggle.isOn = SettingsManager.AntiAliasingEnabled;

@@ -61,6 +61,23 @@ namespace SniperGame.Gameplay
             }
         }
 
+        private void Start()
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            {
+                var netObj = GetComponent<NetworkObject>();
+                if (netObj != null && !netObj.IsSpawned)
+                {
+                    Debug.Log("[RoundManager] Auto-spawning RoundManager NetworkObject on Server...");
+                    netObj.Spawn();
+                }
+                else if (IsSpawned && CurrentState.Value == MatchState.WaitingForPlayers)
+                {
+                    StartCoroutine(InitialMatchStartRoutine());
+                }
+            }
+        }
+
         private void Update()
         {
             if (!IsServer) return;
@@ -85,6 +102,9 @@ namespace SniperGame.Gameplay
 
         public bool CanPlayersFight()
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+                return true;
+
             return CurrentState.Value == MatchState.InRound;
         }
 

@@ -107,3 +107,4 @@ InitTestScene*.unity*
 Assets/Modeling/Map2Test/LightingData.asset
 Assets/Modeling/Map2Test/LightingData.asset
 Assets/Modeling/Map2Test/LightingData.asset
+Assets/_Project/Scripts/UI/PauseMenu.cs

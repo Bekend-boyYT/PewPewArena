@@ -64,7 +64,6 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
     {
         private static readonly int SourceColorId = Shader.PropertyToID("_MatrixSourceColor");
         private static readonly int EntityMaskId = Shader.PropertyToID("_MatrixEntityMask");
-        private static readonly int InverseViewProjectionId = Shader.PropertyToID("_MatrixInvViewProj");
         private static readonly int RevealId = Shader.PropertyToID("_MatrixReveal");
         private static readonly int RainSpeedId = Shader.PropertyToID("_MatrixRainSpeed");
         private static readonly int DensityId = Shader.PropertyToID("_MatrixDensity");
@@ -101,7 +100,6 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
             public TextureHandle normals;
             public TextureHandle destination;
             public Material material;
-            public Matrix4x4 inverseViewProjection;
             public float reveal;
             public float rainSpeed;
             public float density;
@@ -167,8 +165,6 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
                 });
             }
 
-            Matrix4x4 gpuProjection = GL.GetGPUProjectionMatrix(cameraData.GetProjectionMatrix(), true);
-            Matrix4x4 inverseViewProjection = (gpuProjection * cameraData.GetViewMatrix()).inverse;
             using (var builder = renderGraph.AddRasterRenderPass<VisionPassData>("World Space Matrix Code Vision", out var passData))
             {
                 passData.sourceColor = sourceColor;
@@ -177,7 +173,6 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
                 passData.normals = resources.cameraNormalsTexture;
                 passData.destination = resources.activeColorTexture;
                 passData.material = visionMaterial;
-                passData.inverseViewProjection = inverseViewProjection;
                 passData.reveal = revealProgress;
                 passData.rainSpeed = rainSpeed;
                 passData.density = rainDensity;
@@ -197,7 +192,6 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
                     context.cmd.SetGlobalTexture(EntityMaskId, data.entityMask);
                     context.cmd.SetGlobalTexture(Shader.PropertyToID("_CameraDepthTexture"), data.depth);
                     context.cmd.SetGlobalTexture(Shader.PropertyToID("_CameraNormalsTexture"), data.normals);
-                    context.cmd.SetGlobalMatrix(InverseViewProjectionId, data.inverseViewProjection);
                     context.cmd.SetGlobalFloat(RevealId, data.reveal);
                     context.cmd.SetGlobalFloat(RainSpeedId, data.rainSpeed);
                     context.cmd.SetGlobalFloat(DensityId, data.density);

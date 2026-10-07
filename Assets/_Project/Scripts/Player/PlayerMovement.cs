@@ -1,6 +1,7 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using SniperGame.UI;
@@ -160,11 +161,41 @@ namespace SniperGame.Player
             _currentStamina = maxStamina;
         }
 
+        private void OnEnable()
+        {
+            UI.Settings.SettingsManager.OnFOVChanged += HandleSettingsFOVChanged;
+            UI.Settings.SettingsManager.OnViewDistanceChanged += HandleSettingsViewDistanceChanged;
+        }
+
+        private void OnDisable()
+        {
+            UI.Settings.SettingsManager.OnFOVChanged -= HandleSettingsFOVChanged;
+            UI.Settings.SettingsManager.OnViewDistanceChanged -= HandleSettingsViewDistanceChanged;
+        }
+
+        private void HandleSettingsFOVChanged(float fov)
+        {
+            if (_cameraComponent != null && !_isScoped)
+            {
+                _cameraComponent.fieldOfView = fov;
+            }
+        }
+
+        private void HandleSettingsViewDistanceChanged(float distance)
+        {
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.farClipPlane = distance;
+            }
+        }
+
         private void Start()
         {
             if (_cameraComponent != null)
             {
-                _cameraComponent.fieldOfView = baseFOV;
+                float savedFOV = UI.Settings.SettingsManager.FOV;
+                _cameraComponent.fieldOfView = savedFOV > 10f ? savedFOV : baseFOV;
+                _cameraComponent.farClipPlane = UI.Settings.SettingsManager.ViewDistance;
             }
 
             if (CombatHUD.Instance != null && staminaEnabled)
@@ -175,6 +206,11 @@ namespace SniperGame.Player
             if (IsOwner)
             {
                 HideLocalPlayerBody();
+                if (IsGameplayScene() && !PauseMenu.IsPaused)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
         }
 
@@ -211,13 +247,33 @@ namespace SniperGame.Player
             }
         }
 
+        private bool IsGameplayScene()
+        {
+            string activeScene = SceneManager.GetActiveScene().name;
+            string objectScene = gameObject.scene.name;
+
+            if (activeScene == "Map2Test" || activeScene == "Maintestgameplay" ||
+                objectScene == "Map2Test" || objectScene == "Maintestgameplay")
+            {
+                return true;
+            }
+
+            if ((!string.IsNullOrEmpty(activeScene) && (activeScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || activeScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)) ||
+                (!string.IsNullOrEmpty(objectScene) && (objectScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || objectScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)))
+            {
+                return true;
+            }
+
+            return activeScene != "01_MainMenu" && !string.IsNullOrEmpty(activeScene);
+        }
+
         private void Update()
         {
             if (!IsOwner) return;
 
             bool isMatchEnd = CombatHUD.Instance != null && CombatHUD.Instance.IsMatchEndActive;
 
-            if (SceneManager.GetActiveScene().name != "Maintestgameplay" || PauseMenu.IsPaused || isMatchEnd)
+            if (!IsGameplayScene() || PauseMenu.IsPaused || isMatchEnd)
             {
                 if (Cursor.lockState != CursorLockMode.None)
                 {
@@ -228,7 +284,16 @@ namespace SniperGame.Player
                 return;
             }
 
-            if (Cursor.lockState != CursorLockMode.Locked)
+            // Click-to-lock recovery in Game View: if cursor was unlocked, clicking inside locks it back
+            if (Input.GetMouseButtonDown(0) && Cursor.lockState != CursorLockMode.Locked)
+            {
+                if (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject())
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
+            }
+            else if (Cursor.lockState != CursorLockMode.Locked)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;

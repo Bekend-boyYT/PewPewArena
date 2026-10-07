@@ -63,7 +63,8 @@ namespace SniperGame.Audio
         {
             if (clip != null && _2dAudioSource != null)
             {
-                _2dAudioSource.PlayOneShot(clip, volume);
+                float sfxVol = UI.Settings.SettingsManager.SfxVolume;
+                _2dAudioSource.PlayOneShot(clip, volume * sfxVol);
             }
         }
     }

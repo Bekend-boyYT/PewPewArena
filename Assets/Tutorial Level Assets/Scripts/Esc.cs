@@ -92,6 +92,8 @@ public class Esc : MonoBehaviour
     private void QuitToMainMenu()
     {
         Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
