@@ -394,7 +394,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerMovement
   ShowTopMostFoldoutHeaderGroup: 1
-  soundPlayer: {fileID: 1930027797558389159}
   cameraTransform: {fileID: 6304926110293085849}
   visualsRoot: {fileID: 1663566611182935679}
   baseFOV: 80
@@ -412,14 +411,11 @@ MonoBehaviour:
   staminaRegenDelay: 0.9
   minStaminaToSprint: 15
   jumpHeight: 2.4
+  doubleJumpHeight: 2
   gravity: 100
   jumpBufferTime: 0.2
   coyoteTime: 0.15
-  crouchSlideKey: 99
-  slideHoldThreshold: 0.2
-  crouchHeight: 1
-  crouchCamOffsetY: 0.55
-  crouchTransitionSpeed: 11
+  slideKey: 99
   slideBoostSpeed: 20
   slideDuration: 0.5
   slideFriction: 12
@@ -440,6 +436,7 @@ MonoBehaviour:
   fovChangeSpeed: 8
   runFovIncrease: 15
   slideFovIncrease: 3
+  soundPlayer: {fileID: 1930027797558389159}
 --- !u!114 &6650333325785518552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1154,7 +1151,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
