@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6671246444940670907}
   - component: {fileID: 2966404234256397557}
   m_Layer: 0
-  m_Name: Placeholder water toren
+  m_Name: WaterToren
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
