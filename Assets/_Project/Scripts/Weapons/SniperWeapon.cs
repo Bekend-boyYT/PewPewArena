@@ -68,8 +68,8 @@ namespace SniperGame.Weapons
         [SerializeField] private Transform firePoint;
         [SerializeField] private PlayerMovement playerMovement;
 
-        [Header("Effects, Bullets & Tracers")]
-        [Tooltip("Your 3D bullet prefab that flies from the barrel")]
+        [Header("Effects, Bullets & Tracers (Fallback)")]
+        [Tooltip("Legacy fallback bullet prefab")]
         [SerializeField] private GameObject bulletPrefab;
         [SerializeField] private float bulletSpeed = 450f;
         [SerializeField] private ParticleSystem muzzleFlash;
@@ -77,6 +77,18 @@ namespace SniperGame.Weapons
         [SerializeField] private Material tracerMaterial;
         [SerializeField] private float tracerDuration = 0.08f;
         [SerializeField] private float tracerWidth = 0.04f;
+
+        [Header("Sniper 1 VFX")]
+        [SerializeField] private GameObject muzzleFlashPrefab1;
+        [SerializeField] private GameObject bulletPrefab1;
+        [SerializeField] private GameObject hitEffectPrefab1;
+        [SerializeField] private float bulletSpeed1 = 500f;
+
+        [Header("Sniper 2 VFX")]
+        [SerializeField] private GameObject muzzleFlashPrefab2;
+        [SerializeField] private GameObject bulletPrefab2;
+        [SerializeField] private GameObject hitEffectPrefab2;
+        [SerializeField] private float bulletSpeed2 = 550f;
 
         [Header("Layers")]
         [SerializeField] private LayerMask hitMask = ~0;
@@ -664,7 +676,7 @@ namespace SniperGame.Weapons
                 playerMovement.AddRecoil(pitch, yaw);
             }
 
-            PlayShootEffects();
+            PlayShootEffects(_activeWeaponSlot);
 
             ShootServerRpc(origin, direction, OwnerClientId, _activeWeaponSlot);
         }
@@ -762,6 +774,7 @@ namespace SniperGame.Weapons
 
             Vector3 hitPoint = origin + direction * range;
             Vector3 hitNormal = -direction;
+            bool isCharacterHit = false;
 
             RaycastHit[] hits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -781,6 +794,7 @@ namespace SniperGame.Weapons
 
                 if (targetHealth != null && targetHealth.OwnerClientId != shooterClientId)
                 {
+                    isCharacterHit = true;
                     HitboxType hitType = (hitbox != null) ? hitbox.Type : HitboxType.Body;
                     int appliedDamage;
                     bool showHitmarker;
@@ -808,8 +822,9 @@ namespace SniperGame.Weapons
                 break;
             }
 
-            Vector3 spawnOrigin = (firePoint != null) ? firePoint.position : origin;
-            SpawnShotVisualsClientRpc(spawnOrigin, hitPoint, hitNormal);
+            Transform activeMuzzle = (weaponSlot == 0) ? firePoint1 : firePoint2;
+            Vector3 spawnOrigin = (activeMuzzle != null) ? activeMuzzle.position : ((firePoint != null) ? firePoint.position : origin);
+            SpawnShotVisualsClientRpc(spawnOrigin, hitPoint, hitNormal, weaponSlot, isCharacterHit);
         }
 
         [ClientRpc]
@@ -840,25 +855,43 @@ namespace SniperGame.Weapons
         }
 
         [ClientRpc]
-        private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal)
+        private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal, int weaponSlot, bool isCharacterHit)
         {
-            if (bulletPrefab != null)
+            GameObject bPrefab = (weaponSlot == 0)
+                ? (bulletPrefab1 != null ? bulletPrefab1 : bulletPrefab)
+                : (bulletPrefab2 != null ? bulletPrefab2 : bulletPrefab);
+
+            GameObject hPrefab = (weaponSlot == 0)
+                ? (hitEffectPrefab1 != null ? hitEffectPrefab1 : hitEffectPrefab)
+                : (hitEffectPrefab2 != null ? hitEffectPrefab2 : hitEffectPrefab);
+
+            float speed = (weaponSlot == 0)
+                ? (bulletSpeed1 > 0 ? bulletSpeed1 : bulletSpeed)
+                : (bulletSpeed2 > 0 ? bulletSpeed2 : bulletSpeed);
+
+            if (bPrefab != null)
             {
-                GameObject bullet = Instantiate(bulletPrefab, origin, Quaternion.identity);
+                GameObject bullet = Instantiate(bPrefab, origin, Quaternion.identity);
                 var cosmetic = bullet.GetComponent<CosmeticBullet>();
                 if (cosmetic == null)
                 {
                     cosmetic = bullet.AddComponent<CosmeticBullet>();
                 }
-                cosmetic.Initialize(hitPosition, hitNormal, hitEffectPrefab, bulletSpeed);
+                cosmetic.Initialize(hitPosition, hitNormal, hPrefab, speed, isCharacterHit);
             }
             else
             {
                 StartCoroutine(DrawTracerRoutine(origin, hitPosition));
 
-                if (hitEffectPrefab != null)
+                if (hPrefab != null)
                 {
-                    GameObject effect = Instantiate(hitEffectPrefab, hitPosition, Quaternion.LookRotation(hitNormal));
+                    Quaternion rot = (hitNormal != Vector3.zero) ? Quaternion.LookRotation(hitNormal) : Quaternion.identity;
+                    GameObject effect = Instantiate(hPrefab, hitPosition, rot);
+                    var cleanup = effect.GetComponent<VFXAutoCleanup>();
+                    if (cleanup != null)
+                    {
+                        cleanup.SetCharacterHit(isCharacterHit);
+                    }
                     Destroy(effect, 3f);
                 }
             }
@@ -891,13 +924,14 @@ namespace SniperGame.Weapons
             Destroy(tracerObj);
         }
 
-        private void PlayShootEffects()
+        private void PlayShootEffects(int slot)
         {
-            if (muzzleFlash != null) muzzleFlash.Play();
+            PlayMuzzleFlash(slot);
+
             if (weaponAudioSource != null && gunshotClip != null)
             {
-                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+                weaponAudioSource.pitch = (slot == 1) ? Random.Range(0.88f, 0.94f) : Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, (slot == 1) ? 1.0f : 0.95f);
             }
 
             if (IsOwner && CombatHUD.Instance != null)
@@ -905,19 +939,40 @@ namespace SniperGame.Weapons
                 CombatHUD.Instance.TriggerScopeRecoil(1.0f);
             }
 
-            PlayShootEffectsClientRpc();
+            PlayShootEffectsClientRpc(slot);
         }
 
         [ClientRpc]
-        private void PlayShootEffectsClientRpc(ClientRpcParams clientRpcParams = default)
+        private void PlayShootEffectsClientRpc(int slot, ClientRpcParams clientRpcParams = default)
         {
             if (IsOwner) return;
 
-            if (muzzleFlash != null) muzzleFlash.Play();
+            PlayMuzzleFlash(slot);
+
             if (weaponAudioSource != null && gunshotClip != null)
             {
-                weaponAudioSource.pitch = Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, 1.0f);
+                weaponAudioSource.pitch = (slot == 1) ? Random.Range(0.88f, 0.94f) : Random.Range(0.96f, 1.04f);
+                weaponAudioSource.PlayOneShot(gunshotClip, (slot == 1) ? 1.0f : 0.95f);
+            }
+        }
+
+        private void PlayMuzzleFlash(int slot)
+        {
+            Transform muzzleTransform = (slot == 0) ? firePoint1 : firePoint2;
+            if (muzzleTransform == null) muzzleTransform = (firePoint != null) ? firePoint : transform;
+
+            GameObject prefabToSpawn = (slot == 0)
+                ? (muzzleFlashPrefab1 != null ? muzzleFlashPrefab1 : (muzzleFlash != null ? muzzleFlash.gameObject : null))
+                : (muzzleFlashPrefab2 != null ? muzzleFlashPrefab2 : (muzzleFlash != null ? muzzleFlash.gameObject : null));
+
+            if (prefabToSpawn != null && muzzleTransform != null)
+            {
+                GameObject flashObj = Instantiate(prefabToSpawn, muzzleTransform.position, muzzleTransform.rotation, muzzleTransform);
+                Destroy(flashObj, 1.5f);
+            }
+            else if (muzzleFlash != null)
+            {
+                muzzleFlash.Play();
             }
         }
 

@@ -352,13 +352,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1134403843
+  GlobalObjectIdHash: 3759555964
   InScenePlacedSourceGlobalObjectIdHash: 3759555964
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -563,6 +563,14 @@ MonoBehaviour:
   tracerMaterial: {fileID: 0}
   tracerDuration: 0.08
   tracerWidth: 0.04
+  muzzleFlashPrefab1: {fileID: 3003336575500683960, guid: c75d34f0d0a31fd4998cd1995e00d9da, type: 3}
+  bulletPrefab1: {fileID: 4902780824844457583, guid: 23302659b9df1ca4788970bdb4bea73b, type: 3}
+  hitEffectPrefab1: {fileID: 484365077167131744, guid: 801f382f17b9b154e9088603a8829560, type: 3}
+  bulletSpeed1: 500
+  muzzleFlashPrefab2: {fileID: 1755746549281700376, guid: b5400e72d4b81f8459adb8e2dbe864b4, type: 3}
+  bulletPrefab2: {fileID: 9004964136365580237, guid: 24eba6981d7dd8f4fa1b8763f8a6cf1d, type: 3}
+  hitEffectPrefab2: {fileID: 3842634530626216332, guid: a116360ad18febb4987c2b2b36d408c5, type: 3}
+  bulletSpeed2: 550
   hitMask:
     serializedVersion: 2
     m_Bits: 4294967295

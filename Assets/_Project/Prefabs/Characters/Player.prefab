@@ -449,32 +449,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerMovement
   ShowTopMostFoldoutHeaderGroup: 1
-  cameraHolder: {fileID: 6234881638414218974}
-  footstepAudioSource: {fileID: 2148086025490745545}
+  soundPlayer: {fileID: 0}
+  cameraTransform: {fileID: 0}
+  visualsRoot: {fileID: 0}
+  baseFOV: 80
+  lookSensitivity: 2
+  lookXLimit: 85
   walkSpeed: 5
-  sprintSpeed: 8.5
+  runSpeed: 15
   crouchSpeed: 2.5
   acceleration: 18
-  deceleration: 22
-  airControlMultiplier: 0.4
+  airControl: 0.6
+  staminaEnabled: 1
   maxStamina: 100
   staminaDrainRate: 28
   staminaRegenRate: 22
-  regenDelay: 1
-  jumpForce: 6.5
-  baseGravity: -18
-  fallGravityMultiplier: 2.2
-  standingHeight: 2
+  staminaRegenDelay: 0.9
+  minStaminaToSprint: 15
+  jumpHeight: 2.4
+  gravity: 28
+  jumpBufferTime: 0.15
+  coyoteTime: 0.15
+  crouchSlideKey: 99
+  slideHoldThreshold: 0.2
   crouchHeight: 1.2
-  standingCameraY: 1.6
-  crouchCameraY: 0.9
-  crouchSmoothSpeed: 14
-  footstepClips:
-  - {fileID: 8300000, guid: 56478a03adf153a468b4eac397cf2924, type: 3}
-  - {fileID: 8300000, guid: f452c063cf9b70747af5433e7c62a2bf, type: 3}
-  walkStepInterval: 0.45
-  sprintStepInterval: 0.3
-  footstepVolume: 0.65
+  crouchCamOffsetY: 0.55
+  crouchTransitionSpeed: 11
+  slideBoostSpeed: 20
+  slideDuration: 0.75
+  slideFriction: 12
+  slideCooldown: 0.4
+  slideCameraLean: 10
+  wallRunMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  wallRunHoldTime: 0.4
+  wallRunSpeed: 16
+  wallRunDownwardDrift: 0.5
+  wallStickForce: 6
+  wallRunCameraLean: 14
+  wallJumpUpForce: 9
+  wallJumpSideForce: 13
+  promptDistance: 3.5
+  cameraTiltSpeed: 12
+  fovChangeSpeed: 8
+  runFovIncrease: 8
+  slideFovIncrease: 14
 --- !u!114 &2451569977180287874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -540,9 +560,8 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 100
-  characterController: {fileID: 8591399208384449305}
-  visualsRenderer: {fileID: 8131419437210913135}
-  playerLook: {fileID: -7700286182009497169}
+  visualsRoot: {fileID: 0}
+  playerMovement: {fileID: 0}
 --- !u!114 &8674415964324781783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -558,6 +577,19 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   range: 500
   fireRate: 1.6
+  weaponHolder1: {fileID: 0}
+  weaponAnimator1: {fileID: 0}
+  firePoint1: {fileID: 0}
+  maxClipAmmo1: 5
+  weaponHolder2: {fileID: 0}
+  weaponAnimator2: {fileID: 0}
+  firePoint2: {fileID: 0}
+  maxClipAmmo2: 3
+  hipRecoilPitch2: 0.95
+  hipRecoilYaw2: 0.65
+  scopedRecoilPitch2: 0.8
+  scopedRecoilYaw2: 0.45
+  sniper2Damage: 999
   maxClipAmmo: 5
   reloadDuration: 2.2
   weaponAudioSource: {fileID: 1436527269021096286}
@@ -567,21 +599,41 @@ MonoBehaviour:
   scopedFOV: 18
   zoomSpeed: 16
   scopedSensitivityMultiplier: 0.35
+  weaponAnimator: {fileID: 0}
+  weaponVisuals: {fileID: 0}
+  scopeInDuration: 0.2
+  scopeOverlayLeadTime: 0.05
+  isScopedParam: IsScoped
   hipRecoilPitch: 3.2
   hipRecoilYaw: 1
   scopedRecoilPitch: 1.4
   scopedRecoilYaw: 0.4
   playerCamera: {fileID: 6814447643227849398}
   firePoint: {fileID: 2605089401782484605}
-  playerLook: {fileID: -7700286182009497169}
+  playerMovement: {fileID: 0}
+  bulletPrefab: {fileID: 0}
+  bulletSpeed: 450
   muzzleFlash: {fileID: 0}
   hitEffectPrefab: {fileID: 0}
   tracerMaterial: {fileID: 0}
   tracerDuration: 0.08
   tracerWidth: 0.04
+  muzzleFlashPrefab1: {fileID: 3003336575500683960, guid: c75d34f0d0a31fd4998cd1995e00d9da, type: 3}
+  bulletPrefab1: {fileID: 4902780824844457583, guid: 23302659b9df1ca4788970bdb4bea73b, type: 3}
+  hitEffectPrefab1: {fileID: 484365077167131744, guid: 801f382f17b9b154e9088603a8829560, type: 3}
+  bulletSpeed1: 500
+  muzzleFlashPrefab2: {fileID: 1755746549281700376, guid: b5400e72d4b81f8459adb8e2dbe864b4, type: 3}
+  bulletPrefab2: {fileID: 9004964136365580237, guid: 24eba6981d7dd8f4fa1b8763f8a6cf1d, type: 3}
+  hitEffectPrefab2: {fileID: 3842634530626216332, guid: a116360ad18febb4987c2b2b36d408c5, type: 3}
+  bulletSpeed2: 550
   hitMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  ActiveWeaponIndex:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!82 &1436527269021096286
 AudioSource:
   m_ObjectHideFlags: 0
