@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -26,8 +27,12 @@ namespace SniperGame.UI
         [SerializeField] private GameObject playPanel;
         [SerializeField] private GameObject loadoutPanel;
         [SerializeField] private GameObject settingsPanel;
+        [SerializeField] private GameObject settingsContainer;
         [SerializeField] private GameObject createScreen;
         [SerializeField] private GameObject joinScreen;
+
+        private GameObject _settingsContainer;
+        private GameObject _settingsInnerPanel;
 
         [Header("Main Menu Buttons")]
         [SerializeField] private Button playButton;
@@ -105,12 +110,7 @@ namespace SniperGame.UI
             if (mainScreen == null) mainScreen = transform.Find("MainMenuPanel")?.gameObject;
             if (playPanel == null) playPanel = transform.Find("PlayPanel")?.gameObject;
             if (loadoutPanel == null) loadoutPanel = transform.Find("LoadoutPanel")?.gameObject;
-            if (settingsPanel == null)
-            {
-                settingsPanel = transform.Find("SettingsPanel")?.gameObject
-                    ?? (transform.parent != null ? transform.parent.Find("SettingsPanel")?.gameObject : null)
-                    ?? GameObject.Find("SettingsPanel");
-            }
+            FindSettingsReferences();
             if (createScreen == null) createScreen = transform.Find("CreateScreen")?.gameObject;
             if (joinScreen == null) joinScreen = transform.Find("JoinScreen")?.gameObject;
 
@@ -121,8 +121,8 @@ namespace SniperGame.UI
             if (quitButton == null && mainScreen != null)
                 quitButton = mainScreen.transform.Find("QuitGame")?.GetComponent<Button>() ?? mainScreen.transform.Find("QuitButton")?.GetComponent<Button>();
 
-            if (settingsBackButton == null && settingsPanel != null)
-                settingsBackButton = settingsPanel.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+            if (settingsBackButton == null)
+                settingsBackButton = FindSettingsBackButton();
 
             if (openCreateScreenButton == null && playPanel != null)
                 openCreateScreenButton = playPanel.transform.Find("CreateGameButton")?.GetComponent<Button>();
@@ -159,6 +159,194 @@ namespace SniperGame.UI
                 joinBackButton = joinScreen.transform.Find("JoinBackButton")?.GetComponent<Button>();
             if (joinConfirmButton == null && joinScreen != null)
                 joinConfirmButton = joinScreen.transform.Find("JoinConfirmButton")?.GetComponent<Button>();
+        }
+
+        private void FindSettingsReferences()
+        {
+            if (_settingsContainer == null && settingsContainer != null)
+                _settingsContainer = settingsContainer;
+
+            if (_settingsInnerPanel == null && settingsPanel != null)
+            {
+                if (settingsPanel.name.IndexOf("main", StringComparison.OrdinalIgnoreCase) >= 0 && _settingsContainer == null)
+                {
+                    _settingsContainer = settingsPanel;
+                }
+                else
+                {
+                    _settingsInnerPanel = settingsPanel;
+                }
+            }
+
+            if (_settingsInnerPanel == null || _settingsContainer == null)
+            {
+                List<Transform> allCandidates = new List<Transform>();
+                allCandidates.AddRange(GetComponentsInChildren<Transform>(true));
+                if (transform.root != null && transform.root != transform)
+                {
+                    allCandidates.AddRange(transform.root.GetComponentsInChildren<Transform>(true));
+                }
+
+                var activeScene = gameObject.scene.isLoaded ? gameObject.scene : SceneManager.GetActiveScene();
+                if (activeScene.isLoaded)
+                {
+                    foreach (var rootGo in activeScene.GetRootGameObjects())
+                    {
+                        if (rootGo != null)
+                        {
+                            allCandidates.AddRange(rootGo.GetComponentsInChildren<Transform>(true));
+                        }
+                    }
+                }
+
+                // 1. Search for outer settings container (e.g. settingspanelmain or any container named with settings + main)
+                if (_settingsContainer == null)
+                {
+                    foreach (var t in allCandidates)
+                    {
+                        if (t == null) continue;
+                        string lower = t.name.ToLowerInvariant();
+                        if (lower.Contains("settingspanelmain") || lower.Contains("settingsmain") || lower.Contains("settingpanelmain") || lower.Contains("settings_main"))
+                        {
+                            _settingsContainer = t.gameObject;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Search for inner SettingsPanel or SettingsUIController
+                if (_settingsInnerPanel == null)
+                {
+                    if (_settingsContainer != null)
+                    {
+                        foreach (var t in _settingsContainer.GetComponentsInChildren<Transform>(true))
+                        {
+                            if (t == null || t.gameObject == _settingsContainer) continue;
+                            if (t.name.Equals("SettingsPanel", StringComparison.OrdinalIgnoreCase) ||
+                                t.GetComponent<Settings.SettingsUIController>() != null)
+                            {
+                                _settingsInnerPanel = t.gameObject;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (_settingsInnerPanel == null)
+                    {
+                        foreach (var t in allCandidates)
+                        {
+                            if (t == null) continue;
+                            if (t.name.Equals("SettingsPanel", StringComparison.OrdinalIgnoreCase))
+                            {
+                                _settingsInnerPanel = t.gameObject;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (_settingsInnerPanel == null)
+                    {
+                        foreach (var t in allCandidates)
+                        {
+                            if (t == null) continue;
+                            if (t.GetComponent<Settings.SettingsUIController>() != null)
+                            {
+                                _settingsInnerPanel = t.gameObject;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 3. If container wasn't found by name, but inner panel has a parent other than ConnectionCanvas
+                if (_settingsContainer == null && _settingsInnerPanel != null)
+                {
+                    Transform parent = _settingsInnerPanel.transform.parent;
+                    if (parent != null && parent != transform)
+                    {
+                        _settingsContainer = parent.gameObject;
+                    }
+                }
+
+                // 4. Fallbacks
+                if (_settingsContainer == null && _settingsInnerPanel != null)
+                {
+                    _settingsContainer = _settingsInnerPanel;
+                }
+                if (_settingsInnerPanel == null && _settingsContainer != null)
+                {
+                    _settingsInnerPanel = _settingsContainer;
+                }
+            }
+
+            if (settingsPanel == null)
+            {
+                settingsPanel = _settingsInnerPanel ?? _settingsContainer;
+            }
+            if (settingsContainer == null)
+            {
+                settingsContainer = _settingsContainer;
+            }
+
+            EnsureContainerUnderCanvas();
+
+            if (settingsBackButton == null)
+            {
+                settingsBackButton = FindSettingsBackButton();
+            }
+        }
+
+        private void EnsureContainerUnderCanvas()
+        {
+            if (_settingsContainer == null) return;
+
+            Canvas parentCanvas = _settingsContainer.GetComponentInParent<Canvas>();
+            if (parentCanvas == null)
+            {
+                _settingsContainer.transform.SetParent(this.transform, false);
+
+                RectTransform rt = _settingsContainer.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = Vector2.zero;
+                    rt.anchorMax = Vector2.one;
+                    rt.offsetMin = Vector2.zero;
+                    rt.offsetMax = Vector2.zero;
+                    rt.localScale = Vector3.one;
+                }
+                Debug.Log("[RelayUI] Reparented settings container under ConnectionCanvas to ensure Canvas rendering.");
+            }
+        }
+
+        private Button FindSettingsBackButton()
+        {
+            if (settingsBackButton != null) return settingsBackButton;
+
+            if (_settingsInnerPanel != null)
+            {
+                var btn = _settingsInnerPanel.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+                if (btn != null) return btn;
+
+                foreach (var b in _settingsInnerPanel.GetComponentsInChildren<Button>(true))
+                {
+                    if (b != null && b.gameObject.name.IndexOf("back", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return b;
+                }
+            }
+
+            if (_settingsContainer != null && _settingsContainer != _settingsInnerPanel)
+            {
+                var btn = _settingsContainer.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+                if (btn != null) return btn;
+
+                foreach (var b in _settingsContainer.GetComponentsInChildren<Button>(true))
+                {
+                    if (b != null && b.gameObject.name.IndexOf("back", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return b;
+                }
+            }
+
+            return null;
         }
 
         private void SetupButtonListeners()
@@ -258,12 +446,17 @@ namespace SniperGame.UI
         {
             ForceUnlockCursor();
 
+            bool isSettings = (screenToShow != null && (screenToShow == settingsPanel || screenToShow == _settingsContainer || screenToShow == _settingsInnerPanel));
+
             if (mainScreen != null) mainScreen.SetActive(screenToShow == mainScreen);
             if (playPanel != null) playPanel.SetActive(screenToShow == playPanel);
-            if (settingsPanel != null) settingsPanel.SetActive(screenToShow == settingsPanel);
             if (createScreen != null) createScreen.SetActive(screenToShow == createScreen);
             if (joinScreen != null) joinScreen.SetActive(screenToShow == joinScreen);
             if (loadoutPanel != null) loadoutPanel.SetActive(screenToShow == loadoutPanel);
+
+            if (_settingsContainer != null) _settingsContainer.SetActive(isSettings);
+            if (_settingsInnerPanel != null && _settingsInnerPanel != _settingsContainer) _settingsInnerPanel.SetActive(isSettings);
+            if (settingsPanel != null && settingsPanel != _settingsContainer && settingsPanel != _settingsInnerPanel) settingsPanel.SetActive(isSettings);
 
             if (openCreateScreenButton != null) openCreateScreenButton.interactable = true;
             if (openJoinScreenButton != null) openJoinScreenButton.interactable = true;
@@ -292,20 +485,29 @@ namespace SniperGame.UI
 
         public void OnOpenSettingsScreen()
         {
-            if (settingsPanel == null)
+            FindSettingsReferences();
+
+            GameObject targetScreen = _settingsContainer != null ? _settingsContainer : (_settingsInnerPanel != null ? _settingsInnerPanel : settingsPanel);
+            ShowScreen(targetScreen != null ? targetScreen : mainScreen);
+
+            if (_settingsInnerPanel != null && _settingsContainer != null && _settingsInnerPanel != _settingsContainer)
             {
-                AutoFindReferences();
+                _settingsInnerPanel.transform.SetAsLastSibling();
             }
 
-            ShowScreen(settingsPanel != null ? settingsPanel : mainScreen);
-
-            if (settingsPanel != null)
+            GameObject activeSettingsTarget = _settingsInnerPanel != null ? _settingsInnerPanel : _settingsContainer;
+            if (activeSettingsTarget != null)
             {
-                var controller = settingsPanel.GetComponent<Settings.SettingsUIController>();
+                var controller = activeSettingsTarget.GetComponentInChildren<Settings.SettingsUIController>(true);
                 if (controller == null)
                 {
-                    controller = settingsPanel.AddComponent<Settings.SettingsUIController>();
+                    controller = activeSettingsTarget.GetComponent<Settings.SettingsUIController>();
                 }
+                if (controller == null)
+                {
+                    controller = activeSettingsTarget.AddComponent<Settings.SettingsUIController>();
+                }
+
                 if (controller != null)
                 {
                     controller.SwitchTab(0);
@@ -314,7 +516,7 @@ namespace SniperGame.UI
 
                 if (settingsBackButton == null)
                 {
-                    settingsBackButton = settingsPanel.transform.Find("SettingsBackButton")?.GetComponent<Button>();
+                    settingsBackButton = FindSettingsBackButton();
                 }
 
                 if (settingsBackButton != null)
@@ -323,11 +525,14 @@ namespace SniperGame.UI
                     settingsBackButton.onClick.AddListener(OnSettingsBackClicked);
                 }
             }
+
+            Debug.Log($"[RelayUI] Opened Settings screen. Container: {(_settingsContainer != null ? _settingsContainer.name : "null")}, InnerPanel: {(_settingsInnerPanel != null ? _settingsInnerPanel.name : "null")}");
         }
 
         public void OnSettingsBackClicked()
         {
             ShowScreen(mainScreen);
+            Debug.Log("[RelayUI] Closed Settings screen. Returning to Main Menu.");
         }
 
         public void OnOpenLoadoutScreen()
