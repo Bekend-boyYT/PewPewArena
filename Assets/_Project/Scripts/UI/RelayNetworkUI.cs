@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using PewPewArena.UI;
 
 namespace SniperGame.UI
 {
@@ -551,16 +552,21 @@ namespace SniperGame.UI
             PlayerPrefs.SetInt("SelectedLoadout", index);
             PlayerPrefs.Save();
             HostEquippedSniper = index;
-            RefreshLoadoutVisuals();
+            RefreshLoadoutVisuals(playFeedback: true);
             Debug.Log($"[RelayUI] Selected Sniper loadout: {index + 1}");
         }
 
-        private void RefreshLoadoutVisuals()
+        private void RefreshLoadoutVisuals(bool playFeedback = false)
         {
             int selected = PlayerPrefs.GetInt("SelectedLoadout", 0);
             HostEquippedSniper = selected;
             if (sniper1Button != null)
             {
+                var card1 = sniper1Button.GetComponent<LoadoutCardEffect>();
+                if (card1 != null)
+                {
+                    card1.SetEquipped(selected == 0, playFeedback);
+                }
                 var outline = sniper1Button.GetComponent<Outline>();
                 if (outline != null)
                 {
@@ -570,6 +576,11 @@ namespace SniperGame.UI
             }
             if (sniper2Button != null)
             {
+                var card2 = sniper2Button.GetComponent<LoadoutCardEffect>();
+                if (card2 != null)
+                {
+                    card2.SetEquipped(selected == 1, playFeedback);
+                }
                 var outline = sniper2Button.GetComponent<Outline>();
                 if (outline != null)
                 {
