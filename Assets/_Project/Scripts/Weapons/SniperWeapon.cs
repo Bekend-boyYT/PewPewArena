@@ -184,7 +184,8 @@ namespace SniperGame.Weapons
                 int forcedSlot = RoundManager.Instance.HostSelectedSniper.Value;
                 if (ActiveWeaponIndex.Value != forcedSlot)
                 {
-                    SwitchWeapon(forcedSlot);
+                    ActiveWeaponIndex.Value = forcedSlot;
+                    EquipWeapon(forcedSlot);
                 }
             }
         }
@@ -208,7 +209,8 @@ namespace SniperGame.Weapons
                     int forcedSlot = RoundManager.Instance.HostSelectedSniper.Value;
                     if (ActiveWeaponIndex.Value != forcedSlot)
                     {
-                        SwitchWeapon(forcedSlot);
+                        ActiveWeaponIndex.Value = forcedSlot;
+                        EquipWeapon(forcedSlot);
                     }
                     else
                     {
@@ -289,19 +291,7 @@ namespace SniperGame.Weapons
 
         public void SwitchWeapon(int newSlot)
         {
-            if (newSlot < 0 || newSlot > 1) return;
-            if (newSlot == ActiveWeaponIndex.Value) return;
-
-            if (_isReloading)
-            {
-                if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
-                _isReloading = false;
-            }
-
-            ResetAimingState();
-
-            ActiveWeaponIndex.Value = newSlot;
-            EquipWeapon(newSlot);
+            // In-match weapon switching is disabled. Players spawn strictly with their chosen loadout sniper.
         }
 
         private void EquipWeapon(int slot)
@@ -402,15 +392,6 @@ namespace SniperGame.Weapons
             }
         }
 
-        public bool CanSwitchWeapons()
-        {
-            if (RoundManager.Instance != null && !RoundManager.Instance.IsSniper2Allowed.Value)
-            {
-                return false;
-            }
-            return true;
-        }
-
         private void Update()
         {
             if (!IsOwner) return;
@@ -419,31 +400,6 @@ namespace SniperGame.Weapons
             {
                 ResetAimingState();
                 return;
-            }
-
-            if (CanSwitchWeapons())
-            {
-                int targetSlot = -1;
-                bool key1Pressed = (Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame) ||
-                                   Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1);
-                bool key2Pressed = (Keyboard.current != null && Keyboard.current.digit2Key.wasPressedThisFrame) ||
-                                   Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2);
-
-                if (key1Pressed) targetSlot = 0;
-                else if (key2Pressed) targetSlot = 1;
-                else
-                {
-                    float scroll = Input.mouseScrollDelta.y;
-                    if (Mathf.Abs(scroll) > 0.05f)
-                    {
-                        targetSlot = (ActiveWeaponIndex.Value == 0) ? 1 : 0;
-                    }
-                }
-
-                if (targetSlot != -1 && targetSlot != ActiveWeaponIndex.Value)
-                {
-                    SwitchWeapon(targetSlot);
-                }
             }
 
             bool reloadPressed = (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Reload);

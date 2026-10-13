@@ -2041,6 +2041,16 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 60
+  IsSniper2Allowed:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  HostSelectedSniper:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!1 &2101286506
 GameObject:
   m_ObjectHideFlags: 0
@@ -2212,12 +2222,21 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5936817244468003372, guid: 886802f5886741c44bd50666c597c650, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
     - target: {fileID: 7939580531604680488, guid: 886802f5886741c44bd50666c597c650, type: 3}
       propertyPath: m_Name
       value: CombatHUDCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 9037995079079610445, guid: 886802f5886741c44bd50666c597c650, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8483363115785388273, guid: 886802f5886741c44bd50666c597c650, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 886802f5886741c44bd50666c597c650, type: 3}

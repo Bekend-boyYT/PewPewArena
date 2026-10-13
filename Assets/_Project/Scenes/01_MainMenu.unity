@@ -215,8 +215,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9199915477391900031, guid: a1217005e52b7e348acdb4f726d51e8d, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 125.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9199915477391900031, guid: a1217005e52b7e348acdb4f726d51e8d, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -68.4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 821325313941456918, guid: a1217005e52b7e348acdb4f726d51e8d, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a1217005e52b7e348acdb4f726d51e8d, type: 3}
@@ -1986,19 +1995,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8016498024507655821, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 923.7478
+      value: 941.8849
       objectReference: {fileID: 0}
     - target: {fileID: 8016498024507655821, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 118.1583
+      value: 121.19
       objectReference: {fileID: 0}
     - target: {fileID: 8016498024507655821, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.000015259
+      value: 9.0686
       objectReference: {fileID: 0}
     - target: {fileID: 8016498024507655821, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 326
+      value: 324.48
       objectReference: {fileID: 0}
     - target: {fileID: 8473696010701118045, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset

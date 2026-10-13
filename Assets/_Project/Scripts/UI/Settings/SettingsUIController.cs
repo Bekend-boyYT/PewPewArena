@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using PewPewArena.UI;
 
 namespace SniperGame.UI.Settings
 {
@@ -131,6 +132,7 @@ namespace SniperGame.UI.Settings
             ApplyVisualTheme();
             ShowTabInstant(_currentTabIndex);
             RefreshAllUI();
+            ResetAllButtonEffects();
         }
 
         #region Auto-Resolution
@@ -719,6 +721,8 @@ namespace SniperGame.UI.Settings
             {
                 keybindsSidePanel.SetActive(false);
             }
+
+            ResetAllButtonEffects();
         }
 
         private IEnumerator CrossFadePanelRoutine(int targetIndex)
@@ -1000,6 +1004,28 @@ namespace SniperGame.UI.Settings
 
             // 5. Keybinds Side Panel & Rows
             StyleKeybindsPanel(darkCharcoalBg, controlBoxBg, controlBoxHover, cyberGoldAccent, textPrimary);
+
+            // 6. Ensure SettingsBackButton and KeybindsButton maintain transparent backgrounds
+            var backBtnGo = FindChildRelaxed(transform, "SettingsBackButton");
+            if (backBtnGo != null)
+            {
+                var bImg = backBtnGo.GetComponent<Image>();
+                if (bImg != null) bImg.color = new Color(1f, 1f, 1f, 0f);
+            }
+            if (keybindsOpenBtn != null)
+            {
+                var kImg = keybindsOpenBtn.GetComponent<Image>();
+                if (kImg != null) kImg.color = new Color(1f, 1f, 1f, 0f);
+            }
+        }
+
+        private void ResetAllButtonEffects()
+        {
+            var btnEffects = GetComponentsInChildren<MainMenuButtonEffect>(true);
+            foreach (var effect in btnEffects)
+            {
+                effect.ApplyInstantIdleState();
+            }
         }
 
         private void StyleAllDropdowns(Color boxBg, Color boxHover, Color templateBg, Color goldAccent, Color textCol)
