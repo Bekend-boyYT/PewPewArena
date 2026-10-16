@@ -376,6 +376,50 @@ namespace PewPewArena.UI
             var right = GetOrCreateImage(back, "BackLineRight");
             right.color = line;
             SetRect(right.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(116f, 0f), new Vector2(64f, 2f));
+
+            var btnEffect = back.GetComponent<MainMenuButtonEffect>();
+            if (btnEffect != null)
+            {
+                btnEffect.FindRightArrow();
+
+                // If right arrow was not found (e.g. if unsaved scene was reloaded), ensure fallback right arrow exists
+                if (btnEffect.RightArrowTransform == null)
+                {
+                    var existingLeft = back.Find("HoverArrow") ?? back.Find("Arrow");
+                    var rightArrowGo = new GameObject("HoverArrowRight", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+                    rightArrowGo.layer = back.gameObject.layer;
+                    rightArrowGo.transform.SetParent(back, false);
+
+                    var rt = rightArrowGo.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.sizeDelta = new Vector2(40f, 34f);
+                    rt.localScale = new Vector3(-1f, 1f, 1f);
+
+                    var cg = rightArrowGo.GetComponent<CanvasGroup>();
+                    cg.alpha = 0f;
+                    cg.interactable = false;
+                    cg.blocksRaycasts = false;
+
+                    var img = rightArrowGo.GetComponent<Image>();
+                    img.raycastTarget = false;
+                    if (existingLeft != null)
+                    {
+                        var leftImg = existingLeft.GetComponent<Image>();
+                        if (leftImg != null)
+                        {
+                            img.sprite = leftImg.sprite;
+                            img.color = leftImg.color;
+                        }
+                    }
+
+                    btnEffect.FindRightArrow();
+                }
+
+                btnEffect.CalculateArrowPositions();
+                btnEffect.ApplyInstantIdleState();
+            }
         }
         #endregion
 

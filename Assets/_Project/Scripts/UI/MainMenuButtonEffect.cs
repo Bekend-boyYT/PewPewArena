@@ -30,6 +30,11 @@ namespace PewPewArena.UI
         [SerializeField] private Image arrowImage;
         [SerializeField] private Sprite arrowSprite;
 
+        [Header("Right Arrow Settings (Optional)")]
+        [SerializeField] private RectTransform rightArrowTransform;
+        [SerializeField] private CanvasGroup rightArrowCanvasGroup;
+        [SerializeField] private Image rightArrowImage;
+
         [Header("Text Styling")]
         [SerializeField] private Color idleTextColor = new Color(0.85f, 0.90f, 0.93f, 1f);
         [SerializeField] private Color hoverTextColor = new Color(1.0f, 1.0f, 1.0f, 1f);
@@ -54,15 +59,20 @@ namespace PewPewArena.UI
 
         private Vector2 _arrowTargetPos;
         private Vector2 _arrowRestPos;
+        private Vector2 _rightArrowTargetPos;
+        private Vector2 _rightArrowRestPos;
         private Vector3 _baseScale = Vector3.one;
 
         public CanvasGroup ArrowCanvasGroup => arrowCanvasGroup;
+        public CanvasGroup RightArrowCanvasGroup => rightArrowCanvasGroup;
+        public RectTransform RightArrowTransform => rightArrowTransform;
         public bool IsHovered => _isHovered;
         public bool IsPressed => _isPressed;
 
         private void Awake()
         {
             InitializeComponents();
+            FindRightArrow();
             CalculateArrowPositions();
             ApplyInstantIdleState();
         }
@@ -71,6 +81,7 @@ namespace PewPewArena.UI
         {
             _isHovered = false;
             _isPressed = false;
+            FindRightArrow();
             CalculateArrowPositions();
             ApplyInstantIdleState();
         }
@@ -122,16 +133,18 @@ namespace PewPewArena.UI
                 buttonText.raycastTarget = false;
             }
 
-            // Look for existing arrow child or create one
+            // Look for existing left arrow child or create one
             if (arrowTransform == null)
             {
-                Transform existingArrow = transform.Find("Arrow") ?? transform.Find("HoverArrow");
+                Transform existingArrow = transform.Find("Arrow") ?? transform.Find("HoverArrow") ?? transform.Find("HoverArrowLeft") ?? transform.Find("ArrowLeft");
                 if (existingArrow == null)
                 {
                     for (int i = 0; i < transform.childCount; i++)
                     {
                         Transform child = transform.GetChild(i);
-                        if (child.name.IndexOf("Arrow", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                        string cName = child.name;
+                        if (cName.IndexOf("Right", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                        if (cName.IndexOf("Arrow", System.StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             existingArrow = child;
                             break;
@@ -158,6 +171,12 @@ namespace PewPewArena.UI
                     arrowCanvasGroup = arrowTransform.gameObject.AddComponent<CanvasGroup>();
             }
 
+            if (arrowCanvasGroup != null)
+            {
+                arrowCanvasGroup.interactable = false;
+                arrowCanvasGroup.blocksRaycasts = false;
+            }
+
             if (arrowImage == null && arrowTransform != null)
             {
                 arrowImage = arrowTransform.GetComponent<Image>();
@@ -171,6 +190,89 @@ namespace PewPewArena.UI
                 }
                 arrowImage.color = arrowColor;
                 arrowImage.raycastTarget = false;
+            }
+
+            FindRightArrow();
+        }
+
+        /// <summary>
+        /// Detects any right-side arrow child added to the button (e.g. HoverArrowRight, HoverArrow (1), RightArrow).
+        /// </summary>
+        public void FindRightArrow()
+        {
+            if (rightArrowTransform == null)
+            {
+                string[] candidates = new string[]
+                {
+                    "HoverArrowRight", "RightArrow", "ArrowRight", "HoverArrow (1)",
+                    "Arrow (1)", "Right HoverArrow", "HoverArrow_Right", "Arrow_Right",
+                    "HoverArrow2", "Arrow2", "RightHoverArrow"
+                };
+
+                foreach (string candidate in candidates)
+                {
+                    Transform found = transform.Find(candidate);
+                    if (found != null && found != arrowTransform)
+                    {
+                        rightArrowTransform = found.GetComponent<RectTransform>();
+                        break;
+                    }
+                }
+
+                if (rightArrowTransform == null)
+                {
+                    for (int i = 0; i < transform.childCount; i++)
+                    {
+                        Transform child = transform.GetChild(i);
+                        if (child == arrowTransform) continue;
+                        if (buttonText != null && child == buttonText.transform) continue;
+
+                        string cName = child.name;
+                        if (cName.IndexOf("Line", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                        if (cName.IndexOf("Arrow", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            cName.IndexOf("Right", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            rightArrowTransform = child.GetComponent<RectTransform>();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (rightArrowTransform != null)
+            {
+                if (!rightArrowTransform.gameObject.activeSelf)
+                    rightArrowTransform.gameObject.SetActive(true);
+
+                if (rightArrowCanvasGroup == null)
+                {
+                    rightArrowCanvasGroup = rightArrowTransform.GetComponent<CanvasGroup>();
+                    if (rightArrowCanvasGroup == null)
+                        rightArrowCanvasGroup = rightArrowTransform.gameObject.AddComponent<CanvasGroup>();
+                }
+
+                rightArrowCanvasGroup.interactable = false;
+                rightArrowCanvasGroup.blocksRaycasts = false;
+
+                if (rightArrowImage == null)
+                {
+                    rightArrowImage = rightArrowTransform.GetComponent<Image>();
+                }
+
+                if (rightArrowImage != null)
+                {
+                    if (rightArrowImage.sprite == null && arrowSprite != null)
+                    {
+                        rightArrowImage.sprite = arrowSprite;
+                    }
+                    if (rightArrowImage.sprite == null && arrowImage != null && arrowImage.sprite != null)
+                    {
+                        rightArrowImage.sprite = arrowImage.sprite;
+                    }
+                    rightArrowImage.color = arrowColor;
+                    rightArrowImage.raycastTarget = false;
+                }
             }
         }
 
@@ -201,29 +303,47 @@ namespace PewPewArena.UI
         }
 
         /// <summary>
-        /// Computes the exact idle and hovered positions of the arrow so it sits cleanly
-        /// to the left of the button text without any overlap.
+        /// Computes the exact idle and hovered positions of arrows so they sit cleanly
+        /// flanking the button text without any overlap.
         /// </summary>
         public void CalculateArrowPositions()
         {
-            if (buttonText == null || arrowTransform == null) return;
+            if (buttonText == null) return;
 
             buttonText.ForceMeshUpdate();
             float textWidth = buttonText.preferredWidth;
             float textCenterX = buttonText.rectTransform.anchoredPosition.x;
             float textCenterY = buttonText.rectTransform.anchoredPosition.y;
 
-            // Compute the left boundary of the text
-            float textLeft = textCenterX - (textWidth * 0.5f);
-            float arrowWidth = arrowTransform.rect.width > 0 ? arrowTransform.rect.width : arrowSize.x;
+            if (arrowTransform != null)
+            {
+                // Compute the left boundary of the text
+                float textLeft = textCenterX - (textWidth * 0.5f);
+                float arrowWidth = arrowTransform.rect.width > 0 ? arrowTransform.rect.width : arrowSize.x;
 
-            // Target position: arrow sits arrowMargin to the left of the text
-            float targetX = textLeft - (arrowWidth * 0.5f) - arrowMargin;
-            // Rest position: slightly further back to the left so it slides forward on hover
-            float restX = targetX - arrowSlideDistance;
+                // Target position: arrow sits arrowMargin to the left of the text
+                float targetX = textLeft - (arrowWidth * 0.5f) - arrowMargin;
+                // Rest position: slightly further back to the left so it slides forward on hover
+                float restX = targetX - arrowSlideDistance;
 
-            _arrowTargetPos = new Vector2(targetX, textCenterY);
-            _arrowRestPos = new Vector2(restX, textCenterY);
+                _arrowTargetPos = new Vector2(targetX, textCenterY);
+                _arrowRestPos = new Vector2(restX, textCenterY);
+            }
+
+            if (rightArrowTransform != null)
+            {
+                // Compute the right boundary of the text
+                float textRight = textCenterX + (textWidth * 0.5f);
+                float rightArrowWidth = rightArrowTransform.rect.width > 0 ? rightArrowTransform.rect.width : arrowSize.x;
+
+                // Target position: right arrow sits arrowMargin to the right of the text
+                float rightTargetX = textRight + (rightArrowWidth * 0.5f) + arrowMargin;
+                // Rest position: slightly further back to the right so it slides forward (inward) on hover
+                float rightRestX = rightTargetX + arrowSlideDistance;
+
+                _rightArrowTargetPos = new Vector2(rightTargetX, textCenterY);
+                _rightArrowRestPos = new Vector2(rightRestX, textCenterY);
+            }
         }
 
         /// <summary>
@@ -242,6 +362,12 @@ namespace PewPewArena.UI
 
             if (arrowTransform != null)
                 arrowTransform.anchoredPosition = _arrowRestPos;
+
+            if (rightArrowCanvasGroup != null)
+                rightArrowCanvasGroup.alpha = 0f;
+
+            if (rightArrowTransform != null)
+                rightArrowTransform.anchoredPosition = _rightArrowRestPos;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -253,6 +379,7 @@ namespace PewPewArena.UI
                 targetTextColor: hoverTextColor,
                 targetArrowAlpha: 1f,
                 targetArrowPos: _arrowTargetPos,
+                targetRightArrowPos: _rightArrowTargetPos,
                 duration: transitionDuration
             );
         }
@@ -266,6 +393,7 @@ namespace PewPewArena.UI
                 targetTextColor: idleTextColor,
                 targetArrowAlpha: 0f,
                 targetArrowPos: _arrowRestPos,
+                targetRightArrowPos: _rightArrowRestPos,
                 duration: transitionDuration
             );
         }
@@ -280,6 +408,7 @@ namespace PewPewArena.UI
                 targetTextColor: clickTextColor,
                 targetArrowAlpha: 1f,
                 targetArrowPos: _arrowTargetPos,
+                targetRightArrowPos: _rightArrowTargetPos,
                 duration: clickDuration
             );
         }
@@ -296,6 +425,7 @@ namespace PewPewArena.UI
                     targetTextColor: hoverTextColor,
                     targetArrowAlpha: 1f,
                     targetArrowPos: _arrowTargetPos,
+                    targetRightArrowPos: _rightArrowTargetPos,
                     duration: transitionDuration
                 );
             }
@@ -306,12 +436,13 @@ namespace PewPewArena.UI
                     targetTextColor: idleTextColor,
                     targetArrowAlpha: 0f,
                     targetArrowPos: _arrowRestPos,
+                    targetRightArrowPos: _rightArrowRestPos,
                     duration: transitionDuration
                 );
             }
         }
 
-        private void StartTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, float duration)
+        private void StartTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
         {
             if (!gameObject.activeInHierarchy) return;
 
@@ -319,10 +450,10 @@ namespace PewPewArena.UI
             {
                 StopCoroutine(_activeTransition);
             }
-            _activeTransition = StartCoroutine(AnimateTransition(targetScale, targetTextColor, targetArrowAlpha, targetArrowPos, duration));
+            _activeTransition = StartCoroutine(AnimateTransition(targetScale, targetTextColor, targetArrowAlpha, targetArrowPos, targetRightArrowPos, duration));
         }
 
-        private IEnumerator AnimateTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, float duration)
+        private IEnumerator AnimateTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
         {
             float elapsed = 0f;
 
@@ -332,6 +463,9 @@ namespace PewPewArena.UI
             Color startTextColor = buttonText != null ? buttonText.color : idleTextColor;
             float startArrowAlpha = arrowCanvasGroup != null ? arrowCanvasGroup.alpha : 0f;
             Vector2 startArrowPos = arrowTransform != null ? arrowTransform.anchoredPosition : _arrowRestPos;
+
+            float startRightArrowAlpha = rightArrowCanvasGroup != null ? rightArrowCanvasGroup.alpha : 0f;
+            Vector2 startRightArrowPos = rightArrowTransform != null ? rightArrowTransform.anchoredPosition : _rightArrowRestPos;
 
             while (elapsed < duration)
             {
@@ -351,6 +485,12 @@ namespace PewPewArena.UI
                 if (arrowTransform != null)
                     arrowTransform.anchoredPosition = Vector2.LerpUnclamped(startArrowPos, targetArrowPos, ease);
 
+                if (rightArrowCanvasGroup != null)
+                    rightArrowCanvasGroup.alpha = Mathf.LerpUnclamped(startRightArrowAlpha, targetArrowAlpha, ease);
+
+                if (rightArrowTransform != null)
+                    rightArrowTransform.anchoredPosition = Vector2.LerpUnclamped(startRightArrowPos, targetRightArrowPos, ease);
+
                 yield return null;
             }
 
@@ -365,6 +505,12 @@ namespace PewPewArena.UI
 
             if (arrowTransform != null)
                 arrowTransform.anchoredPosition = targetArrowPos;
+
+            if (rightArrowCanvasGroup != null)
+                rightArrowCanvasGroup.alpha = targetArrowAlpha;
+
+            if (rightArrowTransform != null)
+                rightArrowTransform.anchoredPosition = targetRightArrowPos;
 
             _activeTransition = null;
         }
