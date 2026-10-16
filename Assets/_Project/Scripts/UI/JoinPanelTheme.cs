@@ -404,7 +404,10 @@ namespace PewPewArena.UI
                 btnRt.anchorMax = new Vector2(0.5f, 0.5f);
                 btnRt.pivot = new Vector2(0.5f, 0.5f);
                 btnRt.anchoredPosition = new Vector2(0f, -52f);
-                btnRt.sizeDelta = new Vector2(450f, 54f);
+                if (btnRt.sizeDelta == Vector2.zero)
+                {
+                    btnRt.sizeDelta = new Vector2(450f, 54f);
+                }
             }
 
             // Fill background
@@ -475,7 +478,10 @@ namespace PewPewArena.UI
                 btnRt.anchorMax = new Vector2(0.5f, 0.5f);
                 btnRt.pivot = new Vector2(0.5f, 0.5f);
                 btnRt.anchoredPosition = new Vector2(0f, -175f);
-                btnRt.sizeDelta = new Vector2(280f, 50f);
+                if (btnRt.sizeDelta == Vector2.zero)
+                {
+                    btnRt.sizeDelta = new Vector2(280f, 50f);
+                }
             }
 
             // Fill background

@@ -30,8 +30,8 @@ namespace PewPewArena.UI
         [SerializeField] private Image arrowImage;
         [Header("Arrow Styling")]
         [SerializeField] private Color arrowColor = new Color(0.92f, 0.98f, 1.0f, 1f);
-        [SerializeField] private Vector2 arrowSize = new Vector2(26f, 22f);
-        [SerializeField] private float arrowMargin = 10f;
+        [SerializeField] private Vector2 arrowSize = new Vector2(40f, 34f);
+        [SerializeField] private float arrowMargin = 12f;
         [SerializeField] private float arrowSlideDistance = 6f;
 
         [Header("Arrow Sprites")]
@@ -251,30 +251,16 @@ namespace PewPewArena.UI
             if (_rectTransform == null)
                 _rectTransform = GetComponent<RectTransform>();
 
-            // Auto-standardize menu button dimensions (at least 280x50) to comfortably fit text and flanking arrows
-            // Preserves wider buttons like JoinConfirmButton (450px)
-            if (_rectTransform != null)
+            // Ensure crisp, uncropped arrow proportions matching native 421x358 texture ratio (40x34)
+            if (arrowSize == new Vector2(26f, 22f) || arrowSize == new Vector2(24f, 24f) || arrowSize == Vector2.zero)
             {
-                if (_rectTransform.sizeDelta.x > 0f && _rectTransform.sizeDelta.x < 280f)
-                {
-                    _rectTransform.sizeDelta = new Vector2(280f, Mathf.Max(50f, _rectTransform.sizeDelta.y));
-                }
-                else if (_rectTransform.sizeDelta.y > 0f && _rectTransform.sizeDelta.y < 50f)
-                {
-                    _rectTransform.sizeDelta = new Vector2(_rectTransform.sizeDelta.x, 50f);
-                }
+                arrowSize = new Vector2(40f, 34f);
             }
-
-            // Upgrade legacy serialized 40x34 or zero arrow sizes to the refined 26x22
-            if (arrowSize == new Vector2(40f, 34f) || arrowSize == Vector2.zero)
+            if (arrowMargin <= 0f)
             {
-                arrowSize = new Vector2(26f, 22f);
+                arrowMargin = 12f;
             }
-            if (arrowMargin >= 16f)
-            {
-                arrowMargin = 10f;
-            }
-            if (arrowSlideDistance >= 8f)
+            if (arrowSlideDistance <= 0f)
             {
                 arrowSlideDistance = 6f;
             }
@@ -554,29 +540,23 @@ namespace PewPewArena.UI
 
             buttonText.ForceMeshUpdate();
 
-            // Text rendered width & center in button space
-            float textWidth = buttonText.textBounds.size.x > 0f ? buttonText.textBounds.size.x : buttonText.preferredWidth;
+            // Text rendered width in button space
+            float textWidth = buttonText.preferredWidth;
+            if (textWidth <= 0f && buttonText.textBounds.size.x > 0f)
+            {
+                textWidth = buttonText.textBounds.size.x;
+            }
             float halfTextWidth = textWidth * 0.5f;
 
             float textCenterX = 0f;
-            float textCenterY = 0f;
-            if (buttonText.rectTransform != null)
+            if (buttonText.rectTransform != null && buttonText.rectTransform.anchorMin.x == buttonText.rectTransform.anchorMax.x)
             {
-                Vector3 textCenterWorld = buttonText.transform.TransformPoint(buttonText.textBounds.center);
-                Vector3 textCenterLocal = transform.InverseTransformPoint(textCenterWorld);
-                textCenterX = textCenterLocal.x;
-                textCenterY = textCenterLocal.y;
-
-                float maxOffset = _rectTransform != null && _rectTransform.rect.width > 0f ? _rectTransform.rect.width * 0.45f : 140f;
-                if (Mathf.Abs(textCenterX) > maxOffset)
-                {
-                    textCenterX = 0f;
-                }
-                float maxH = _rectTransform != null && _rectTransform.rect.height > 0f ? _rectTransform.rect.height * 0.45f : 25f;
-                if (Mathf.Abs(textCenterY) > maxH)
-                {
-                    textCenterY = 0f;
-                }
+                textCenterX = buttonText.rectTransform.anchoredPosition.x;
+            }
+            float textCenterY = 0f;
+            if (buttonText.rectTransform != null && buttonText.rectTransform.anchorMin.y == buttonText.rectTransform.anchorMax.y)
+            {
+                textCenterY = buttonText.rectTransform.anchoredPosition.y;
             }
 
             float buttonWidth = (_rectTransform != null && _rectTransform.rect.width > 0f) ? _rectTransform.rect.width : 280f;
@@ -597,13 +577,13 @@ namespace PewPewArena.UI
                 // Ideal rest (idle) sits arrowSlideDistance further left so it slides forward on hover
                 float idealRestX = idealTargetX - arrowSlideDistance;
 
-                // Boundary clamping: arrow must remain strictly inside [-buttonHalfWidth + edgePadding, textLeft - 2f]
+                // Boundary clamping: arrow must remain strictly inside [-buttonHalfWidth + edgePadding, textLeft - 4f]
                 float minX = -buttonHalfWidth + edgePadding + halfArrowWidth;
-                float maxX = textLeft - 2f - halfArrowWidth;
+                float maxX = textLeft - 4f - halfArrowWidth;
 
                 if (minX > maxX)
                 {
-                    float midX = (-buttonHalfWidth + edgePadding + textLeft - 2f) * 0.5f;
+                    float midX = (-buttonHalfWidth + edgePadding + textLeft - 4f) * 0.5f;
                     minX = midX;
                     maxX = midX;
                 }
@@ -632,13 +612,13 @@ namespace PewPewArena.UI
                 // Ideal rest (idle) sits arrowSlideDistance further right so it slides forward (inward) on hover
                 float idealRestX = idealTargetX + arrowSlideDistance;
 
-                // Boundary clamping: arrow must remain strictly inside [textRight + 2f, buttonHalfWidth - edgePadding]
-                float minX = textRight + 2f + halfRightArrowWidth;
+                // Boundary clamping: arrow must remain strictly inside [textRight + 4f, buttonHalfWidth - edgePadding]
+                float minX = textRight + 4f + halfRightArrowWidth;
                 float maxX = buttonHalfWidth - edgePadding - halfRightArrowWidth;
 
                 if (minX > maxX)
                 {
-                    float midX = (textRight + 2f + buttonHalfWidth - edgePadding) * 0.5f;
+                    float midX = (textRight + 4f + buttonHalfWidth - edgePadding) * 0.5f;
                     minX = midX;
                     maxX = midX;
                 }

@@ -610,7 +610,10 @@ namespace SniperGame.UI
                 rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.anchoredPosition = pos;
-                rt.sizeDelta = new Vector2(280f, 52f);
+                if (rt.sizeDelta == Vector2.zero)
+                {
+                    rt.sizeDelta = new Vector2(280f, 52f);
+                }
                 rt.localScale = Vector3.one;
             }
 

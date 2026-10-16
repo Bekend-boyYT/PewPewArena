@@ -8434,7 +8434,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &91000012
 CanvasRenderer:
@@ -8509,8 +8509,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -8553,7 +8553,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &91000022
 CanvasRenderer:
@@ -8628,8 +8628,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -8672,7 +8672,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &91000032
 CanvasRenderer:
@@ -8747,8 +8747,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -8791,7 +8791,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &92000012
 CanvasRenderer:
@@ -8866,8 +8866,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -8910,7 +8910,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &92000022
 CanvasRenderer:
@@ -8985,8 +8985,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9029,7 +9029,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &92000032
 CanvasRenderer:
@@ -9104,8 +9104,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9148,7 +9148,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &92000042
 CanvasRenderer:
@@ -9223,8 +9223,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9267,7 +9267,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &92000052
 CanvasRenderer:
@@ -9342,8 +9342,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9386,7 +9386,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &93000012
 CanvasRenderer:
@@ -9461,8 +9461,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9505,7 +9505,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &93000022
 CanvasRenderer:
@@ -9580,8 +9580,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9624,7 +9624,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &94000012
 CanvasRenderer:
@@ -9699,8 +9699,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -9743,7 +9743,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &94000022
 CanvasRenderer:
@@ -9818,8 +9818,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -14961,8 +14961,8 @@ MonoBehaviour:
   hoverTextColor: {r: 1, g: 1, b: 1, a: 1}
   clickTextColor: {r: 0.7, g: 1, b: 0.9, a: 1}
   arrowColor: {r: 0.92, g: 0.98, b: 1, a: 1}
-  arrowSize: {x: 26, y: 22}
-  arrowMargin: 10
+  arrowSize: {x: 40, y: 34}
+  arrowMargin: 12
   arrowSlideDistance: 6
   hoverScale: 1.03
   clickScale: 0.97
@@ -15006,7 +15006,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -60, y: 0}
-  m_SizeDelta: {x: 26, y: 22}
+  m_SizeDelta: {x: 40, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 
 --- !u!222 &95100223

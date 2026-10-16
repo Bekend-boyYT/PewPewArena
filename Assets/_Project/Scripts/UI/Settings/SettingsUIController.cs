@@ -1413,21 +1413,11 @@ namespace SniperGame.UI.Settings
             var backBtnGo = FindChildRelaxed(transform, "SettingsBackButton");
             if (backBtnGo != null)
             {
-                var rt = backBtnGo.GetComponent<RectTransform>();
-                if (rt != null && rt.sizeDelta.x < 280f)
-                {
-                    rt.sizeDelta = new Vector2(280f, 50f);
-                }
                 var bEffect = backBtnGo.GetComponent<MainMenuButtonEffect>();
                 if (bEffect != null) bEffect.InitializeComponents();
             }
             if (keybindsOpenBtn != null)
             {
-                var rt = keybindsOpenBtn.GetComponent<RectTransform>();
-                if (rt != null && rt.sizeDelta.x < 280f)
-                {
-                    rt.sizeDelta = new Vector2(280f, 50f);
-                }
                 var kEffect = keybindsOpenBtn.GetComponent<MainMenuButtonEffect>();
                 if (kEffect != null) kEffect.InitializeComponents();
             }
