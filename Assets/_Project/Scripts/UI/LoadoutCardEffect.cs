@@ -70,10 +70,46 @@ namespace PewPewArena.UI
         private Coroutine _cardTransitionCoroutine;
         private Coroutine _statSweepCoroutine;
 
+        // Themed visuals (bound at runtime by LoadoutPanelTheme). All optional / null-safe.
+        private Image _cardFill;
+        private Image _cardFrame;
+        private Image[] _cornerAccents;
+        private Image _bayFill;
+        private Image _bayBrackets;
+        private Image _badgeFrame;
+        private Image _badgeIcon;
+        private bool _hasThemeVisuals;
+
         public bool IsEquipped => _isEquipped;
         public bool IsHovered => _isHovered;
         public bool IsPressed => _isPressed;
         public int CardIndex => cardIndex;
+
+        /// <summary>
+        /// Binds the redesigned card visuals so equip / hover states can drive their colours.
+        /// </summary>
+        public void BindThemeVisuals(Color theme, Image cardFill, Image cardFrame, Image[] cornerAccents,
+            Image bayFill, Image bayBrackets, Image badgeBg, Image badgeFrame, Image badgeIcon,
+            TextMeshProUGUI badgeText, CanvasGroup auraGlow, Image[] fills, float[] fillTargets)
+        {
+            themeColor = theme;
+            _cardFill = cardFill;
+            _cardFrame = cardFrame;
+            _cornerAccents = cornerAccents;
+            _bayFill = bayFill;
+            _bayBrackets = bayBrackets;
+            _badgeFrame = badgeFrame;
+            _badgeIcon = badgeIcon;
+            if (badgeBg != null) equipBadgeBg = badgeBg;
+            if (badgeText != null) equipBadgeText = badgeText;
+            if (auraGlow != null) radialGlowCanvasGroup = auraGlow;
+            if (fills != null && fills.Length > 0) statFillBars = fills;
+            if (fillTargets != null && fillTargets.Length > 0) targetFillAmounts = fillTargets;
+            _hasThemeVisuals = true;
+
+            ApplyEquipVisuals(false);
+        }
+
 
         private void Awake()
         {
@@ -205,35 +241,42 @@ namespace PewPewArena.UI
 
         private void ApplyEquipVisuals(bool animatePunch)
         {
-            if (equipBadgeText != null)
+            if (_hasThemeVisuals)
             {
-                equipBadgeText.text = _isEquipped ? "✓  EQUIPPED" : "EQUIP WEAPON";
-                equipBadgeText.color = _isEquipped ? Color.white : new Color(0.85f, 0.90f, 0.96f, 0.85f);
+                ApplyThemeColors();
             }
-
-            if (equipBadgeBg != null)
+            else
             {
-                equipBadgeBg.color = _isEquipped
-                    ? new Color(themeColor.r, themeColor.g, themeColor.b, 0.88f)
-                    : new Color(0.08f, 0.13f, 0.19f, 0.65f);
-            }
+                if (equipBadgeText != null)
+                {
+                    equipBadgeText.text = _isEquipped ? "✓  EQUIPPED" : "EQUIP WEAPON";
+                    equipBadgeText.color = _isEquipped ? Color.white : new Color(0.85f, 0.90f, 0.96f, 0.85f);
+                }
 
-            if (equipBadgeOutline != null)
-            {
-                equipBadgeOutline.effectColor = _isEquipped
-                    ? new Color(themeColor.r, themeColor.g, themeColor.b, 1f)
-                    : new Color(0.25f, 0.35f, 0.45f, 0.50f);
-            }
+                if (equipBadgeBg != null)
+                {
+                    equipBadgeBg.color = _isEquipped
+                        ? new Color(themeColor.r, themeColor.g, themeColor.b, 0.88f)
+                        : new Color(0.08f, 0.13f, 0.19f, 0.65f);
+                }
 
-            if (cardOutline != null)
-            {
-                cardOutline.effectColor = _isEquipped ? themeColor : (_isHovered ? hoverOutlineColor : idleOutlineColor);
-                cardOutline.effectDistance = _isEquipped ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
-            }
+                if (equipBadgeOutline != null)
+                {
+                    equipBadgeOutline.effectColor = _isEquipped
+                        ? new Color(themeColor.r, themeColor.g, themeColor.b, 1f)
+                        : new Color(0.25f, 0.35f, 0.45f, 0.50f);
+                }
 
-            if (radialGlowCanvasGroup != null)
-            {
-                radialGlowCanvasGroup.alpha = _isEquipped ? 0.35f : (_isHovered ? 0.25f : 0.12f);
+                if (cardOutline != null)
+                {
+                    cardOutline.effectColor = _isEquipped ? themeColor : (_isHovered ? hoverOutlineColor : idleOutlineColor);
+                    cardOutline.effectDistance = _isEquipped ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
+                }
+
+                if (radialGlowCanvasGroup != null)
+                {
+                    radialGlowCanvasGroup.alpha = _isEquipped ? 0.35f : (_isHovered ? 0.25f : 0.12f);
+                }
             }
 
             if (animatePunch && cardRoot != null && gameObject.activeInHierarchy)
@@ -242,6 +285,81 @@ namespace PewPewArena.UI
                 _cardTransitionCoroutine = StartCoroutine(AnimateEquipPunch());
             }
         }
+
+        /// <summary>
+        /// Redesigned card styling: equipped card gets a theme-tinted body and a solid theme button
+        /// ("EQUIPPED"), others keep a dark body with theme border and a ghost "EQUIP WEAPON" button.
+        /// </summary>
+        private void ApplyThemeColors()
+        {
+            Color t = themeColor;
+            Color darkBase = new Color(0.03f, 0.06f, 0.09f, 1f);
+            Color Alpha(Color c, float a) => new Color(c.r, c.g, c.b, a);
+
+            if (_cardFill != null)
+            {
+                Color body = Color.Lerp(darkBase, t, _isEquipped ? 0.36f : (_isHovered ? 0.15f : 0.10f));
+                _cardFill.color = Alpha(body, _isEquipped ? 0.84f : 0.86f);
+            }
+
+            if (_cardFrame != null)
+                _cardFrame.color = Alpha(t, _isEquipped || _isHovered ? 1f : 0.80f);
+
+            if (_cornerAccents != null)
+            {
+                foreach (var accent in _cornerAccents)
+                    if (accent != null) accent.color = Alpha(Color.Lerp(t, Color.white, 0.15f), 1f);
+            }
+
+            if (_bayFill != null)
+                _bayFill.color = Alpha(t, _isEquipped ? 0.30f : (_isHovered ? 0.28f : 0.22f));
+
+            if (_bayBrackets != null)
+                _bayBrackets.color = Alpha(t, _isEquipped || _isHovered ? 1f : 0.85f);
+
+            if (radialGlowCanvasGroup != null)
+                radialGlowCanvasGroup.alpha = _isEquipped ? 0.45f : (_isHovered ? 0.40f : 0.15f);
+
+            Color textColor;
+            if (_isEquipped)
+            {
+                textColor = new Color(t.r * 0.20f, t.g * 0.16f, t.b * 0.10f + 0.02f, 1f);
+                if (equipBadgeBg != null) equipBadgeBg.color = Alpha(t, 1f);
+                if (_badgeFrame != null) _badgeFrame.color = Alpha(Color.Lerp(t, Color.white, 0.30f), 1f);
+            }
+            else
+            {
+                textColor = new Color(0.88f, 0.94f, 0.98f, 1f);
+                if (equipBadgeBg != null)
+                    equipBadgeBg.color = _isHovered ? new Color(0.14f, 0.27f, 0.35f, 0.92f) : new Color(0.10f, 0.20f, 0.27f, 0.88f);
+                if (_badgeFrame != null)
+                    _badgeFrame.color = Alpha(Color.Lerp(t, Color.white, 0.35f), _isHovered ? 1f : 0.75f);
+            }
+
+            if (equipBadgeText != null)
+            {
+                equipBadgeText.text = _isEquipped ? "EQUIPPED" : "EQUIP WEAPON";
+                equipBadgeText.color = textColor;
+            }
+
+            if (_badgeIcon != null)
+            {
+                _badgeIcon.sprite = _isEquipped ? LoadoutUISprites.IconSquare : LoadoutUISprites.IconCrosshair;
+                _badgeIcon.color = textColor;
+
+                // Keep icon + label visually centred as one group
+                if (equipBadgeText != null)
+                {
+                    float textW = equipBadgeText.GetPreferredValues(equipBadgeText.text).x;
+                    float iconW = _badgeIcon.rectTransform.sizeDelta.x;
+                    const float gap = 12f;
+                    float groupW = iconW + gap + textW;
+                    _badgeIcon.rectTransform.anchoredPosition = new Vector2(-groupW * 0.5f + iconW * 0.5f, 0f);
+                    equipBadgeText.rectTransform.anchoredPosition = new Vector2((iconW + gap) * 0.5f, 0f);
+                }
+            }
+        }
+
 
         public void OnPointerEnter(PointerEventData eventData)
         {
@@ -285,6 +403,12 @@ namespace PewPewArena.UI
             _cardTransitionCoroutine = StartCoroutine(AnimateScale(targetScale, duration));
 
             // Outline & radial glow feedback
+            if (_hasThemeVisuals)
+            {
+                ApplyThemeColors();
+                return;
+            }
+
             if (cardOutline != null && !_isEquipped)
             {
                 cardOutline.effectColor = _isHovered ? hoverOutlineColor : idleOutlineColor;

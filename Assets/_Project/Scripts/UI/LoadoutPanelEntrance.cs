@@ -49,6 +49,11 @@ namespace PewPewArena.UI
 
         private void Awake()
         {
+            // Apply the redesigned layout first so the cached "original" positions match the new layout
+            var theme = GetComponent<LoadoutPanelTheme>();
+            if (theme == null) theme = gameObject.AddComponent<LoadoutPanelTheme>();
+            theme.Apply();
+
             EnsureCanvasGroup();
             CacheElements();
         }
