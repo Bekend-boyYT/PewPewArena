@@ -46,8 +46,8 @@ namespace SniperGame.Weapons
             }
 
             _bulletLight.type = LightType.Point;
-            _bulletLight.color = isHeavyBullet ? new Color(1f, 0.72f, 0.2f) : bulletLightColor;
-            _bulletLight.intensity = isHeavyBullet ? 6.5f : bulletLightIntensity;
+            _bulletLight.color = isHeavyBullet ? new Color(1f, 0.78f, 0.25f) : bulletLightColor;
+            _bulletLight.intensity = isHeavyBullet ? 5.5f : bulletLightIntensity;
             _bulletLight.range = isHeavyBullet ? 7.5f : bulletLightRange;
             _bulletLight.shadows = LightShadows.None;
             _bulletLight.enabled = true;
@@ -71,12 +71,22 @@ namespace SniperGame.Weapons
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
 
-            // Tubular, solid sniper contrail profile (broad core tapering to needle tip at tail)
+            // Tubular, aerodynamic sniper contrail profile
             AnimationCurve widthCurve = new AnimationCurve();
-            widthCurve.AddKey(new Keyframe(0f, 1f));
-            widthCurve.AddKey(new Keyframe(0.35f, 0.95f));
-            widthCurve.AddKey(new Keyframe(0.7f, 0.55f));
-            widthCurve.AddKey(new Keyframe(1f, 0f));
+            if (isHeavyBullet)
+            {
+                widthCurve.AddKey(new Keyframe(0f, 1f));
+                widthCurve.AddKey(new Keyframe(0.25f, 0.95f));
+                widthCurve.AddKey(new Keyframe(0.6f, 0.5f));
+                widthCurve.AddKey(new Keyframe(1f, 0f));
+            }
+            else
+            {
+                widthCurve.AddKey(new Keyframe(0f, 1f));
+                widthCurve.AddKey(new Keyframe(0.35f, 0.95f));
+                widthCurve.AddKey(new Keyframe(0.7f, 0.55f));
+                widthCurve.AddKey(new Keyframe(1f, 0f));
+            }
             trail.widthCurve = widthCurve;
 
             Gradient grad = new Gradient();
@@ -85,9 +95,9 @@ namespace SniperGame.Weapons
                 grad.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),
-                        new GradientColorKey(new Color(1f, 0.78f, 0.22f), 0.3f),
-                        new GradientColorKey(new Color(1f, 0.42f, 0.05f), 0.75f),
-                        new GradientColorKey(new Color(0.85f, 0.15f, 0.02f), 1f)
+                        new GradientColorKey(new Color(1f, 0.88f, 0.42f), 0.22f),
+                        new GradientColorKey(new Color(1f, 0.50f, 0.08f), 0.58f),
+                        new GradientColorKey(new Color(0.85f, 0.16f, 0.02f), 1f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(1f, 0f),
@@ -135,29 +145,41 @@ namespace SniperGame.Weapons
 
                 if (isHeavyBullet)
                 {
-                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
-                    main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3.5f);
-                    main.gravityModifier = 0.25f;
-                    main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
-                    main.startColor = new Color(1f, 0.7f, 0.18f, 1f);
-                    em.rateOverDistance = 45f;
+                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.32f);
+                    main.startSpeed = new ParticleSystem.MinMaxCurve(0.8f, 2.2f);
+                    main.gravityModifier = 0.35f;
+                    main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.07f);
+                    main.startColor = new Color(1f, 0.8f, 0.28f, 1f);
+                    em.rateOverDistance = 25f;
 
                     var shape = ps.shape;
                     shape.shapeType = ParticleSystemShapeType.Sphere;
-                    shape.radius = 0.04f;
+                    shape.radius = 0.025f;
 
                     var col = ps.colorOverLifetime;
                     col.enabled = true;
                     Gradient colGrad = new Gradient();
                     colGrad.SetKeys(
-                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.4f, 0.05f), 1f) },
-                        new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.85f, 0.5f), new GradientAlphaKey(0f, 1f) }
+                        new GradientColorKey[] {
+                            new GradientColorKey(Color.white, 0f),
+                            new GradientColorKey(new Color(1f, 0.7f, 0.15f), 0.3f),
+                            new GradientColorKey(new Color(0.85f, 0.2f, 0.02f), 1f)
+                        },
+                        new GradientAlphaKey[] {
+                            new GradientAlphaKey(1f, 0f),
+                            new GradientAlphaKey(0.85f, 0.5f),
+                            new GradientAlphaKey(0f, 1f)
+                        }
                     );
                     col.color = colGrad;
 
                     var sol = ps.sizeOverLifetime;
                     sol.enabled = true;
                     sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0f));
+
+                    psr.renderMode = ParticleSystemRenderMode.Stretch;
+                    psr.lengthScale = 1.6f;
+                    psr.velocityScale = 0.12f;
                 }
                 else
                 {

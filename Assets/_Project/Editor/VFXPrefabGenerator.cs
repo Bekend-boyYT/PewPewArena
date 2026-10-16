@@ -179,29 +179,29 @@ namespace SniperGame.Editor
             GameObject root = new GameObject("Bullet_Sniper2");
 
             var bullet = root.AddComponent<CosmeticBullet>();
-            SetSerializedField(bullet, "trailTime", 0.48f);
-            SetSerializedField(bullet, "trailWidth", 0.16f);
+            SetSerializedField(bullet, "trailTime", 0.45f);
+            SetSerializedField(bullet, "trailWidth", 0.11f);
             SetSerializedField(bullet, "isHeavyBullet", true);
-            SetSerializedField(bullet, "bulletLightColor", new Color(1f, 0.7f, 0.2f));
-            SetSerializedField(bullet, "bulletLightIntensity", 6.5f);
-            SetSerializedField(bullet, "bulletLightRange", 8.0f);
+            SetSerializedField(bullet, "bulletLightColor", new Color(1f, 0.78f, 0.25f));
+            SetSerializedField(bullet, "bulletLightIntensity", 5.5f);
+            SetSerializedField(bullet, "bulletLightRange", 7.5f);
             SetSerializedField(bullet, "trailMaterial", tracerMat);
             SetSerializedField(bullet, "sparksMaterial", sparksMat);
 
             // Dynamic Point Light on root
             Light light = root.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = new Color(1f, 0.7f, 0.2f);
-            light.intensity = 6.5f;
-            light.range = 8.0f;
+            light.color = new Color(1f, 0.78f, 0.25f);
+            light.intensity = 5.5f;
+            light.range = 7.5f;
             light.shadows = LightShadows.None;
 
             // TrailRenderer
             TrailRenderer trail = root.AddComponent<TrailRenderer>();
             trail.material = tracerMat;
-            trail.time = 0.48f;
+            trail.time = 0.45f;
             trail.minVertexDistance = 0.05f;
-            trail.widthMultiplier = 0.16f;
+            trail.widthMultiplier = 0.11f;
 
             AnimationCurve widthCurve = new AnimationCurve();
             widthCurve.AddKey(new Keyframe(0f, 1f));

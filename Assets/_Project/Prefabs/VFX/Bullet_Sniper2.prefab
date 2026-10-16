@@ -47,9 +47,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Weapons.CosmeticBullet
   trailMaterial: {fileID: 2100000, guid: daa308879f263f3488787046fe7aa257, type: 2}
   sparksMaterial: {fileID: 2100000, guid: 41c96fb616502b84ab5b827784d2d76f, type: 2}
-  trailTime: 0.48
-  trailWidth: 0.16
+  trailTime: 0.45
+  trailWidth: 0.11
   isHeavyBullet: 1
-  bulletLightColor: {r: 1, g: 0.7, b: 0.2, a: 1}
-  bulletLightIntensity: 6.5
-  bulletLightRange: 8
+  bulletLightColor: {r: 1, g: 0.78, b: 0.25, a: 1}
+  bulletLightIntensity: 5.5
+  bulletLightRange: 7.5
