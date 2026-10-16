@@ -356,7 +356,7 @@ namespace PewPewArena.UI
             var back = transform.Find("LoadoutBackButton") as RectTransform;
             if (back == null) return;
 
-            SetRect(back, new Vector2(0.5f, 0.5f), new Vector2(0f, -373f), new Vector2(220f, 50f));
+            SetRect(back, new Vector2(0.5f, 0.5f), new Vector2(0f, -373f), new Vector2(280f, 50f));
 
             var text = back.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
             if (text != null)
@@ -368,14 +368,11 @@ namespace PewPewArena.UI
                 text.alignment = TextAlignmentOptions.Center;
             }
 
-            Color line = new Color(0.78f, 0.84f, 0.89f, 0.75f);
-            var left = GetOrCreateImage(back, "BackLineLeft");
-            left.color = line;
-            SetRect(left.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-116f, 0f), new Vector2(64f, 2f));
+            var left = back.Find("BackLineLeft");
+            if (left != null) left.gameObject.SetActive(false);
 
-            var right = GetOrCreateImage(back, "BackLineRight");
-            right.color = line;
-            SetRect(right.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(116f, 0f), new Vector2(64f, 2f));
+            var right = back.Find("BackLineRight");
+            if (right != null) right.gameObject.SetActive(false);
 
             var btnEffect = back.GetComponent<MainMenuButtonEffect>();
             if (btnEffect != null)
@@ -395,7 +392,7 @@ namespace PewPewArena.UI
                     rt.anchorMin = new Vector2(0.5f, 0.5f);
                     rt.anchorMax = new Vector2(0.5f, 0.5f);
                     rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.sizeDelta = new Vector2(40f, 34f);
+                    rt.sizeDelta = new Vector2(26f, 22f);
                     rt.localScale = Vector3.one;
 
                     var cg = rightArrowGo.GetComponent<CanvasGroup>();

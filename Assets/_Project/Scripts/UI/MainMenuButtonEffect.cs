@@ -30,9 +30,9 @@ namespace PewPewArena.UI
         [SerializeField] private Image arrowImage;
         [Header("Arrow Styling")]
         [SerializeField] private Color arrowColor = new Color(0.92f, 0.98f, 1.0f, 1f);
-        [SerializeField] private Vector2 arrowSize = new Vector2(40f, 34f);
-        [SerializeField] private float arrowMargin = 16f;
-        [SerializeField] private float arrowSlideDistance = 8f;
+        [SerializeField] private Vector2 arrowSize = new Vector2(26f, 22f);
+        [SerializeField] private float arrowMargin = 10f;
+        [SerializeField] private float arrowSlideDistance = 6f;
 
         [Header("Arrow Sprites")]
         [SerializeField] private Sprite arrowSprite;
@@ -42,6 +42,15 @@ namespace PewPewArena.UI
         [SerializeField] private RectTransform rightArrowTransform;
         [SerializeField] private CanvasGroup rightArrowCanvasGroup;
         [SerializeField] private Image rightArrowImage;
+
+        [Header("Border & Fill Styling")]
+        [SerializeField] private bool showBorder = true;
+        [SerializeField] private Color borderIdleColor = new Color(0.25f, 0.42f, 0.52f, 0.60f);
+        [SerializeField] private Color borderHoverColor = new Color(0.38f, 0.65f, 0.80f, 0.90f);
+        [SerializeField] private Color fillIdleColor = new Color(0.035f, 0.07f, 0.11f, 0.70f);
+        [SerializeField] private Color fillHoverColor = new Color(0.05f, 0.10f, 0.16f, 0.85f);
+        [SerializeField] private Image buttonBgImage;
+        [SerializeField] private Image buttonBorderImage;
 
         [Header("Text Styling")]
         [SerializeField] private Color idleTextColor = new Color(0.85f, 0.90f, 0.93f, 1f);
@@ -127,6 +136,18 @@ namespace PewPewArena.UI
             }
         }
 
+        public Image ButtonBorderImage => buttonBorderImage;
+        public Image ButtonBgImage => buttonBgImage;
+        public bool ShowBorder
+        {
+            get => showBorder;
+            set
+            {
+                showBorder = value;
+                if (buttonBorderImage != null) buttonBorderImage.gameObject.SetActive(showBorder);
+            }
+        }
+
         public bool IsHovered => _isHovered;
         public bool IsPressed => _isPressed;
 
@@ -142,6 +163,7 @@ namespace PewPewArena.UI
         {
             _isHovered = false;
             _isPressed = false;
+            InitializeComponents();
             FindRightArrow();
             CalculateArrowPositions();
             ApplyInstantIdleState();
@@ -160,12 +182,102 @@ namespace PewPewArena.UI
         }
 
         /// <summary>
+        /// Configures the rounded button fill and steel-cyan rounded rectangle outline.
+        /// </summary>
+        public void SetupBorderAndFill()
+        {
+            if (!showBorder) return;
+
+            if (buttonBgImage == null)
+            {
+                buttonBgImage = GetComponent<Image>();
+            }
+
+            if (buttonBgImage != null)
+            {
+                buttonBgImage.sprite = JoinUISprites.ButtonFill;
+                buttonBgImage.type = Image.Type.Sliced;
+                buttonBgImage.color = fillIdleColor;
+                buttonBgImage.raycastTarget = true;
+            }
+
+            var legacyOutline = GetComponent<Outline>();
+            if (legacyOutline != null) legacyOutline.enabled = false;
+
+            if (buttonBorderImage == null)
+            {
+                Transform borderTr = transform.Find("ButtonBorder") ?? transform.Find("Border") ?? transform.Find("ButtonFrame");
+                if (borderTr != null)
+                {
+                    buttonBorderImage = borderTr.GetComponent<Image>();
+                }
+            }
+
+            if (buttonBorderImage == null)
+            {
+                GameObject borderObj = new GameObject("ButtonBorder", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                borderObj.layer = gameObject.layer;
+                borderObj.transform.SetParent(transform, false);
+
+                RectTransform bRt = borderObj.GetComponent<RectTransform>();
+                bRt.anchorMin = Vector2.zero;
+                bRt.anchorMax = Vector2.one;
+                bRt.offsetMin = Vector2.zero;
+                bRt.offsetMax = Vector2.zero;
+                bRt.pivot = new Vector2(0.5f, 0.5f);
+                bRt.localScale = Vector3.one;
+
+                buttonBorderImage = borderObj.GetComponent<Image>();
+            }
+
+            if (buttonBorderImage != null)
+            {
+                buttonBorderImage.gameObject.SetActive(true);
+                buttonBorderImage.sprite = JoinUISprites.ButtonFrame;
+                buttonBorderImage.type = Image.Type.Sliced;
+                buttonBorderImage.color = borderIdleColor;
+                buttonBorderImage.raycastTarget = false;
+
+                // Keep border behind text and arrows (index 0)
+                buttonBorderImage.transform.SetSiblingIndex(0);
+            }
+        }
+
+        /// <summary>
         /// Automatically discovers or configures required UI components.
         /// </summary>
         public void InitializeComponents()
         {
             if (_rectTransform == null)
                 _rectTransform = GetComponent<RectTransform>();
+
+            // Auto-standardize menu button dimensions (at least 280x50) to comfortably fit text and flanking arrows
+            // Preserves wider buttons like JoinConfirmButton (450px)
+            if (_rectTransform != null)
+            {
+                if (_rectTransform.sizeDelta.x > 0f && _rectTransform.sizeDelta.x < 280f)
+                {
+                    _rectTransform.sizeDelta = new Vector2(280f, Mathf.Max(50f, _rectTransform.sizeDelta.y));
+                }
+                else if (_rectTransform.sizeDelta.y > 0f && _rectTransform.sizeDelta.y < 50f)
+                {
+                    _rectTransform.sizeDelta = new Vector2(_rectTransform.sizeDelta.x, 50f);
+                }
+            }
+
+            // Upgrade legacy serialized 40x34 or zero arrow sizes to the refined 26x22
+            if (arrowSize == new Vector2(40f, 34f) || arrowSize == Vector2.zero)
+            {
+                arrowSize = new Vector2(26f, 22f);
+            }
+            if (arrowMargin >= 16f)
+            {
+                arrowMargin = 10f;
+            }
+            if (arrowSlideDistance >= 8f)
+            {
+                arrowSlideDistance = 6f;
+            }
 
             if (button == null)
                 button = GetComponent<Button>();
@@ -174,15 +286,9 @@ namespace PewPewArena.UI
             {
                 // Disable Unity's default color tint transition so it doesn't fight our custom animation
                 button.transition = Selectable.Transition.None;
-
-                // Ensure the button's background image is transparent
-                Image bgImage = button.GetComponent<Image>();
-                if (bgImage != null)
-                {
-                    bgImage.color = new Color(0f, 0f, 0f, 0f);
-                    bgImage.raycastTarget = true;
-                }
             }
+
+            SetupBorderAndFill();
 
             if (buttonText == null)
             {
@@ -215,6 +321,7 @@ namespace PewPewArena.UI
                         Transform child = transform.GetChild(i);
                         string cName = child.name;
                         if (cName.IndexOf("Right", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                        if (cName.IndexOf("Border", System.StringComparison.OrdinalIgnoreCase) >= 0 || cName.IndexOf("Frame", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
                         if (cName.IndexOf("Arrow", System.StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             existingArrow = child;
@@ -233,6 +340,11 @@ namespace PewPewArena.UI
                 {
                     CreateArrowChild();
                 }
+            }
+
+            if (arrowTransform != null)
+            {
+                arrowTransform.sizeDelta = arrowSize;
             }
 
             if (arrowCanvasGroup == null && arrowTransform != null)
@@ -261,6 +373,7 @@ namespace PewPewArena.UI
                 }
                 arrowImage.color = arrowColor;
                 arrowImage.raycastTarget = false;
+                arrowImage.preserveAspect = true;
             }
 
             FindRightArrow();
@@ -306,6 +419,7 @@ namespace PewPewArena.UI
 
                         string cName = child.name;
                         if (cName.IndexOf("Line", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                        if (cName.IndexOf("Border", System.StringComparison.OrdinalIgnoreCase) >= 0 || cName.IndexOf("Frame", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
 
                         if (cName.IndexOf("Arrow", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                             cName.IndexOf("Right", System.StringComparison.OrdinalIgnoreCase) >= 0)
@@ -334,6 +448,8 @@ namespace PewPewArena.UI
                     rightArrowTransform.localScale = new Vector3(Mathf.Abs(currentScale.x), currentScale.y, currentScale.z);
                 }
 
+                rightArrowTransform.sizeDelta = arrowSize;
+
                 if (rightArrowCanvasGroup == null)
                 {
                     rightArrowCanvasGroup = rightArrowTransform.GetComponent<CanvasGroup>();
@@ -357,6 +473,7 @@ namespace PewPewArena.UI
                     }
                     rightArrowImage.color = arrowColor;
                     rightArrowImage.raycastTarget = false;
+                    rightArrowImage.preserveAspect = true;
                 }
             }
         }
@@ -382,6 +499,7 @@ namespace PewPewArena.UI
             arrowImage = arrowObj.GetComponent<Image>();
             arrowImage.raycastTarget = false;
             arrowImage.color = arrowColor;
+            arrowImage.preserveAspect = true;
 
             if (arrowSprite != null)
             {
@@ -400,7 +518,7 @@ namespace PewPewArena.UI
             rightArrowObj.transform.SetParent(transform, false);
 
             rightArrowTransform = rightArrowObj.GetComponent<RectTransform>();
-            rightArrowTransform.sizeDelta = arrowTransform != null && arrowTransform.sizeDelta != Vector2.zero ? arrowTransform.sizeDelta : arrowSize;
+            rightArrowTransform.sizeDelta = arrowSize;
             rightArrowTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rightArrowTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rightArrowTransform.pivot = new Vector2(0.5f, 0.5f);
@@ -414,6 +532,7 @@ namespace PewPewArena.UI
             rightArrowImage = rightArrowObj.GetComponent<Image>();
             rightArrowImage.raycastTarget = false;
             rightArrowImage.color = arrowColor;
+            rightArrowImage.preserveAspect = true;
 
             if (rightArrowSprite != null)
             {
@@ -427,45 +546,111 @@ namespace PewPewArena.UI
 
         /// <summary>
         /// Computes the exact idle and hovered positions of arrows so they sit cleanly
-        /// flanking the button text without any overlap.
+        /// flanking the button text without any overlap, strictly clamped inside the button outline.
         /// </summary>
         public void CalculateArrowPositions()
         {
             if (buttonText == null) return;
 
             buttonText.ForceMeshUpdate();
-            float textWidth = buttonText.preferredWidth;
-            float textCenterX = buttonText.rectTransform.anchoredPosition.x;
-            float textCenterY = buttonText.rectTransform.anchoredPosition.y;
+
+            // Text rendered width & center in button space
+            float textWidth = buttonText.textBounds.size.x > 0f ? buttonText.textBounds.size.x : buttonText.preferredWidth;
+            float halfTextWidth = textWidth * 0.5f;
+
+            float textCenterX = 0f;
+            float textCenterY = 0f;
+            if (buttonText.rectTransform != null)
+            {
+                Vector3 textCenterWorld = buttonText.transform.TransformPoint(buttonText.textBounds.center);
+                Vector3 textCenterLocal = transform.InverseTransformPoint(textCenterWorld);
+                textCenterX = textCenterLocal.x;
+                textCenterY = textCenterLocal.y;
+
+                float maxOffset = _rectTransform != null && _rectTransform.rect.width > 0f ? _rectTransform.rect.width * 0.45f : 140f;
+                if (Mathf.Abs(textCenterX) > maxOffset)
+                {
+                    textCenterX = 0f;
+                }
+                float maxH = _rectTransform != null && _rectTransform.rect.height > 0f ? _rectTransform.rect.height * 0.45f : 25f;
+                if (Mathf.Abs(textCenterY) > maxH)
+                {
+                    textCenterY = 0f;
+                }
+            }
+
+            float buttonWidth = (_rectTransform != null && _rectTransform.rect.width > 0f) ? _rectTransform.rect.width : 280f;
+            float buttonHalfWidth = buttonWidth * 0.5f;
+            const float edgePadding = 12f; // Guarantees arrows never touch or cross the rounded button outline frame
 
             if (arrowTransform != null)
             {
-                // Compute the left boundary of the text
-                float textLeft = textCenterX - (textWidth * 0.5f);
-                float arrowWidth = arrowTransform.rect.width > 0 ? arrowTransform.rect.width : arrowSize.x;
+                arrowTransform.sizeDelta = arrowSize;
+                float arrowWidth = arrowSize.x;
+                float halfArrowWidth = arrowWidth * 0.5f;
 
-                // Target position: arrow sits arrowMargin to the left of the text
-                float targetX = textLeft - (arrowWidth * 0.5f) - arrowMargin;
-                // Rest position: slightly further back to the left so it slides forward on hover
-                float restX = targetX - arrowSlideDistance;
+                // Left boundary of text
+                float textLeft = textCenterX - halfTextWidth;
 
-                _arrowTargetPos = new Vector2(targetX, textCenterY);
+                // Ideal target (hovered) sits arrowMargin to the left of text
+                float idealTargetX = textLeft - halfArrowWidth - arrowMargin;
+                // Ideal rest (idle) sits arrowSlideDistance further left so it slides forward on hover
+                float idealRestX = idealTargetX - arrowSlideDistance;
+
+                // Boundary clamping: arrow must remain strictly inside [-buttonHalfWidth + edgePadding, textLeft - 2f]
+                float minX = -buttonHalfWidth + edgePadding + halfArrowWidth;
+                float maxX = textLeft - 2f - halfArrowWidth;
+
+                if (minX > maxX)
+                {
+                    float midX = (-buttonHalfWidth + edgePadding + textLeft - 2f) * 0.5f;
+                    minX = midX;
+                    maxX = midX;
+                }
+
+                float restX = Mathf.Clamp(idealRestX, minX, maxX);
+                float targetX = Mathf.Clamp(idealTargetX, minX, maxX);
+
+                // Ensure slide direction is forward (left-to-right toward the text)
+                if (targetX < restX) targetX = restX;
+
                 _arrowRestPos = new Vector2(restX, textCenterY);
+                _arrowTargetPos = new Vector2(targetX, textCenterY);
             }
 
             if (rightArrowTransform != null)
             {
-                // Compute the right boundary of the text
-                float textRight = textCenterX + (textWidth * 0.5f);
-                float rightArrowWidth = rightArrowTransform.rect.width > 0 ? rightArrowTransform.rect.width : arrowSize.x;
+                rightArrowTransform.sizeDelta = arrowSize;
+                float rightArrowWidth = arrowSize.x;
+                float halfRightArrowWidth = rightArrowWidth * 0.5f;
 
-                // Target position: right arrow sits arrowMargin to the right of the text
-                float rightTargetX = textRight + (rightArrowWidth * 0.5f) + arrowMargin;
-                // Rest position: slightly further back to the right so it slides forward (inward) on hover
-                float rightRestX = rightTargetX + arrowSlideDistance;
+                // Right boundary of text
+                float textRight = textCenterX + halfTextWidth;
 
-                _rightArrowTargetPos = new Vector2(rightTargetX, textCenterY);
-                _rightArrowRestPos = new Vector2(rightRestX, textCenterY);
+                // Ideal target (hovered) sits arrowMargin to the right of text
+                float idealTargetX = textRight + halfRightArrowWidth + arrowMargin;
+                // Ideal rest (idle) sits arrowSlideDistance further right so it slides forward (inward) on hover
+                float idealRestX = idealTargetX + arrowSlideDistance;
+
+                // Boundary clamping: arrow must remain strictly inside [textRight + 2f, buttonHalfWidth - edgePadding]
+                float minX = textRight + 2f + halfRightArrowWidth;
+                float maxX = buttonHalfWidth - edgePadding - halfRightArrowWidth;
+
+                if (minX > maxX)
+                {
+                    float midX = (textRight + 2f + buttonHalfWidth - edgePadding) * 0.5f;
+                    minX = midX;
+                    maxX = midX;
+                }
+
+                float restX = Mathf.Clamp(idealRestX, minX, maxX);
+                float targetX = Mathf.Clamp(idealTargetX, minX, maxX);
+
+                // Ensure slide direction is forward (right-to-left toward the text)
+                if (targetX > restX) targetX = restX;
+
+                _rightArrowRestPos = new Vector2(restX, textCenterY);
+                _rightArrowTargetPos = new Vector2(targetX, textCenterY);
             }
         }
 
@@ -479,6 +664,20 @@ namespace PewPewArena.UI
 
             if (buttonText != null)
                 buttonText.color = idleTextColor;
+
+            if (showBorder)
+            {
+                if (buttonBorderImage == null || buttonBgImage == null)
+                {
+                    SetupBorderAndFill();
+                }
+
+                if (buttonBorderImage != null)
+                    buttonBorderImage.color = borderIdleColor;
+
+                if (buttonBgImage != null)
+                    buttonBgImage.color = fillIdleColor;
+            }
 
             if (arrowCanvasGroup != null)
                 arrowCanvasGroup.alpha = 0f;
@@ -500,6 +699,8 @@ namespace PewPewArena.UI
             StartTransition(
                 targetScale: hoverScale,
                 targetTextColor: hoverTextColor,
+                targetBorderColor: borderHoverColor,
+                targetFillColor: fillHoverColor,
                 targetArrowAlpha: 1f,
                 targetArrowPos: _arrowTargetPos,
                 targetRightArrowPos: _rightArrowTargetPos,
@@ -514,6 +715,8 @@ namespace PewPewArena.UI
             StartTransition(
                 targetScale: 1f,
                 targetTextColor: idleTextColor,
+                targetBorderColor: borderIdleColor,
+                targetFillColor: fillIdleColor,
                 targetArrowAlpha: 0f,
                 targetArrowPos: _arrowRestPos,
                 targetRightArrowPos: _rightArrowRestPos,
@@ -529,6 +732,8 @@ namespace PewPewArena.UI
             StartTransition(
                 targetScale: clickScale,
                 targetTextColor: clickTextColor,
+                targetBorderColor: borderHoverColor,
+                targetFillColor: fillHoverColor,
                 targetArrowAlpha: 1f,
                 targetArrowPos: _arrowTargetPos,
                 targetRightArrowPos: _rightArrowTargetPos,
@@ -546,6 +751,8 @@ namespace PewPewArena.UI
                 StartTransition(
                     targetScale: hoverScale,
                     targetTextColor: hoverTextColor,
+                    targetBorderColor: borderHoverColor,
+                    targetFillColor: fillHoverColor,
                     targetArrowAlpha: 1f,
                     targetArrowPos: _arrowTargetPos,
                     targetRightArrowPos: _rightArrowTargetPos,
@@ -557,6 +764,8 @@ namespace PewPewArena.UI
                 StartTransition(
                     targetScale: 1f,
                     targetTextColor: idleTextColor,
+                    targetBorderColor: borderIdleColor,
+                    targetFillColor: fillIdleColor,
                     targetArrowAlpha: 0f,
                     targetArrowPos: _arrowRestPos,
                     targetRightArrowPos: _rightArrowRestPos,
@@ -565,7 +774,7 @@ namespace PewPewArena.UI
             }
         }
 
-        private void StartTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
+        private void StartTransition(float targetScale, Color targetTextColor, Color targetBorderColor, Color targetFillColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
         {
             if (!gameObject.activeInHierarchy) return;
 
@@ -573,10 +782,10 @@ namespace PewPewArena.UI
             {
                 StopCoroutine(_activeTransition);
             }
-            _activeTransition = StartCoroutine(AnimateTransition(targetScale, targetTextColor, targetArrowAlpha, targetArrowPos, targetRightArrowPos, duration));
+            _activeTransition = StartCoroutine(AnimateTransition(targetScale, targetTextColor, targetBorderColor, targetFillColor, targetArrowAlpha, targetArrowPos, targetRightArrowPos, duration));
         }
 
-        private IEnumerator AnimateTransition(float targetScale, Color targetTextColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
+        private IEnumerator AnimateTransition(float targetScale, Color targetTextColor, Color targetBorderColor, Color targetFillColor, float targetArrowAlpha, Vector2 targetArrowPos, Vector2 targetRightArrowPos, float duration)
         {
             float elapsed = 0f;
 
@@ -584,6 +793,9 @@ namespace PewPewArena.UI
             Vector3 endScale = _baseScale * targetScale;
 
             Color startTextColor = buttonText != null ? buttonText.color : idleTextColor;
+            Color startBorderColor = buttonBorderImage != null ? buttonBorderImage.color : borderIdleColor;
+            Color startFillColor = buttonBgImage != null ? buttonBgImage.color : fillIdleColor;
+
             float startArrowAlpha = arrowCanvasGroup != null ? arrowCanvasGroup.alpha : 0f;
             Vector2 startArrowPos = arrowTransform != null ? arrowTransform.anchoredPosition : _arrowRestPos;
 
@@ -601,6 +813,12 @@ namespace PewPewArena.UI
 
                 if (buttonText != null)
                     buttonText.color = Color.LerpUnclamped(startTextColor, targetTextColor, ease);
+
+                if (buttonBorderImage != null && showBorder)
+                    buttonBorderImage.color = Color.LerpUnclamped(startBorderColor, targetBorderColor, ease);
+
+                if (buttonBgImage != null && showBorder)
+                    buttonBgImage.color = Color.LerpUnclamped(startFillColor, targetFillColor, ease);
 
                 if (arrowCanvasGroup != null)
                     arrowCanvasGroup.alpha = Mathf.LerpUnclamped(startArrowAlpha, targetArrowAlpha, ease);
@@ -622,6 +840,12 @@ namespace PewPewArena.UI
 
             if (buttonText != null)
                 buttonText.color = targetTextColor;
+
+            if (buttonBorderImage != null && showBorder)
+                buttonBorderImage.color = targetBorderColor;
+
+            if (buttonBgImage != null && showBorder)
+                buttonBgImage.color = targetFillColor;
 
             if (arrowCanvasGroup != null)
                 arrowCanvasGroup.alpha = targetArrowAlpha;

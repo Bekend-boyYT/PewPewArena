@@ -417,6 +417,15 @@ namespace PewPewArena.UI
                 bgImg.raycastTarget = true;
             }
 
+            // Subtle steel-cyan button border
+            var borderImg = GetOrCreateImage(btnTrans, "ButtonBorder");
+            borderImg.sprite = JoinUISprites.ButtonFrame;
+            borderImg.color = new Color(0.25f, 0.42f, 0.52f, 0.60f);
+            borderImg.type = Image.Type.Sliced;
+            borderImg.raycastTarget = false;
+            StretchFull(borderImg.rectTransform);
+            borderImg.transform.SetSiblingIndex(0);
+
             // Glowing cyan button frame
             var glowImg = GetOrCreateImage(btnTrans, "ButtonGlowFrame");
             glowImg.sprite = JoinUISprites.ButtonGlowFrame;
@@ -428,7 +437,7 @@ namespace PewPewArena.UI
             gRt.anchorMax = Vector2.one;
             gRt.offsetMin = new Vector2(-4f, -4f);
             gRt.offsetMax = new Vector2(4f, 4f);
-            glowImg.transform.SetSiblingIndex(0);
+            glowImg.transform.SetSiblingIndex(1);
 
             // Button text
             var label = btnTrans.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -446,6 +455,7 @@ namespace PewPewArena.UI
             var effect = btnTrans.GetComponent<MainMenuButtonEffect>();
             if (effect != null)
             {
+                effect.InitializeComponents();
                 effect.CalculateArrowPositions();
                 effect.ApplyInstantIdleState();
             }
@@ -465,7 +475,7 @@ namespace PewPewArena.UI
                 btnRt.anchorMax = new Vector2(0.5f, 0.5f);
                 btnRt.pivot = new Vector2(0.5f, 0.5f);
                 btnRt.anchoredPosition = new Vector2(0f, -175f);
-                btnRt.sizeDelta = new Vector2(260f, 48f);
+                btnRt.sizeDelta = new Vector2(280f, 50f);
             }
 
             // Fill background
@@ -503,6 +513,7 @@ namespace PewPewArena.UI
             var backEffect = btnTrans.GetComponent<MainMenuButtonEffect>();
             if (backEffect != null)
             {
+                backEffect.InitializeComponents();
                 backEffect.CalculateArrowPositions();
                 backEffect.ApplyInstantIdleState();
             }

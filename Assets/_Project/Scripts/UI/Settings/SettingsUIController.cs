@@ -1409,17 +1409,27 @@ namespace SniperGame.UI.Settings
             // 6. Polish ResetSettingsButton
             StyleResetSettingsButton(cyberGoldAccent, textPrimary);
 
-            // 7. Ensure SettingsBackButton and KeybindsButton maintain transparent backgrounds
+            // 7. Ensure SettingsBackButton and KeybindsButton are initialized with standard button styling
             var backBtnGo = FindChildRelaxed(transform, "SettingsBackButton");
             if (backBtnGo != null)
             {
-                var bImg = backBtnGo.GetComponent<Image>();
-                if (bImg != null) bImg.color = new Color(1f, 1f, 1f, 0f);
+                var rt = backBtnGo.GetComponent<RectTransform>();
+                if (rt != null && rt.sizeDelta.x < 280f)
+                {
+                    rt.sizeDelta = new Vector2(280f, 50f);
+                }
+                var bEffect = backBtnGo.GetComponent<MainMenuButtonEffect>();
+                if (bEffect != null) bEffect.InitializeComponents();
             }
             if (keybindsOpenBtn != null)
             {
-                var kImg = keybindsOpenBtn.GetComponent<Image>();
-                if (kImg != null) kImg.color = new Color(1f, 1f, 1f, 0f);
+                var rt = keybindsOpenBtn.GetComponent<RectTransform>();
+                if (rt != null && rt.sizeDelta.x < 280f)
+                {
+                    rt.sizeDelta = new Vector2(280f, 50f);
+                }
+                var kEffect = keybindsOpenBtn.GetComponent<MainMenuButtonEffect>();
+                if (kEffect != null) kEffect.InitializeComponents();
             }
         }
 
@@ -1480,16 +1490,11 @@ namespace SniperGame.UI.Settings
             if (resetSettingsBtn == null) return;
 
             var rt = resetSettingsBtn.GetComponent<RectTransform>();
-            if (rt != null && rt.sizeDelta.x < 210f)
+            if (rt != null && rt.sizeDelta.x < 280f)
             {
-                rt.sizeDelta = new Vector2(240f, 40f);
+                rt.sizeDelta = new Vector2(280f, 50f);
             }
 
-            var img = resetSettingsBtn.GetComponent<Image>();
-            if (img != null)
-            {
-                img.color = new Color(1f, 1f, 1f, 0f);
-            }
             resetSettingsBtn.transition = Selectable.Transition.None;
 
             var tmp = resetSettingsBtn.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -1510,6 +1515,7 @@ namespace SniperGame.UI.Settings
             {
                 effect = resetSettingsBtn.gameObject.AddComponent<MainMenuButtonEffect>();
             }
+            effect.InitializeComponents();
         }
 
         private void ResetAllButtonEffects()

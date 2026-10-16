@@ -617,8 +617,6 @@ namespace SniperGame.UI
             var img = btn.targetGraphic as Image ?? btn.GetComponent<Image>();
             if (img != null)
             {
-                img.sprite = null;
-                img.color = new Color(0f, 0f, 0f, 0f);
                 img.raycastTarget = true;
             }
 
