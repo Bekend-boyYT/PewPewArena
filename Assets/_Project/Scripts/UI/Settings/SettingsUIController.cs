@@ -799,27 +799,73 @@ namespace SniperGame.UI.Settings
                 ("Row_Reload", KeyAction.Reload)
             };
 
+            Color keycapFill = new Color(0.086f, 0.098f, 0.145f, 0.96f);
+            Color keycapBorder = new Color(0.25f, 0.42f, 0.52f, 0.72f);
+            Color goldText = new Color(1f, 0.84f, 0.20f, 1f);
+            Color lockedText = new Color(0.75f, 0.80f, 0.88f, 0.88f);
+
             foreach (var item in actionMap)
             {
                 var row = FindChildRelaxed(keybindsSidePanel.transform, item.rowName);
                 if (row == null) continue;
 
+                bool isRebindable = item.action != KeyAction.Move;
                 var btn = row.GetComponentInChildren<Button>(true);
                 var tmp = btn != null ? btn.GetComponentInChildren<TextMeshProUGUI>(true) : null;
                 if (tmp != null)
                 {
                     tmp.text = KeybindManager.GetKeyDisplayName(item.action);
-                    tmp.color = new Color(1f, 0.85f, 0.2f, 1f); // Cyber Gold
+                    tmp.color = isRebindable ? goldText : lockedText;
                     tmp.fontStyle = FontStyles.Bold;
+                    tmp.alignment = TextAlignmentOptions.Center;
+                    tmp.characterSpacing = 1.5f;
+                    tmp.enableAutoSizing = true;
+                    tmp.fontSizeMin = 10f;
+                    tmp.fontSizeMax = 14.5f;
+                    tmp.fontSize = 14f;
+                    tmp.raycastTarget = false;
                 }
 
                 if (btn != null)
                 {
+                    btn.transition = Selectable.Transition.None;
+                    btn.interactable = isRebindable;
+
                     var btnImg = btn.GetComponent<Image>();
-                    if (btnImg != null) btnImg.color = new Color(0.106f, 0.118f, 0.169f, 1f);
+                    if (btnImg != null)
+                    {
+                        btnImg.sprite = JoinUISprites.ButtonFill;
+                        btnImg.type = Image.Type.Sliced;
+                        btnImg.color = keycapFill;
+                    }
+
+                    var borderTr = btn.transform.Find("KeyButtonBorder");
+                    if (borderTr == null)
+                    {
+                        var borderGo = new GameObject("KeyButtonBorder", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                        borderGo.transform.SetParent(btn.transform, false);
+                        borderGo.transform.SetAsFirstSibling();
+                        borderTr = borderGo.transform;
+                    }
+                    var borderRt = borderTr.GetComponent<RectTransform>();
+                    if (borderRt != null)
+                    {
+                        borderRt.anchorMin = Vector2.zero;
+                        borderRt.anchorMax = Vector2.one;
+                        borderRt.offsetMin = Vector2.zero;
+                        borderRt.offsetMax = Vector2.zero;
+                    }
+                    var borderImg = borderTr.GetComponent<Image>();
+                    if (borderImg != null)
+                    {
+                        borderImg.sprite = JoinUISprites.ButtonFrame;
+                        borderImg.type = Image.Type.Sliced;
+                        borderImg.color = keycapBorder;
+                        borderImg.raycastTarget = false;
+                    }
                 }
 
-                if (btn != null && item.action != KeyAction.Move)
+                if (btn != null && isRebindable)
                 {
                     btn.onClick.RemoveAllListeners();
                     btn.onClick.AddListener(() =>
@@ -830,7 +876,7 @@ namespace SniperGame.UI.Settings
 
                 var kbHover = row.GetComponent<KeybindRowHoverItem>();
                 if (kbHover == null) kbHover = row.AddComponent<KeybindRowHoverItem>();
-                kbHover.Init(item.action != KeyAction.Move);
+                kbHover.Init(isRebindable);
             }
         }
         #endregion
@@ -1278,6 +1324,11 @@ namespace SniperGame.UI.Settings
             {
                 keybindsSidePanel.SetActive(true);
                 SetupKeybindRows();
+                if (keybindsCloseBtn != null)
+                {
+                    var closeEff = keybindsCloseBtn.GetComponent<MainMenuButtonEffect>();
+                    if (closeEff != null) closeEff.ApplyInstantIdleState();
+                }
                 cg.alpha = 0f;
                 if (rt != null) rt.anchoredPosition = closedPos;
             }
@@ -1757,34 +1808,217 @@ namespace SniperGame.UI.Settings
         {
             if (keybindsSidePanel == null) return;
 
+            // 1. Panel Container Background, Border & Left Gold Accent
             var pImg = keybindsSidePanel.GetComponent<Image>();
-            if (pImg != null) pImg.color = panelBg;
+            if (pImg != null)
+            {
+                pImg.sprite = JoinUISprites.ButtonFill;
+                pImg.type = Image.Type.Sliced;
+                pImg.color = new Color(0.055f, 0.065f, 0.098f, 0.98f);
+                pImg.raycastTarget = true;
+            }
 
-            // Style Title
-            var title = keybindsSidePanel.transform.Find("Title_Keybinds")?.GetComponent<TextMeshProUGUI>();
+            var panelBorderTr = keybindsSidePanel.transform.Find("KeybindsPanelBorder");
+            if (panelBorderTr == null)
+            {
+                var borderGo = new GameObject("KeybindsPanelBorder", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                borderGo.transform.SetParent(keybindsSidePanel.transform, false);
+                borderGo.transform.SetAsFirstSibling();
+                panelBorderTr = borderGo.transform;
+            }
+            var panelBorderRt = panelBorderTr.GetComponent<RectTransform>();
+            if (panelBorderRt != null)
+            {
+                panelBorderRt.anchorMin = Vector2.zero;
+                panelBorderRt.anchorMax = Vector2.one;
+                panelBorderRt.offsetMin = Vector2.zero;
+                panelBorderRt.offsetMax = Vector2.zero;
+            }
+            var panelBorderImg = panelBorderTr.GetComponent<Image>();
+            if (panelBorderImg != null)
+            {
+                panelBorderImg.sprite = JoinUISprites.ButtonFrame;
+                panelBorderImg.type = Image.Type.Sliced;
+                panelBorderImg.color = new Color(0.25f, 0.42f, 0.52f, 0.72f);
+                panelBorderImg.raycastTarget = false;
+            }
+
+            var leftAccentTr = keybindsSidePanel.transform.Find("KeybindsLeftAccent");
+            if (leftAccentTr == null)
+            {
+                var accentGo = new GameObject("KeybindsLeftAccent", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                accentGo.transform.SetParent(keybindsSidePanel.transform, false);
+                leftAccentTr = accentGo.transform;
+            }
+            var leftAccentRt = leftAccentTr.GetComponent<RectTransform>();
+            if (leftAccentRt != null)
+            {
+                leftAccentRt.anchorMin = new Vector2(0f, 0.04f);
+                leftAccentRt.anchorMax = new Vector2(0f, 0.96f);
+                leftAccentRt.pivot = new Vector2(0f, 0.5f);
+                leftAccentRt.anchoredPosition = new Vector2(1.5f, 0f);
+                leftAccentRt.sizeDelta = new Vector2(2.5f, 0f);
+            }
+            var leftAccentImg = leftAccentTr.GetComponent<Image>();
+            if (leftAccentImg != null)
+            {
+                leftAccentImg.color = new Color(1f, 0.80f, 0.12f, 0.85f);
+                leftAccentImg.raycastTarget = false;
+            }
+
+            // 2. Style Header & Gold Divider
+            var titleTr = keybindsSidePanel.transform.Find("KeybindsHeader") ?? keybindsSidePanel.transform.Find("Title_Keybinds");
+            var title = titleTr != null ? titleTr.GetComponent<TextMeshProUGUI>() : null;
             if (title != null)
             {
-                title.color = goldAccent;
+                var titleRt = title.rectTransform;
+                if (titleRt != null)
+                {
+                    titleRt.anchorMin = new Vector2(0.5f, 0.5f);
+                    titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+                    titleRt.pivot = new Vector2(0.5f, 0.5f);
+                    titleRt.anchoredPosition = new Vector2(0f, 198f);
+                    titleRt.sizeDelta = new Vector2(260f, 36f);
+                }
+                title.text = "KEYBINDS";
+                title.fontSize = 25f;
                 title.fontStyle = FontStyles.Bold;
+                title.characterSpacing = 4f;
+                title.alignment = TextAlignmentOptions.Center;
+                title.color = new Color(0.96f, 0.97f, 1f, 1f);
+                title.raycastTarget = false;
             }
 
-            // Style Close Button
+            var headerDivTr = keybindsSidePanel.transform.Find("KeybindsHeaderDivider");
+            if (headerDivTr == null)
+            {
+                var divGo = new GameObject("KeybindsHeaderDivider", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                divGo.transform.SetParent(keybindsSidePanel.transform, false);
+                headerDivTr = divGo.transform;
+            }
+            var headerDivRt = headerDivTr.GetComponent<RectTransform>();
+            if (headerDivRt != null)
+            {
+                headerDivRt.anchorMin = new Vector2(0.5f, 0.5f);
+                headerDivRt.anchorMax = new Vector2(0.5f, 0.5f);
+                headerDivRt.pivot = new Vector2(0.5f, 0.5f);
+                headerDivRt.anchoredPosition = new Vector2(0f, 175f);
+                headerDivRt.sizeDelta = new Vector2(246f, 2f);
+            }
+            var headerDivImg = headerDivTr.GetComponent<Image>();
+            if (headerDivImg != null)
+            {
+                headerDivImg.color = new Color(1f, 0.80f, 0.12f, 0.82f);
+                headerDivImg.raycastTarget = false;
+            }
+
+            // 3. Style Close Button with MainMenuButtonEffect (Outline + Hover Arrows)
             if (keybindsCloseBtn != null)
             {
-                var cbImg = keybindsCloseBtn.GetComponent<Image>();
-                if (cbImg != null) cbImg.color = new Color(0.22f, 0.10f, 0.10f, 1f);
+                var cbRt = keybindsCloseBtn.GetComponent<RectTransform>();
+                if (cbRt != null)
+                {
+                    cbRt.anchorMin = new Vector2(0.5f, 0.5f);
+                    cbRt.anchorMax = new Vector2(0.5f, 0.5f);
+                    cbRt.pivot = new Vector2(0.5f, 0.5f);
+                    cbRt.anchoredPosition = new Vector2(0f, -195f);
+                    cbRt.sizeDelta = new Vector2(220f, 42f);
+                }
+
+                keybindsCloseBtn.transition = Selectable.Transition.None;
+
                 var cbText = keybindsCloseBtn.GetComponentInChildren<TextMeshProUGUI>(true);
-                if (cbText != null) cbText.color = new Color(1f, 0.45f, 0.45f, 1f);
+                if (cbText != null)
+                {
+                    cbText.text = "CLOSE";
+                    cbText.fontSize = 21f;
+                    cbText.fontStyle = FontStyles.Bold;
+                    cbText.characterSpacing = 3f;
+                    cbText.alignment = TextAlignmentOptions.Center;
+                    cbText.color = Color.white;
+                    cbText.raycastTarget = false;
+                }
+
+                var closeEffect = keybindsCloseBtn.GetComponent<MainMenuButtonEffect>();
+                if (closeEffect == null)
+                {
+                    closeEffect = keybindsCloseBtn.gameObject.AddComponent<MainMenuButtonEffect>();
+                }
+                closeEffect.InitializeComponents();
+                closeEffect.CalculateArrowPositions();
+                closeEffect.ApplyInstantIdleState();
             }
 
-            // Style Rows
-            var actionMap = new string[] { "Row_Move", "Row_Jump", "Row_Crouch", "Row_Slide", "Row_WallJump", "Row_Shoot", "Row_Aim", "Row_Reload" };
-            foreach (var rowName in actionMap)
+            // 4. Style & Layout Keybind Rows
+            var actionRows = new (string rowName, string displayLabel, bool isRebindable)[]
             {
-                var row = FindChildRelaxed(keybindsSidePanel.transform, rowName);
+                ("Row_Move", "MOVE", false),
+                ("Row_Jump", "JUMP", true),
+                ("Row_Crouch", "CROUCH", true),
+                ("Row_Slide", "SLIDE", true),
+                ("Row_WallJump", "WALL JUMP", true),
+                ("Row_Shoot", "SHOOT", true),
+                ("Row_Aim", "AIM", true),
+                ("Row_Reload", "RELOAD", true)
+            };
+
+            Color keycapFill = new Color(0.086f, 0.098f, 0.145f, 0.96f);
+            Color keycapBorder = new Color(0.25f, 0.42f, 0.52f, 0.72f);
+            Color rowLabelIdle = new Color(0.81f, 0.84f, 0.90f, 1f);
+            Color lockedKeyText = new Color(0.75f, 0.80f, 0.88f, 0.88f);
+
+            for (int i = 0; i < actionRows.Length; i++)
+            {
+                var info = actionRows[i];
+                var row = FindChildRelaxed(keybindsSidePanel.transform, info.rowName);
                 if (row == null) continue;
 
-                var label = row.transform.Find("Action_Label")?.GetComponent<TextMeshProUGUI>();
+                var rowRt = row.GetComponent<RectTransform>();
+                if (rowRt != null)
+                {
+                    rowRt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rowRt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rowRt.pivot = new Vector2(0.5f, 0.5f);
+                    rowRt.anchoredPosition = new Vector2(0f, 147f - i * 41f);
+                    rowRt.sizeDelta = new Vector2(264f, 34f);
+                }
+
+                // Ensure row has an Image for hover backdrop & pointer events
+                var rowBg = row.GetComponent<Image>();
+                if (rowBg == null) rowBg = row.AddComponent<Image>();
+                rowBg.sprite = JoinUISprites.ButtonFill;
+                rowBg.type = Image.Type.Sliced;
+                rowBg.color = new Color(1f, 0.82f, 0.18f, 0f);
+                rowBg.raycastTarget = true;
+
+                // Ensure left gold accent bar on row
+                var accentTr = row.transform.Find("RowAccentBar");
+                if (accentTr == null)
+                {
+                    var accentGo = new GameObject("RowAccentBar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    accentGo.transform.SetParent(row.transform, false);
+                    accentTr = accentGo.transform;
+                }
+                var accentRt = accentTr.GetComponent<RectTransform>();
+                if (accentRt != null)
+                {
+                    accentRt.anchorMin = new Vector2(0f, 0.12f);
+                    accentRt.anchorMax = new Vector2(0f, 0.88f);
+                    accentRt.pivot = new Vector2(0f, 0.5f);
+                    accentRt.anchoredPosition = new Vector2(2f, 0f);
+                    accentRt.sizeDelta = new Vector2(3f, 0f);
+                    accentRt.localScale = new Vector3(1f, 0f, 1f);
+                }
+                var accentImg = accentTr.GetComponent<Image>();
+                if (accentImg != null)
+                {
+                    accentImg.color = goldAccent;
+                    accentImg.raycastTarget = false;
+                }
+
+                // Style ActionLabel
+                var labelTr = row.transform.Find("ActionLabel") ?? row.transform.Find("Action_Label");
+                var label = labelTr != null ? labelTr.GetComponent<TextMeshProUGUI>() : null;
                 if (label == null)
                 {
                     var texts = row.GetComponentsInChildren<TextMeshProUGUI>(true);
@@ -1792,29 +2026,100 @@ namespace SniperGame.UI.Settings
                 }
                 if (label != null)
                 {
-                    label.color = textCol;
+                    var lblRt = label.rectTransform;
+                    if (lblRt != null)
+                    {
+                        lblRt.anchorMin = new Vector2(0.5f, 0.5f);
+                        lblRt.anchorMax = new Vector2(0.5f, 0.5f);
+                        lblRt.pivot = new Vector2(0.5f, 0.5f);
+                        lblRt.anchoredPosition = new Vector2(-60f, 0f);
+                        lblRt.sizeDelta = new Vector2(124f, 30f);
+                    }
+                    label.text = info.displayLabel;
+                    label.color = rowLabelIdle;
                     label.fontStyle = FontStyles.Bold;
+                    label.fontSize = 15f;
+                    label.characterSpacing = 1.5f;
+                    label.alignment = TextAlignmentOptions.MidlineLeft;
+                    label.raycastTarget = false;
                 }
 
+                // Style KeyButton
                 var btn = row.GetComponentInChildren<Button>(true);
                 if (btn != null)
                 {
-                    var btnImg = btn.GetComponent<Image>();
-                    if (btnImg != null) btnImg.color = boxBg;
+                    var btnRt = btn.GetComponent<RectTransform>();
+                    if (btnRt != null)
+                    {
+                        btnRt.anchorMin = new Vector2(0.5f, 0.5f);
+                        btnRt.anchorMax = new Vector2(0.5f, 0.5f);
+                        btnRt.pivot = new Vector2(0.5f, 0.5f);
+                        btnRt.anchoredPosition = new Vector2(68f, 0f);
+                        btnRt.sizeDelta = new Vector2(112f, 28f);
+                    }
 
-                    var bcb = btn.colors;
-                    bcb.normalColor = boxBg;
-                    bcb.highlightedColor = boxHover;
-                    bcb.pressedColor = new Color(0.08f, 0.09f, 0.12f, 1f);
-                    btn.colors = bcb;
+                    btn.transition = Selectable.Transition.None;
+                    btn.interactable = info.isRebindable;
+
+                    var btnImg = btn.GetComponent<Image>();
+                    if (btnImg != null)
+                    {
+                        btnImg.sprite = JoinUISprites.ButtonFill;
+                        btnImg.type = Image.Type.Sliced;
+                        btnImg.color = keycapFill;
+                    }
+
+                    var borderTr = btn.transform.Find("KeyButtonBorder");
+                    if (borderTr == null)
+                    {
+                        var borderGo = new GameObject("KeyButtonBorder", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                        borderGo.transform.SetParent(btn.transform, false);
+                        borderGo.transform.SetAsFirstSibling();
+                        borderTr = borderGo.transform;
+                    }
+                    var borderRt = borderTr.GetComponent<RectTransform>();
+                    if (borderRt != null)
+                    {
+                        borderRt.anchorMin = Vector2.zero;
+                        borderRt.anchorMax = Vector2.one;
+                        borderRt.offsetMin = Vector2.zero;
+                        borderRt.offsetMax = Vector2.zero;
+                    }
+                    var borderImg = borderTr.GetComponent<Image>();
+                    if (borderImg != null)
+                    {
+                        borderImg.sprite = JoinUISprites.ButtonFrame;
+                        borderImg.type = Image.Type.Sliced;
+                        borderImg.color = keycapBorder;
+                        borderImg.raycastTarget = false;
+                    }
 
                     var btnText = btn.GetComponentInChildren<TextMeshProUGUI>(true);
                     if (btnText != null)
                     {
-                        btnText.color = goldAccent;
+                        var btRt = btnText.rectTransform;
+                        if (btRt != null)
+                        {
+                            btRt.anchorMin = Vector2.zero;
+                            btRt.anchorMax = Vector2.one;
+                            btRt.offsetMin = new Vector2(6f, 2f);
+                            btRt.offsetMax = new Vector2(-6f, -2f);
+                        }
+                        btnText.color = info.isRebindable ? goldAccent : lockedKeyText;
                         btnText.fontStyle = FontStyles.Bold;
+                        btnText.alignment = TextAlignmentOptions.Center;
+                        btnText.characterSpacing = 1.5f;
+                        btnText.enableAutoSizing = true;
+                        btnText.fontSizeMin = 10f;
+                        btnText.fontSizeMax = 14.5f;
+                        btnText.fontSize = 14f;
+                        btnText.raycastTarget = false;
                     }
                 }
+
+                var kbHover = row.GetComponent<KeybindRowHoverItem>();
+                if (kbHover == null) kbHover = row.AddComponent<KeybindRowHoverItem>();
+                kbHover.Init(info.isRebindable);
             }
         }
         #endregion
@@ -2451,10 +2756,14 @@ namespace SniperGame.UI.Settings
     /// </summary>
     public class KeybindRowHoverItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
+        private Image _rowBg;
+        private RectTransform _accentBarRt;
         private TextMeshProUGUI _actionLabel;
         private RectTransform _labelRt;
         private RectTransform _btnRt;
-        private float _baseLabelX;
+        private Image _btnImg;
+        private Image _btnBorderImg;
+        private float _baseLabelX = -60f;
         private bool _isRebindable;
         private bool _isHovered;
         private bool _isInitialized;
@@ -2462,19 +2771,41 @@ namespace SniperGame.UI.Settings
         public void Init(bool isRebindable)
         {
             _isRebindable = isRebindable;
-            if (_isInitialized) return;
+            _rowBg = GetComponent<Image>();
 
-            _actionLabel = transform.Find("Action_Label")?.GetComponent<TextMeshProUGUI>();
+            var accentTr = transform.Find("RowAccentBar");
+            if (accentTr != null)
+            {
+                _accentBarRt = accentTr.GetComponent<RectTransform>();
+            }
+
+            var labelTr = transform.Find("ActionLabel") ?? transform.Find("Action_Label");
+            _actionLabel = labelTr != null ? labelTr.GetComponent<TextMeshProUGUI>() : null;
+            if (_actionLabel == null)
+            {
+                var texts = GetComponentsInChildren<TextMeshProUGUI>(true);
+                if (texts.Length > 0) _actionLabel = texts[0];
+            }
+
             if (_actionLabel != null)
             {
                 _labelRt = _actionLabel.rectTransform;
-                _baseLabelX = _labelRt.anchoredPosition.x;
+                if (!_isInitialized)
+                {
+                    _baseLabelX = _labelRt.anchoredPosition.x;
+                }
             }
 
             var btn = GetComponentInChildren<Button>(true);
             if (btn != null)
             {
                 _btnRt = btn.GetComponent<RectTransform>();
+                _btnImg = btn.GetComponent<Image>();
+                var borderTr = btn.transform.Find("KeyButtonBorder");
+                if (borderTr != null)
+                {
+                    _btnBorderImg = borderTr.GetComponent<Image>();
+                }
             }
 
             _isInitialized = true;
@@ -2490,9 +2821,24 @@ namespace SniperGame.UI.Settings
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
             float speed = 15f;
 
+            if (_rowBg != null)
+            {
+                Color targetBg = _isHovered
+                    ? new Color(1f, 0.82f, 0.18f, 0.085f)
+                    : new Color(1f, 0.82f, 0.18f, 0f);
+                _rowBg.color = Color.Lerp(_rowBg.color, targetBg, dt * speed);
+            }
+
+            if (_accentBarRt != null)
+            {
+                float targetY = _isHovered ? 1f : 0f;
+                float sy = Mathf.Lerp(_accentBarRt.localScale.y, targetY, dt * speed);
+                _accentBarRt.localScale = new Vector3(1f, sy, 1f);
+            }
+
             if (_actionLabel != null)
             {
-                Color idleCol = new Color(0.90f, 0.92f, 0.96f, 1f);
+                Color idleCol = new Color(0.81f, 0.84f, 0.90f, 1f);
                 Color hoverCol = new Color(1f, 0.88f, 0.35f, 1f);
                 _actionLabel.color = Color.Lerp(_actionLabel.color, _isHovered ? hoverCol : idleCol, dt * speed);
             }
@@ -2504,19 +2850,43 @@ namespace SniperGame.UI.Settings
                 _labelRt.anchoredPosition = p;
             }
 
-            if (_btnRt != null && _isRebindable && !KeybindManager.IsRebinding)
+            if (!KeybindManager.IsRebinding)
             {
-                float targetScale = _isHovered ? 1.04f : 1.0f;
-                float s = Mathf.Lerp(_btnRt.localScale.x, targetScale, dt * speed);
-                _btnRt.localScale = new Vector3(s, s, 1f);
+                if (_btnRt != null && _isRebindable)
+                {
+                    float targetScale = _isHovered ? 1.05f : 1.0f;
+                    float s = Mathf.Lerp(_btnRt.localScale.x, targetScale, dt * speed);
+                    _btnRt.localScale = new Vector3(s, s, 1f);
+                }
+
+                if (_btnImg != null && _isRebindable)
+                {
+                    Color idleFill = new Color(0.086f, 0.098f, 0.145f, 0.96f);
+                    Color hoverFill = new Color(0.135f, 0.155f, 0.225f, 1f);
+                    _btnImg.color = Color.Lerp(_btnImg.color, _isHovered ? hoverFill : idleFill, dt * speed);
+                }
+
+                if (_btnBorderImg != null && _isRebindable)
+                {
+                    Color idleBorder = new Color(0.25f, 0.42f, 0.52f, 0.72f);
+                    Color hoverBorder = new Color(1f, 0.82f, 0.22f, 0.95f);
+                    _btnBorderImg.color = Color.Lerp(_btnBorderImg.color, _isHovered ? hoverBorder : idleBorder, dt * speed);
+                }
             }
         }
 
         private void OnDisable()
         {
             _isHovered = false;
+            if (_rowBg != null) _rowBg.color = new Color(1f, 0.82f, 0.18f, 0f);
+            if (_accentBarRt != null) _accentBarRt.localScale = new Vector3(1f, 0f, 1f);
             if (_labelRt != null) _labelRt.anchoredPosition = new Vector2(_baseLabelX, _labelRt.anchoredPosition.y);
-            if (_btnRt != null && !KeybindManager.IsRebinding) _btnRt.localScale = Vector3.one;
+            if (!KeybindManager.IsRebinding)
+            {
+                if (_btnRt != null) _btnRt.localScale = Vector3.one;
+                if (_btnImg != null) _btnImg.color = new Color(0.086f, 0.098f, 0.145f, 0.96f);
+                if (_btnBorderImg != null) _btnBorderImg.color = new Color(0.25f, 0.42f, 0.52f, 0.72f);
+            }
         }
     }
 }

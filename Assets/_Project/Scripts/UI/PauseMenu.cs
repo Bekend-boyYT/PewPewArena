@@ -103,6 +103,8 @@ namespace SniperGame.UI
 
         private void HandleEscapeInput()
         {
+            if (Settings.KeybindManager.IsRebinding) return;
+
             if (!IsPaused)
             {
                 OpenMainPause();

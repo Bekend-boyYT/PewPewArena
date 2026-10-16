@@ -157,8 +157,12 @@ namespace SniperGame.UI.Settings
                 ? buttonText.transform.parent.GetComponent<RectTransform>()
                 : null;
             UnityEngine.UI.Image btnImg = btnRect != null ? btnRect.GetComponent<UnityEngine.UI.Image>() : null;
-            Color idleBoxBg = new Color(0.106f, 0.118f, 0.169f, 1f);
+            Transform borderTr = btnRect != null ? btnRect.Find("KeyButtonBorder") : null;
+            UnityEngine.UI.Image borderImg = borderTr != null ? borderTr.GetComponent<UnityEngine.UI.Image>() : null;
+
+            Color idleBoxBg = new Color(0.086f, 0.098f, 0.145f, 0.95f);
             Color activeBoxBg = new Color(0.24f, 0.20f, 0.08f, 1f);
+            Color idleBorderCol = new Color(0.25f, 0.42f, 0.52f, 0.65f);
 
             if (buttonText != null)
             {
@@ -168,6 +172,10 @@ namespace SniperGame.UI.Settings
             if (btnImg != null)
             {
                 btnImg.color = activeBoxBg;
+            }
+            if (borderImg != null)
+            {
+                borderImg.color = new Color(1f, 0.85f, 0.22f, 1f);
             }
 
             // Wait one frame to avoid capturing the button click
@@ -182,7 +190,7 @@ namespace SniperGame.UI.Settings
 
                 if (buttonText != null)
                 {
-                    buttonText.color = Color.Lerp(new Color(1f, 0.65f, 0.10f, 0.75f), new Color(1f, 0.90f, 0.40f, 1f), wave);
+                    buttonText.color = Color.Lerp(new Color(1f, 0.65f, 0.10f, 0.78f), new Color(1f, 0.92f, 0.42f, 1f), wave);
                 }
                 if (btnRect != null)
                 {
@@ -191,7 +199,11 @@ namespace SniperGame.UI.Settings
                 }
                 if (btnImg != null)
                 {
-                    btnImg.color = Color.Lerp(new Color(0.18f, 0.15f, 0.07f, 1f), activeBoxBg, wave);
+                    btnImg.color = Color.Lerp(new Color(0.16f, 0.13f, 0.06f, 0.98f), activeBoxBg, wave);
+                }
+                if (borderImg != null)
+                {
+                    borderImg.color = Color.Lerp(new Color(1f, 0.72f, 0.12f, 0.75f), new Color(1f, 0.95f, 0.48f, 1f), wave);
                 }
 
                 // Escape cancels
@@ -204,6 +216,7 @@ namespace SniperGame.UI.Settings
                     }
                     if (btnRect != null) btnRect.localScale = Vector3.one;
                     if (btnImg != null) btnImg.color = idleBoxBg;
+                    if (borderImg != null) borderImg.color = idleBorderCol;
                     IsRebinding = false;
                     onDone?.Invoke();
                     yield break;
@@ -245,6 +258,7 @@ namespace SniperGame.UI.Settings
             }
 
             if (btnImg != null) btnImg.color = idleBoxBg;
+            if (borderImg != null) borderImg.color = idleBorderCol;
             if (btnRect != null)
             {
                 StartCoroutine(ConfirmPopRoutine(btnRect));
