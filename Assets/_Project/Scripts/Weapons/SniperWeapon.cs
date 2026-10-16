@@ -480,6 +480,11 @@ namespace SniperGame.Weapons
             {
                 playerMovement.SetScopeState(true, scopedFOV, scopedSensitivityMultiplier);
             }
+            else
+            {
+                var look = GetComponentInParent<PlayerLook>();
+                if (look != null) look.SetSensitivityMultiplier(scopedSensitivityMultiplier * UI.Settings.SettingsManager.ADSSensitivity);
+            }
 
             // 4. Ensure overlay is hidden while weapon is raising
             if (CombatHUD.Instance != null)
@@ -534,6 +539,11 @@ namespace SniperGame.Weapons
             {
                 playerMovement.SetScopeState(false, scopedFOV, 1.0f);
             }
+            else
+            {
+                var look = GetComponentInParent<PlayerLook>();
+                if (look != null) look.SetSensitivityMultiplier(1.0f);
+            }
 
             // 4. Immediately fade out the 2D scope overlay
             if (CombatHUD.Instance != null)
@@ -546,7 +556,7 @@ namespace SniperGame.Weapons
         {
             if (playerCamera == null || playerMovement != null) return;
 
-            float targetFOV = _isFullyScoped ? scopedFOV : hipFOV;
+            float targetFOV = _isFullyScoped ? scopedFOV : UI.Settings.SettingsManager.FOV;
             playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
         }
 
@@ -672,7 +682,7 @@ namespace SniperGame.Weapons
         {
             if (weaponAudioSource != null && reloadClip != null)
             {
-                weaponAudioSource.PlayOneShot(reloadClip, 0.9f);
+                weaponAudioSource.PlayOneShot(reloadClip, 0.9f * UI.Settings.SettingsManager.SfxVolume);
             }
         }
 
@@ -887,7 +897,7 @@ namespace SniperGame.Weapons
             if (weaponAudioSource != null && gunshotClip != null)
             {
                 weaponAudioSource.pitch = (slot == 1) ? Random.Range(0.88f, 0.94f) : Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, (slot == 1) ? 1.0f : 0.95f);
+                weaponAudioSource.PlayOneShot(gunshotClip, ((slot == 1) ? 1.0f : 0.95f) * UI.Settings.SettingsManager.SfxVolume);
             }
 
             if (IsOwner && CombatHUD.Instance != null)
@@ -908,7 +918,7 @@ namespace SniperGame.Weapons
             if (weaponAudioSource != null && gunshotClip != null)
             {
                 weaponAudioSource.pitch = (slot == 1) ? Random.Range(0.88f, 0.94f) : Random.Range(0.96f, 1.04f);
-                weaponAudioSource.PlayOneShot(gunshotClip, (slot == 1) ? 1.0f : 0.95f);
+                weaponAudioSource.PlayOneShot(gunshotClip, ((slot == 1) ? 1.0f : 0.95f) * UI.Settings.SettingsManager.SfxVolume);
             }
         }
 

@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace SniperGame.UI.Settings
 {
@@ -104,6 +107,7 @@ namespace SniperGame.UI.Settings
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                SceneManager.sceneLoaded += OnSceneLoaded;
                 LoadAllSettings();
                 ApplyAllSettings();
             }
@@ -111,6 +115,19 @@ namespace SniperGame.UI.Settings
             {
                 Destroy(gameObject);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+            }
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            ApplyAllSettings();
         }
 
         #region Load & Save
@@ -200,6 +217,7 @@ namespace SniperGame.UI.Settings
 
             KeybindManager.ResetAllKeybinds();
             PlayerPrefs.Save();
+            OnSettingsChanged?.Invoke();
         }
         #endregion
 
@@ -326,6 +344,12 @@ namespace SniperGame.UI.Settings
             {
                 int targetLevel = Mathf.Clamp(index, 0, totalLevels - 1);
                 QualitySettings.SetQualityLevel(targetLevel, true);
+
+                // Re-apply explicit user graphics overrides so SetQualityLevel doesn't clobber them
+                ApplyVSync(VSyncEnabled);
+                ApplyFpsLimit(FpsLimitIndex);
+                ApplyShadows(ShadowsEnabled);
+                ApplyAntiAliasing(AntiAliasingEnabled);
             }
         }
 
@@ -352,7 +376,26 @@ namespace SniperGame.UI.Settings
 
         private static void ApplyShadows(bool enable)
         {
-            QualitySettings.shadows = enable ? ShadowQuality.All : ShadowQuality.Disable;
+            QualitySettings.shadows = enable ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
+
+            // URP & Scene Lights Shadow Enforcement
+            var lights = FindObjectsByType<Light>(FindObjectsInactive.Include);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                if (lights[i] != null)
+                {
+                    lights[i].shadows = enable ? LightShadows.Soft : LightShadows.None;
+                }
+            }
+
+            var camDataList = FindObjectsByType<UniversalAdditionalCameraData>(FindObjectsInactive.Include);
+            for (int i = 0; i < camDataList.Length; i++)
+            {
+                if (camDataList[i] != null)
+                {
+                    camDataList[i].renderShadows = enable;
+                }
+            }
         }
 
         public static void SetAntiAliasing(bool enable)
@@ -366,6 +409,22 @@ namespace SniperGame.UI.Settings
         private static void ApplyAntiAliasing(bool enable)
         {
             QualitySettings.antiAliasing = enable ? 4 : 0;
+
+            if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urpAsset)
+            {
+                urpAsset.msaaSampleCount = enable ? 4 : 1;
+            }
+
+            var camDataList = FindObjectsByType<UniversalAdditionalCameraData>(FindObjectsInactive.Include);
+            for (int i = 0; i < camDataList.Length; i++)
+            {
+                if (camDataList[i] != null)
+                {
+                    camDataList[i].antialiasing = enable
+                        ? AntialiasingMode.SubpixelMorphologicalAntiAliasing
+                        : AntialiasingMode.None;
+                }
+            }
         }
 
         public static void SetFOV(float fov)
@@ -410,6 +469,7 @@ namespace SniperGame.UI.Settings
             PlayerPrefs.SetFloat("MasterVolume", MasterVolume);
             PlayerPrefs.Save();
             ApplyMasterVolume(MasterVolume);
+            OnSettingsChanged?.Invoke();
         }
 
         private static void ApplyMasterVolume(float vol)
@@ -417,15 +477,61 @@ namespace SniperGame.UI.Settings
             AudioListener.volume = vol;
         }
 
-        private static void ApplySfxVolume(float vol) { }
-        private static void ApplyMusicVolume(float vol) { }
-        private static void ApplyVoiceVolume(float vol) { }
+        private static void ApplySfxVolume(float vol)
+        {
+            SyncSceneAudioSources();
+        }
+
+        private static void ApplyMusicVolume(float vol)
+        {
+            SyncSceneAudioSources();
+        }
+
+        private static void ApplyVoiceVolume(float vol)
+        {
+            SyncSceneAudioSources();
+        }
+
+        private static void SyncSceneAudioSources()
+        {
+            var sources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include);
+            for (int i = 0; i < sources.Length; i++)
+            {
+                var src = sources[i];
+                if (src == null) continue;
+
+                // Skip 2D AudioManager source (already multiplies PlayOneShot by SfxVolume)
+                if (Audio.AudioManager.Instance != null && src.gameObject == Audio.AudioManager.Instance.gameObject)
+                    continue;
+
+                string objName = src.gameObject.name.ToLowerInvariant();
+                string clipName = src.clip != null ? src.clip.name.ToLowerInvariant() : string.Empty;
+
+                if (src.GetComponent<SpeakerDialogue>() != null ||
+                    objName.Contains("voice") || objName.Contains("speaker") || objName.Contains("dialogue") ||
+                    clipName.Contains("voice") || clipName.Contains("greeting"))
+                {
+                    src.volume = VoiceVolume;
+                }
+                else if (objName.Contains("music") || objName.Contains("bgm") || objName.Contains("ost") ||
+                         clipName.Contains("music") || clipName.Contains("bgm"))
+                {
+                    src.volume = MusicVolume;
+                }
+                else
+                {
+                    src.volume = SfxVolume;
+                }
+            }
+        }
 
         public static void SetSfxVolume(float vol)
         {
             SfxVolume = Mathf.Clamp01(vol);
             PlayerPrefs.SetFloat(KeySfxVol, SfxVolume);
             PlayerPrefs.Save();
+            ApplySfxVolume(SfxVolume);
+            OnSettingsChanged?.Invoke();
         }
 
         public static void SetMusicVolume(float vol)
@@ -433,6 +539,8 @@ namespace SniperGame.UI.Settings
             MusicVolume = Mathf.Clamp01(vol);
             PlayerPrefs.SetFloat(KeyMusicVol, MusicVolume);
             PlayerPrefs.Save();
+            ApplyMusicVolume(MusicVolume);
+            OnSettingsChanged?.Invoke();
         }
 
         public static void SetVoiceVolume(float vol)
@@ -440,6 +548,8 @@ namespace SniperGame.UI.Settings
             VoiceVolume = Mathf.Clamp01(vol);
             PlayerPrefs.SetFloat(KeyVoiceVol, VoiceVolume);
             PlayerPrefs.Save();
+            ApplyVoiceVolume(VoiceVolume);
+            OnSettingsChanged?.Invoke();
         }
 
         // --- Controls ---
@@ -449,6 +559,7 @@ namespace SniperGame.UI.Settings
             PlayerPrefs.SetFloat(KeyMouseSens, MouseSensitivity);
             PlayerPrefs.SetFloat("MouseSensitivity", MouseSensitivity);
             PlayerPrefs.Save();
+            OnSettingsChanged?.Invoke();
         }
 
         public static void SetADSSensitivity(float sens)
@@ -456,6 +567,7 @@ namespace SniperGame.UI.Settings
             ADSSensitivity = Mathf.Clamp(sens, 0.1f, 2.0f);
             PlayerPrefs.SetFloat(KeyAdsSens, ADSSensitivity);
             PlayerPrefs.Save();
+            OnSettingsChanged?.Invoke();
         }
 
         public static void SetInvertY(bool invert)
@@ -463,6 +575,7 @@ namespace SniperGame.UI.Settings
             InvertY = invert;
             PlayerPrefs.SetInt(KeyInvertY, invert ? 1 : 0);
             PlayerPrefs.Save();
+            OnSettingsChanged?.Invoke();
         }
         #endregion
     }

@@ -153,18 +153,47 @@ namespace SniperGame.UI.Settings
         {
             IsRebinding = true;
             string originalText = buttonText != null ? buttonText.text : GetKeyDisplayName(action);
+            RectTransform btnRect = buttonText != null && buttonText.transform.parent != null
+                ? buttonText.transform.parent.GetComponent<RectTransform>()
+                : null;
+            UnityEngine.UI.Image btnImg = btnRect != null ? btnRect.GetComponent<UnityEngine.UI.Image>() : null;
+            Color idleBoxBg = new Color(0.106f, 0.118f, 0.169f, 1f);
+            Color activeBoxBg = new Color(0.24f, 0.20f, 0.08f, 1f);
+
             if (buttonText != null)
             {
                 buttonText.text = "< PRESS KEY >";
-                buttonText.color = new Color(1f, 0.7f, 0.1f); // Accent yellow
+                buttonText.color = new Color(1f, 0.88f, 0.35f, 1f);
+            }
+            if (btnImg != null)
+            {
+                btnImg.color = activeBoxBg;
             }
 
             // Wait one frame to avoid capturing the button click
             yield return null;
 
             bool captured = false;
+            float pulseTimer = 0f;
             while (!captured)
             {
+                pulseTimer += Time.unscaledDeltaTime * 7.5f;
+                float wave = 0.5f + 0.5f * Mathf.Sin(pulseTimer);
+
+                if (buttonText != null)
+                {
+                    buttonText.color = Color.Lerp(new Color(1f, 0.65f, 0.10f, 0.75f), new Color(1f, 0.90f, 0.40f, 1f), wave);
+                }
+                if (btnRect != null)
+                {
+                    float s = Mathf.Lerp(1.0f, 1.055f, wave);
+                    btnRect.localScale = new Vector3(s, s, 1f);
+                }
+                if (btnImg != null)
+                {
+                    btnImg.color = Color.Lerp(new Color(0.18f, 0.15f, 0.07f, 1f), activeBoxBg, wave);
+                }
+
                 // Escape cancels
                 if (Input.GetKeyDown(KeyCode.Escape))
                 {
@@ -173,6 +202,8 @@ namespace SniperGame.UI.Settings
                         buttonText.text = originalText;
                         buttonText.color = new Color(1f, 0.85f, 0.2f, 1f); // Cyber Gold
                     }
+                    if (btnRect != null) btnRect.localScale = Vector3.one;
+                    if (btnImg != null) btnImg.color = idleBoxBg;
                     IsRebinding = false;
                     onDone?.Invoke();
                     yield break;
@@ -213,8 +244,31 @@ namespace SniperGame.UI.Settings
                 yield return null;
             }
 
+            if (btnImg != null) btnImg.color = idleBoxBg;
+            if (btnRect != null)
+            {
+                StartCoroutine(ConfirmPopRoutine(btnRect));
+            }
+
             IsRebinding = false;
             onDone?.Invoke();
+        }
+
+        private IEnumerator ConfirmPopRoutine(RectTransform targetRect)
+        {
+            if (targetRect == null) yield break;
+            float duration = 0.14f;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (targetRect == null) yield break;
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float s = Mathf.Lerp(1.12f, 1.0f, Mathf.Sin(t * Mathf.PI * 0.5f));
+                targetRect.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (targetRect != null) targetRect.localScale = Vector3.one;
         }
 
         private void ApplyKeybind(KeyAction action, KeyCode newKey, TextMeshProUGUI buttonText)

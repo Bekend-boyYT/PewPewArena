@@ -607,7 +607,7 @@ namespace SniperGame.Player
 
         private void HandleJumpInput()
         {
-            if (_isWallRunning && Input.GetKeyUp(KeyCode.Space))
+            if (_isWallRunning && (UI.Settings.KeybindManager.GetKeyUp(UI.Settings.KeyAction.WallJump) || Input.GetKeyUp(KeyCode.Space)))
             {
                 ExecuteWallJump();
                 return;
@@ -682,7 +682,7 @@ namespace SniperGame.Player
             float forwardInput = Input.GetAxisRaw("Vertical");
             bool isHoldingSpaceLongEnough = _spaceHoldTimer >= (wallRunHoldTime * 0.95f);
 
-            if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? Input.GetKey(KeyCode.Space) : isHoldingSpaceLongEnough))
+            if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? (UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.WallJump) || Input.GetKey(KeyCode.Space)) : isHoldingSpaceLongEnough))
             {
                 if (Mathf.Abs(candidateHit.normal.y) < 0.2f)
                 {
@@ -788,8 +788,8 @@ namespace SniperGame.Player
             _isSliding = false;
             _lastSlideEndTime = Time.time;
 
-            // If still holding C when the slide ends, seamlessly stay in crouch
-            if (Input.GetKey(crouchSlideKey))
+            // If still holding crouch/slide key when the slide ends, seamlessly stay in crouch
+            if (UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Crouch) || UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Slide) || Input.GetKey(crouchSlideKey))
             {
                 _isCrouched = true;
             }
@@ -797,7 +797,7 @@ namespace SniperGame.Player
 
         private void UpdateCrouchTransition()
         {
-            bool isCrouchedOrSliding = _isSliding || _isCrouched || Input.GetKey(KeyCode.LeftControl);
+            bool isCrouchedOrSliding = _isSliding || _isCrouched || UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Crouch) || Input.GetKey(KeyCode.LeftControl);
 
             float targetHeight = isCrouchedOrSliding ? crouchHeight : _defaultHeight;
             float halfHeightDiff = (_defaultHeight - targetHeight) * 0.5f;
@@ -835,7 +835,7 @@ namespace SniperGame.Player
 
                 if (!soundPlayer.isPlaying || soundPlayer.clip != clipToPlay)
                 {
-                    soundPlayer.PlaySound(clipToPlay, loop: true, volume: isRunning ? 0.8f : 0.5f);
+                    soundPlayer.PlaySound(clipToPlay, loop: true, volume: (isRunning ? 0.8f : 0.5f) * UI.Settings.SettingsManager.SfxVolume);
                 }
             }
             else if (soundPlayer.isPlaying && (soundPlayer.clip == soundPlayer.runningSound || soundPlayer.clip == soundPlayer.walkingSound))
@@ -848,7 +848,7 @@ namespace SniperGame.Player
         {
             if (soundPlayer != null && clip != null)
             {
-                soundPlayer.PlaySound(clip, loop: false, volume: 0.7f);
+                soundPlayer.PlaySound(clip, loop: false, volume: 0.7f * UI.Settings.SettingsManager.SfxVolume);
             }
         }
 

@@ -2136,7 +2136,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 95000023, guid: 886802f5886741c44bd50666c597c650, type: 3}
       propertyPath: m_text
-      value: 'GoodBoy '
+      value: Goodboy
       objectReference: {fileID: 0}
     - target: {fileID: 95000023, guid: 886802f5886741c44bd50666c597c650, type: 3}
       propertyPath: m_fontColor32.rgba

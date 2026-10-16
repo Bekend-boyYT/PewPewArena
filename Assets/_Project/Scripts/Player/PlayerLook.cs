@@ -126,7 +126,8 @@ namespace SniperGame.Player
 
             transform.Rotate(Vector3.up * (lookX + _currentRecoil.y * Time.deltaTime));
 
-            _verticalRotation -= lookY;
+            float pitchSign = UI.Settings.SettingsManager.InvertY ? -1f : 1f;
+            _verticalRotation -= lookY * pitchSign;
             _verticalRotation = Mathf.Clamp(_verticalRotation, minPitch, maxPitch);
 
             if (cameraHolder != null)

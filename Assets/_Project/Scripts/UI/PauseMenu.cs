@@ -479,9 +479,9 @@ namespace SniperGame.UI
             var oldFooter = mainPausePanel.transform.Find("PauseFooterEmblem");
             if (oldFooter != null) oldFooter.gameObject.SetActive(false);
 
-            // 3. Tactical Sub-Header ("// MATCH PAUSED //")
+            // 3. Tactical Sub-Header ("Goodboy")
             var subtitleTmp = GetOrCreateText(mainPausePanel.transform, "PauseSubtitle", new Vector2(0f, 212f), new Vector2(380f, 24f));
-            subtitleTmp.text = "// MATCH PAUSED //";
+            subtitleTmp.text = "Goodboy";
             subtitleTmp.color = new Color(0f, 0.898f, 1f, 0.85f);
             subtitleTmp.fontSize = 14f;
             subtitleTmp.characterSpacing = 4f;
