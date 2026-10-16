@@ -43,6 +43,13 @@ namespace PewPewArena.UI
             if (duration > 0.38f) duration = 0.32f;
             if (buttonStaggerDelay > 0.05f) buttonStaggerDelay = 0.04f;
 
+            if (gameObject.name == "JoinScreen")
+            {
+                var joinTheme = GetComponent<JoinPanelTheme>();
+                if (joinTheme == null) joinTheme = gameObject.AddComponent<JoinPanelTheme>();
+                joinTheme.Apply();
+            }
+
             EnsureCanvasGroup();
             CacheElements();
             HideObsoleteElements();

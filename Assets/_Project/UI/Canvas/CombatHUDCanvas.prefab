@@ -16027,6 +16027,7 @@ MonoBehaviour:
   settingsButton: {fileID: 9089267197696108798}
   quitButton: {fileID: 4026343597747992097}
   hoverArrowSprite: {fileID: 21300000, guid: 77629110f8faf034db69f6e0f6737f34, type: 3}
+  hoverArrowRightSprite: {fileID: 21300000, guid: a0897bcdcccbdde45ba21852301355f3, type: 3}
   sensitivitySlider: {fileID: 5159678748985483967}
   sensitivityValueText: {fileID: 2531058565179959370}
   volumeSlider: {fileID: 9170050720394618440}
@@ -124955,6 +124956,7 @@ MonoBehaviour:
   arrowImage: {fileID: 95000103}
   arrowRect: {fileID: 95000101}
   arrowSprite: {fileID: 21300000, guid: 77629110f8faf034db69f6e0f6737f34, type: 3}
+  rightArrowSprite: {fileID: 21300000, guid: a0897bcdcccbdde45ba21852301355f3, type: 3}
   normalColor: {r: 0.85, g: 0.9, b: 0.93, a: 1}
   hoverColor: {r: 1, g: 0.18, b: 0.22, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
@@ -125054,6 +125056,7 @@ MonoBehaviour:
   arrowImage: {fileID: 95000203}
   arrowRect: {fileID: 95000201}
   arrowSprite: {fileID: 21300000, guid: 77629110f8faf034db69f6e0f6737f34, type: 3}
+  rightArrowSprite: {fileID: 21300000, guid: a0897bcdcccbdde45ba21852301355f3, type: 3}
   normalColor: {r: 0.85, g: 0.9, b: 0.93, a: 1}
   hoverColor: {r: 1, g: 0.18, b: 0.22, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
@@ -125153,6 +125156,7 @@ MonoBehaviour:
   arrowImage: {fileID: 95000303}
   arrowRect: {fileID: 95000301}
   arrowSprite: {fileID: 21300000, guid: 77629110f8faf034db69f6e0f6737f34, type: 3}
+  rightArrowSprite: {fileID: 21300000, guid: a0897bcdcccbdde45ba21852301355f3, type: 3}
   normalColor: {r: 0.85, g: 0.9, b: 0.93, a: 1}
   hoverColor: {r: 1, g: 0.18, b: 0.22, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}

@@ -25,6 +25,7 @@ namespace SniperGame.UI
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button quitButton;
         [SerializeField] private Sprite hoverArrowSprite;
+        [SerializeField] private Sprite hoverArrowRightSprite;
 
         [Header("Settings UI Elements")]
         [SerializeField] private Slider sensitivitySlider;
@@ -647,6 +648,15 @@ namespace SniperGame.UI
                 tmp.raycastTarget = false;
             }
 
+            if (hoverArrowSprite == null)
+            {
+                hoverArrowSprite = MainMenuButtonEffect.GetDefaultLeftArrow();
+            }
+            if (hoverArrowRightSprite == null)
+            {
+                hoverArrowRightSprite = MainMenuButtonEffect.GetDefaultRightArrow();
+            }
+
             // Ensure HoverArrow exists with sprite assigned
             Transform arrowTr = btn.transform.Find("HoverArrow") ?? btn.transform.Find("Arrow");
             if (arrowTr != null && hoverArrowSprite != null)
@@ -661,15 +671,10 @@ namespace SniperGame.UI
             var effect = btn.GetComponent<MainMenuButtonEffect>();
             if (effect == null) effect = btn.gameObject.AddComponent<MainMenuButtonEffect>();
 
+            if (hoverArrowSprite != null) effect.ArrowSprite = hoverArrowSprite;
+            if (hoverArrowRightSprite != null) effect.RightArrowSprite = hoverArrowRightSprite;
+
             effect.InitializeComponents();
-            if (hoverArrowSprite != null)
-            {
-                var arrowImg = btn.transform.Find("HoverArrow")?.GetComponent<Image>() ?? btn.transform.Find("Arrow")?.GetComponent<Image>();
-                if (arrowImg != null && arrowImg.sprite == null)
-                {
-                    arrowImg.sprite = hoverArrowSprite;
-                }
-            }
             effect.CalculateArrowPositions();
             effect.ApplyInstantIdleState();
         }

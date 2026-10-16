@@ -380,6 +380,7 @@ namespace PewPewArena.UI
             var btnEffect = back.GetComponent<MainMenuButtonEffect>();
             if (btnEffect != null)
             {
+                btnEffect.InitializeComponents();
                 btnEffect.FindRightArrow();
 
                 // If right arrow was not found (e.g. if unsaved scene was reloaded), ensure fallback right arrow exists
@@ -395,7 +396,7 @@ namespace PewPewArena.UI
                     rt.anchorMax = new Vector2(0.5f, 0.5f);
                     rt.pivot = new Vector2(0.5f, 0.5f);
                     rt.sizeDelta = new Vector2(40f, 34f);
-                    rt.localScale = new Vector3(-1f, 1f, 1f);
+                    rt.localScale = Vector3.one;
 
                     var cg = rightArrowGo.GetComponent<CanvasGroup>();
                     cg.alpha = 0f;
@@ -404,12 +405,12 @@ namespace PewPewArena.UI
 
                     var img = rightArrowGo.GetComponent<Image>();
                     img.raycastTarget = false;
+                    img.sprite = MainMenuButtonEffect.GetDefaultRightArrow();
                     if (existingLeft != null)
                     {
                         var leftImg = existingLeft.GetComponent<Image>();
                         if (leftImg != null)
                         {
-                            img.sprite = leftImg.sprite;
                             img.color = leftImg.color;
                         }
                     }

@@ -28,7 +28,15 @@ namespace PewPewArena.UI
         [SerializeField] private RectTransform arrowTransform;
         [SerializeField] private CanvasGroup arrowCanvasGroup;
         [SerializeField] private Image arrowImage;
+        [Header("Arrow Styling")]
+        [SerializeField] private Color arrowColor = new Color(0.92f, 0.98f, 1.0f, 1f);
+        [SerializeField] private Vector2 arrowSize = new Vector2(40f, 34f);
+        [SerializeField] private float arrowMargin = 16f;
+        [SerializeField] private float arrowSlideDistance = 8f;
+
+        [Header("Arrow Sprites")]
         [SerializeField] private Sprite arrowSprite;
+        [SerializeField] private Sprite rightArrowSprite;
 
         [Header("Right Arrow Settings (Optional)")]
         [SerializeField] private RectTransform rightArrowTransform;
@@ -39,12 +47,6 @@ namespace PewPewArena.UI
         [SerializeField] private Color idleTextColor = new Color(0.85f, 0.90f, 0.93f, 1f);
         [SerializeField] private Color hoverTextColor = new Color(1.0f, 1.0f, 1.0f, 1f);
         [SerializeField] private Color clickTextColor = new Color(0.70f, 1.0f, 0.90f, 1f);
-
-        [Header("Arrow Styling")]
-        [SerializeField] private Color arrowColor = new Color(0.92f, 0.98f, 1.0f, 1f);
-        [SerializeField] private Vector2 arrowSize = new Vector2(40f, 34f);
-        [SerializeField] private float arrowMargin = 16f;
-        [SerializeField] private float arrowSlideDistance = 8f;
 
         [Header("Animation Timings & Scales")]
         [SerializeField] private float hoverScale = 1.03f;
@@ -63,9 +65,68 @@ namespace PewPewArena.UI
         private Vector2 _rightArrowRestPos;
         private Vector3 _baseScale = Vector3.one;
 
+        private static Sprite _cachedLeftArrow;
+        private static Sprite _cachedRightArrow;
+
+        public static Sprite GetDefaultLeftArrow()
+        {
+            if (_cachedLeftArrow != null) return _cachedLeftArrow;
+            _cachedLeftArrow = Resources.Load<Sprite>("UI/Symbol Pijl rechts");
+#if UNITY_EDITOR
+            if (_cachedLeftArrow == null)
+            {
+                _cachedLeftArrow = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Symbol Pijl rechts.png");
+            }
+#endif
+            return _cachedLeftArrow;
+        }
+
+        public static Sprite GetDefaultRightArrow()
+        {
+            if (_cachedRightArrow != null) return _cachedRightArrow;
+            _cachedRightArrow = Resources.Load<Sprite>("UI/Symbol Pijl links");
+#if UNITY_EDITOR
+            if (_cachedRightArrow == null)
+            {
+                _cachedRightArrow = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Symbol Pijl links.png");
+            }
+#endif
+            return _cachedRightArrow;
+        }
+
         public CanvasGroup ArrowCanvasGroup => arrowCanvasGroup;
         public CanvasGroup RightArrowCanvasGroup => rightArrowCanvasGroup;
+        public RectTransform ArrowTransform => arrowTransform;
         public RectTransform RightArrowTransform => rightArrowTransform;
+        public Image ArrowImage => arrowImage;
+        public Image RightArrowImage => rightArrowImage;
+
+        public Sprite ArrowSprite
+        {
+            get => arrowSprite;
+            set
+            {
+                arrowSprite = value;
+                if (arrowImage != null && arrowSprite != null)
+                {
+                    arrowImage.sprite = arrowSprite;
+                }
+            }
+        }
+
+        public Sprite RightArrowSprite
+        {
+            get => rightArrowSprite;
+            set
+            {
+                rightArrowSprite = value;
+                if (rightArrowImage != null && rightArrowSprite != null)
+                {
+                    rightArrowImage.sprite = rightArrowSprite;
+                }
+            }
+        }
+
         public bool IsHovered => _isHovered;
         public bool IsPressed => _isPressed;
 
@@ -133,6 +194,16 @@ namespace PewPewArena.UI
                 buttonText.raycastTarget = false;
             }
 
+            if (arrowSprite == null)
+            {
+                arrowSprite = GetDefaultLeftArrow();
+            }
+
+            if (rightArrowSprite == null)
+            {
+                rightArrowSprite = GetDefaultRightArrow();
+            }
+
             // Look for existing left arrow child or create one
             if (arrowTransform == null)
             {
@@ -184,7 +255,7 @@ namespace PewPewArena.UI
 
             if (arrowImage != null)
             {
-                if (arrowImage.sprite == null && arrowSprite != null)
+                if (arrowSprite != null)
                 {
                     arrowImage.sprite = arrowSprite;
                 }
@@ -196,10 +267,16 @@ namespace PewPewArena.UI
         }
 
         /// <summary>
-        /// Detects any right-side arrow child added to the button (e.g. HoverArrowRight, HoverArrow (1), RightArrow).
+        /// Detects any right-side arrow child added to the button (e.g. HoverArrowRight, HoverArrow (1), RightArrow),
+        /// or creates one if it doesn't exist.
         /// </summary>
         public void FindRightArrow()
         {
+            if (rightArrowSprite == null)
+            {
+                rightArrowSprite = GetDefaultRightArrow();
+            }
+
             if (rightArrowTransform == null)
             {
                 string[] candidates = new string[]
@@ -238,12 +315,24 @@ namespace PewPewArena.UI
                         }
                     }
                 }
+
+                if (rightArrowTransform == null)
+                {
+                    CreateRightArrowChild();
+                }
             }
 
             if (rightArrowTransform != null)
             {
                 if (!rightArrowTransform.gameObject.activeSelf)
                     rightArrowTransform.gameObject.SetActive(true);
+
+                // Ensure right arrow scale is non-mirrored so Symbol Pijl links points left
+                Vector3 currentScale = rightArrowTransform.localScale;
+                if (currentScale.x < 0f)
+                {
+                    rightArrowTransform.localScale = new Vector3(Mathf.Abs(currentScale.x), currentScale.y, currentScale.z);
+                }
 
                 if (rightArrowCanvasGroup == null)
                 {
@@ -262,13 +351,9 @@ namespace PewPewArena.UI
 
                 if (rightArrowImage != null)
                 {
-                    if (rightArrowImage.sprite == null && arrowSprite != null)
+                    if (rightArrowSprite != null)
                     {
-                        rightArrowImage.sprite = arrowSprite;
-                    }
-                    if (rightArrowImage.sprite == null && arrowImage != null && arrowImage.sprite != null)
-                    {
-                        rightArrowImage.sprite = arrowImage.sprite;
+                        rightArrowImage.sprite = rightArrowSprite;
                     }
                     rightArrowImage.color = arrowColor;
                     rightArrowImage.raycastTarget = false;
@@ -278,7 +363,8 @@ namespace PewPewArena.UI
 
         private void CreateArrowChild()
         {
-            GameObject arrowObj = new GameObject("Arrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+            GameObject arrowObj = new GameObject("HoverArrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+            arrowObj.layer = gameObject.layer;
             arrowObj.transform.SetParent(transform, false);
 
             arrowTransform = arrowObj.GetComponent<RectTransform>();
@@ -286,6 +372,7 @@ namespace PewPewArena.UI
             arrowTransform.anchorMin = new Vector2(0.5f, 0.5f);
             arrowTransform.anchorMax = new Vector2(0.5f, 0.5f);
             arrowTransform.pivot = new Vector2(0.5f, 0.5f);
+            arrowTransform.localScale = Vector3.one;
 
             arrowCanvasGroup = arrowObj.GetComponent<CanvasGroup>();
             arrowCanvasGroup.alpha = 0f;
@@ -299,6 +386,42 @@ namespace PewPewArena.UI
             if (arrowSprite != null)
             {
                 arrowImage.sprite = arrowSprite;
+            }
+            else
+            {
+                arrowImage.sprite = GetDefaultLeftArrow();
+            }
+        }
+
+        private void CreateRightArrowChild()
+        {
+            GameObject rightArrowObj = new GameObject("HoverArrowRight", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+            rightArrowObj.layer = gameObject.layer;
+            rightArrowObj.transform.SetParent(transform, false);
+
+            rightArrowTransform = rightArrowObj.GetComponent<RectTransform>();
+            rightArrowTransform.sizeDelta = arrowTransform != null && arrowTransform.sizeDelta != Vector2.zero ? arrowTransform.sizeDelta : arrowSize;
+            rightArrowTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rightArrowTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rightArrowTransform.pivot = new Vector2(0.5f, 0.5f);
+            rightArrowTransform.localScale = Vector3.one;
+
+            rightArrowCanvasGroup = rightArrowObj.GetComponent<CanvasGroup>();
+            rightArrowCanvasGroup.alpha = 0f;
+            rightArrowCanvasGroup.interactable = false;
+            rightArrowCanvasGroup.blocksRaycasts = false;
+
+            rightArrowImage = rightArrowObj.GetComponent<Image>();
+            rightArrowImage.raycastTarget = false;
+            rightArrowImage.color = arrowColor;
+
+            if (rightArrowSprite != null)
+            {
+                rightArrowImage.sprite = rightArrowSprite;
+            }
+            else
+            {
+                rightArrowImage.sprite = GetDefaultRightArrow();
             }
         }
 
