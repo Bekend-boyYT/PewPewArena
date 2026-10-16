@@ -18,8 +18,8 @@ namespace PewPewArena.UI
     public class MainMenuPanelEntrance : MonoBehaviour
     {
         [Header("Animation Timings")]
-        [SerializeField] private float duration = 0.48f;
-        [SerializeField] private float buttonStaggerDelay = 0.06f;
+        [SerializeField] private float duration = 0.32f;
+        [SerializeField] private float buttonStaggerDelay = 0.04f;
         [SerializeField] private float buttonSlideDistance = 14f;
 
         [Header("Title & Divider Polish")]
@@ -40,6 +40,9 @@ namespace PewPewArena.UI
 
         private void Awake()
         {
+            if (duration > 0.38f) duration = 0.32f;
+            if (buttonStaggerDelay > 0.05f) buttonStaggerDelay = 0.04f;
+
             EnsureCanvasGroup();
             CacheElements();
             HideObsoleteElements();
@@ -208,17 +211,18 @@ namespace PewPewArena.UI
                 elapsed += Time.unscaledDeltaTime;
                 float progress = Mathf.Clamp01(elapsed / duration);
 
-                // Smooth panel fade
-                _canvasGroup.alpha = Mathf.SmoothStep(0f, 1f, progress * 1.35f);
+                // Smooth panel fade using responsive ease-out so elements appear immediately without hesitation
+                float easeAlpha = 1f - Mathf.Pow(1f - progress, 2.2f);
+                _canvasGroup.alpha = easeAlpha;
 
-                // Staggered buttons upward drift
+                // Staggered buttons upward drift with silky physical deceleration
                 for (int i = 0; i < _buttons.Count; i++)
                 {
                     if (_buttons[i] != null && i < _originalPositions.Count)
                     {
                         float buttonDelay = i * buttonStaggerDelay;
-                        float buttonT = Mathf.Clamp01((elapsed - buttonDelay) / (duration * 0.75f));
-                        float ease = Mathf.SmoothStep(0f, 1f, buttonT);
+                        float buttonT = Mathf.Clamp01((elapsed - buttonDelay) / (duration * 0.82f));
+                        float ease = 1f - Mathf.Pow(1f - buttonT, 2.5f);
                         Vector2 startPos = _originalPositions[i] - new Vector2(0f, buttonSlideDistance);
                         _buttons[i].anchoredPosition = Vector2.LerpUnclamped(startPos, _originalPositions[i], ease);
                     }
@@ -227,8 +231,8 @@ namespace PewPewArena.UI
                 // Title glide
                 if (titleText != null && _hasOriginalTitlePos)
                 {
-                    float titleT = Mathf.Clamp01(elapsed / (duration * 0.8f));
-                    float titleEase = Mathf.SmoothStep(0f, 1f, titleT);
+                    float titleT = Mathf.Clamp01(elapsed / (duration * 0.85f));
+                    float titleEase = 1f - Mathf.Pow(1f - titleT, 2.5f);
                     Vector2 titleStart = _originalTitlePos - new Vector2(0f, titleSlideDistance);
                     titleText.rectTransform.anchoredPosition = Vector2.LerpUnclamped(titleStart, _originalTitlePos, titleEase);
                 }
@@ -236,8 +240,8 @@ namespace PewPewArena.UI
                 // Divider glide
                 if (dividerTransform != null && _hasOriginalDividerPos)
                 {
-                    float divT = Mathf.Clamp01(elapsed / (duration * 0.8f));
-                    float divEase = Mathf.SmoothStep(0f, 1f, divT);
+                    float divT = Mathf.Clamp01(elapsed / (duration * 0.85f));
+                    float divEase = 1f - Mathf.Pow(1f - divT, 2.5f);
                     Vector2 divStart = _originalDividerPos - new Vector2(0f, dividerSlideDistance);
                     dividerTransform.anchoredPosition = Vector2.LerpUnclamped(divStart, _originalDividerPos, divEase);
                 }

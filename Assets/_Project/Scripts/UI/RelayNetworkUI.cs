@@ -24,6 +24,7 @@ namespace SniperGame.UI
         [SerializeField] private string tutorialSceneName = "Tutorial";
 
         [Header("Screens / Panels")]
+        [SerializeField] private GameObject persistentBackground;
         [SerializeField] private GameObject mainScreen;
         [SerializeField] private GameObject playPanel;
         [SerializeField] private GameObject loadoutPanel;
@@ -34,6 +35,7 @@ namespace SniperGame.UI
 
         private GameObject _settingsContainer;
         private GameObject _settingsInnerPanel;
+        private Sprite _menuBackgroundSprite;
 
         [Header("Main Menu Buttons")]
         [SerializeField] private Button playButton;
@@ -95,6 +97,7 @@ namespace SniperGame.UI
         {
             ForceUnlockCursor();
 
+            EnsurePersistentBackground();
             AutoFindReferences();
             SetupButtonListeners();
             RefreshLoadoutVisuals();
@@ -441,11 +444,133 @@ namespace SniperGame.UI
             Cursor.visible = true;
         }
 
+        #region Persistent Global Background
+        private void EnsurePersistentBackground()
+        {
+            // 1. Ensure camera clears to solid dark slate color rather than Unity Skybox
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.clearFlags = CameraClearFlags.SolidColor;
+                mainCam.backgroundColor = new Color(0.05f, 0.06f, 0.09f, 1f);
+            }
+
+            // 2. Locate or instantiate PersistentGlobalBackground directly under ConnectionCanvas root
+            if (persistentBackground == null)
+            {
+                Transform bgTr = transform.Find("PersistentGlobalBackground");
+                if (bgTr != null)
+                {
+                    persistentBackground = bgTr.gameObject;
+                }
+            }
+
+            if (persistentBackground == null)
+            {
+                persistentBackground = new GameObject("PersistentGlobalBackground", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                persistentBackground.transform.SetParent(this.transform, false);
+            }
+
+            // Always ensure it is Sibling Index 0 so it renders behind all menu panels
+            persistentBackground.transform.SetAsFirstSibling();
+
+            // Stretch RectTransform to fill entire canvas seamlessly
+            RectTransform rt = persistentBackground.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = Vector2.zero;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.localScale = Vector3.one;
+            }
+
+            // Configure Image component
+            Image bgImg = persistentBackground.GetComponent<Image>();
+            if (bgImg != null)
+            {
+                if (bgImg.sprite == null)
+                {
+                    bgImg.sprite = FindMenuBackgroundSprite();
+                }
+                bgImg.color = Color.white;
+                bgImg.raycastTarget = false; // Never block mouse clicks!
+            }
+
+            persistentBackground.SetActive(true);
+
+            // Clean up redundant child background images inside individual sub-panels so they don't overdraw or fade
+            CleanUpSubpanelBackgrounds();
+        }
+
+        private Sprite FindMenuBackgroundSprite()
+        {
+            if (_menuBackgroundSprite != null) return _menuBackgroundSprite;
+
+            // Search child images for existing background sprite (e.g. MainBackround.jpg)
+            Image[] images = GetComponentsInChildren<Image>(true);
+            foreach (var img in images)
+            {
+                if (img != null && img.sprite != null)
+                {
+                    string sName = img.sprite.name;
+                    string goName = img.gameObject.name;
+                    if (sName.IndexOf("Backround", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        sName.IndexOf("Screenshot", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        goName.IndexOf("Backround", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        goName.IndexOf("Background", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        _menuBackgroundSprite = img.sprite;
+                        return _menuBackgroundSprite;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void CleanUpSubpanelBackgrounds()
+        {
+            string[] subBgNames = new string[] { "MainBackround", "MainBackroundimage", "BackroundPanel" };
+            Transform[] panelTrs = new Transform[] {
+                mainScreen != null ? mainScreen.transform : null,
+                playPanel != null ? playPanel.transform : null,
+                createScreen != null ? createScreen.transform : null,
+                joinScreen != null ? joinScreen.transform : null,
+                loadoutPanel != null ? loadoutPanel.transform : null
+            };
+
+            foreach (var pTr in panelTrs)
+            {
+                if (pTr == null) continue;
+                foreach (var bgName in subBgNames)
+                {
+                    Transform childBg = pTr.Find(bgName);
+                    if (childBg != null)
+                    {
+                        Image img = childBg.GetComponent<Image>();
+                        if (img != null)
+                        {
+                            img.enabled = false;
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+
         #region Screen Navigation
 
         public void ShowScreen(GameObject screenToShow)
         {
             ForceUnlockCursor();
+
+            // Guarantee persistent background stays active and at sibling 0 behind all panels
+            if (persistentBackground != null)
+            {
+                persistentBackground.SetActive(true);
+                persistentBackground.transform.SetAsFirstSibling();
+            }
 
             bool isSettings = (screenToShow != null && (screenToShow == settingsPanel || screenToShow == _settingsContainer || screenToShow == _settingsInnerPanel));
 

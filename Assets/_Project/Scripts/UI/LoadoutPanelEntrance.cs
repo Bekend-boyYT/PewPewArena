@@ -19,8 +19,8 @@ namespace PewPewArena.UI
     public class LoadoutPanelEntrance : MonoBehaviour
     {
         [Header("Animation Timings")]
-        [SerializeField] private float duration = 0.46f;
-        [SerializeField] private float cardStaggerDelay = 0.08f;
+        [SerializeField] private float duration = 0.34f;
+        [SerializeField] private float cardStaggerDelay = 0.05f;
         [SerializeField] private float cardSlideDistance = 45f;
 
         [Header("Header Elements")]
@@ -49,6 +49,9 @@ namespace PewPewArena.UI
 
         private void Awake()
         {
+            if (duration > 0.38f) duration = 0.34f;
+            if (cardStaggerDelay > 0.06f) cardStaggerDelay = 0.05f;
+
             // Apply the redesigned layout first so the cached "original" positions match the new layout
             var theme = GetComponent<LoadoutPanelTheme>();
             if (theme == null) theme = gameObject.AddComponent<LoadoutPanelTheme>();
@@ -200,14 +203,15 @@ namespace PewPewArena.UI
                 elapsed += Time.unscaledDeltaTime;
                 float progress = Mathf.Clamp01(elapsed / duration);
 
-                // Smooth panel fade
-                _canvasGroup.alpha = Mathf.SmoothStep(0f, 1f, progress * 1.3f);
+                // Smooth panel fade using responsive ease-out so weapons bay appears immediately without hesitation
+                float easeAlpha = 1f - Mathf.Pow(1f - progress, 2.2f);
+                _canvasGroup.alpha = easeAlpha;
 
-                // Title and subtitle drop
+                // Title and subtitle drop with smooth physical deceleration
                 if (titleText != null && _hasTitlePos)
                 {
-                    float t = Mathf.Clamp01(elapsed / (duration * 0.75f));
-                    float ease = Mathf.SmoothStep(0f, 1f, t);
+                    float t = Mathf.Clamp01(elapsed / (duration * 0.82f));
+                    float ease = 1f - Mathf.Pow(1f - t, 2.5f);
                     titleText.rectTransform.anchoredPosition = Vector2.LerpUnclamped(
                         _originalTitlePos + new Vector2(0f, titleSlideDistance),
                         _originalTitlePos,
@@ -217,8 +221,8 @@ namespace PewPewArena.UI
 
                 if (subtitleText != null && _hasSubtitlePos)
                 {
-                    float t = Mathf.Clamp01(elapsed / (duration * 0.8f));
-                    float ease = Mathf.SmoothStep(0f, 1f, t);
+                    float t = Mathf.Clamp01(elapsed / (duration * 0.85f));
+                    float ease = 1f - Mathf.Pow(1f - t, 2.5f);
                     subtitleText.rectTransform.anchoredPosition = Vector2.LerpUnclamped(
                         _originalSubtitlePos + new Vector2(0f, subtitleSlideDistance),
                         _originalSubtitlePos,
@@ -226,11 +230,11 @@ namespace PewPewArena.UI
                     );
                 }
 
-                // Divider horizontal expansion
+                // Divider horizontal expansion with deceleration
                 if (dividerTransform != null)
                 {
                     float t = Mathf.Clamp01(elapsed / (duration * 0.85f));
-                    float ease = Mathf.SmoothStep(0f, 1f, t);
+                    float ease = 1f - Mathf.Pow(1f - t, 2.5f);
                     dividerTransform.localScale = new Vector3(
                         Mathf.LerpUnclamped(0f, _originalDividerScale.x, ease),
                         _originalDividerScale.y,
@@ -238,11 +242,11 @@ namespace PewPewArena.UI
                     );
                 }
 
-                // Card 1 slide from left
+                // Card 1 slide from left with deceleration
                 if (sniper1Card != null && _hasCard1Pos)
                 {
-                    float t1 = Mathf.Clamp01(elapsed / (duration * 0.85f));
-                    float ease1 = Mathf.SmoothStep(0f, 1f, t1);
+                    float t1 = Mathf.Clamp01(elapsed / (duration * 0.88f));
+                    float ease1 = 1f - Mathf.Pow(1f - t1, 2.5f);
                     sniper1Card.anchoredPosition = Vector2.LerpUnclamped(
                         _originalCard1Pos - new Vector2(cardSlideDistance, 0f),
                         _originalCard1Pos,
@@ -250,11 +254,11 @@ namespace PewPewArena.UI
                     );
                 }
 
-                // Card 2 slide from right with stagger
+                // Card 2 slide from right with stagger and deceleration
                 if (sniper2Card != null && _hasCard2Pos)
                 {
-                    float t2 = Mathf.Clamp01((elapsed - cardStaggerDelay) / (duration * 0.85f));
-                    float ease2 = Mathf.SmoothStep(0f, 1f, t2);
+                    float t2 = Mathf.Clamp01((elapsed - cardStaggerDelay) / (duration * 0.88f));
+                    float ease2 = 1f - Mathf.Pow(1f - t2, 2.5f);
                     sniper2Card.anchoredPosition = Vector2.LerpUnclamped(
                         _originalCard2Pos + new Vector2(cardSlideDistance, 0f),
                         _originalCard2Pos,
