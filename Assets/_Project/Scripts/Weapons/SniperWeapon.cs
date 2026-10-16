@@ -644,6 +644,43 @@ namespace SniperGame.Weapons
 
             PlayShootEffects(_activeWeaponSlot);
 
+            // Instant client-side predicted bullet tracer for 0ms shooter feedback
+            Transform activeMuzzle = (_activeWeaponSlot == 0) ? firePoint1 : firePoint2;
+            Vector3 bulletOrigin;
+            bool isScoped = (_wantsToScope || _isFullyScoped) && playerCamera != null;
+            if (isScoped)
+            {
+                bulletOrigin = playerCamera.transform.position + playerCamera.transform.forward * 0.4f - playerCamera.transform.up * 0.1f + playerCamera.transform.right * 0.08f;
+            }
+            else
+            {
+                bulletOrigin = (activeMuzzle != null) ? activeMuzzle.position : ((firePoint != null) ? firePoint.position : origin);
+            }
+
+            Vector3 predictedHit = origin + direction * range;
+            Vector3 predictedNormal = -direction;
+            bool predictedCharHit = false;
+
+            RaycastHit[] localHits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(localHits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in localHits)
+            {
+                PlayerHitbox hitbox = hit.collider.GetComponent<PlayerHitbox>();
+                PlayerHealth targetHealth = hitbox != null ? hitbox.Health : hit.collider.GetComponentInParent<PlayerHealth>();
+
+                if (targetHealth != null && targetHealth.OwnerClientId == OwnerClientId)
+                {
+                    continue;
+                }
+
+                predictedHit = hit.point;
+                predictedNormal = hit.normal;
+                predictedCharHit = (targetHealth != null && targetHealth.OwnerClientId != OwnerClientId);
+                break;
+            }
+
+            SpawnCosmeticBullet(bulletOrigin, predictedHit, predictedNormal, _activeWeaponSlot, predictedCharHit);
+
             ShootServerRpc(origin, direction, OwnerClientId, _activeWeaponSlot);
         }
 
@@ -823,6 +860,14 @@ namespace SniperGame.Weapons
         [ClientRpc]
         private void SpawnShotVisualsClientRpc(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal, int weaponSlot, bool isCharacterHit)
         {
+            // Owner already spawned their predicted cosmetic bullet tracer with 0ms delay
+            if (IsOwner) return;
+
+            SpawnCosmeticBullet(origin, hitPosition, hitNormal, weaponSlot, isCharacterHit);
+        }
+
+        private void SpawnCosmeticBullet(Vector3 origin, Vector3 hitPosition, Vector3 hitNormal, int weaponSlot, bool isCharacterHit)
+        {
             GameObject bPrefab = (weaponSlot == 0)
                 ? (bulletPrefab1 != null ? bulletPrefab1 : bulletPrefab)
                 : (bulletPrefab2 != null ? bulletPrefab2 : bulletPrefab);
@@ -931,9 +976,31 @@ namespace SniperGame.Weapons
                 ? (muzzleFlashPrefab1 != null ? muzzleFlashPrefab1 : (muzzleFlash != null ? muzzleFlash.gameObject : null))
                 : (muzzleFlashPrefab2 != null ? muzzleFlashPrefab2 : (muzzleFlash != null ? muzzleFlash.gameObject : null));
 
-            if (prefabToSpawn != null && muzzleTransform != null)
+            if (prefabToSpawn != null)
             {
-                GameObject flashObj = Instantiate(prefabToSpawn, muzzleTransform.position, muzzleTransform.rotation, muzzleTransform);
+                Vector3 flashPos;
+                Quaternion flashRot;
+
+                bool isScoped = IsOwner && (_wantsToScope || _isFullyScoped) && playerCamera != null;
+                if (isScoped)
+                {
+                    // In ADS scope zoom, gun mesh is hidden. Spawn flash in world space slightly forward/down from camera viewport
+                    flashPos = playerCamera.transform.position + playerCamera.transform.forward * 0.45f - playerCamera.transform.up * 0.12f + playerCamera.transform.right * 0.08f;
+                    flashRot = playerCamera.transform.rotation;
+                }
+                else if (muzzleTransform != null)
+                {
+                    flashPos = muzzleTransform.position;
+                    flashRot = muzzleTransform.rotation;
+                }
+                else
+                {
+                    flashPos = transform.position + transform.forward * 0.5f;
+                    flashRot = transform.rotation;
+                }
+
+                // Instantiate in world space so weapon visuals toggling during ADS never hides or cancels the muzzle blast
+                GameObject flashObj = Instantiate(prefabToSpawn, flashPos, flashRot);
                 Destroy(flashObj, 1.5f);
             }
             else if (muzzleFlash != null)

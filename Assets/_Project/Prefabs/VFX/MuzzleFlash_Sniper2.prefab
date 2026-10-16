@@ -4943,9 +4943,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 616b04aaa96f5294cb4b83074a47d5f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Weapons.VFXAutoCleanup
-  lifetime: 2
+  lifetime: 0.75
   flashLight: {fileID: 0}
-  lightDuration: 0.06
+  lightDuration: 0.09
 --- !u!1 &2116058238018115081
 GameObject:
   m_ObjectHideFlags: 0
@@ -4988,9 +4988,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 2
-  m_Color: {r: 1, g: 0.68, b: 0.18, a: 1}
-  m_Intensity: 8.5
-  m_Range: 9.5
+  m_Color: {r: 1, g: 0.65, b: 0.15, a: 1}
+  m_Intensity: 10
+  m_Range: 12
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}

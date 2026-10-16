@@ -7,9 +7,12 @@ namespace SniperGame.Weapons
         [Header("Trail & Particle Configuration")]
         [SerializeField] private Material trailMaterial;
         [SerializeField] private Material sparksMaterial;
-        [SerializeField] private float trailTime = 0.08f;
-        [SerializeField] private float trailWidth = 0.045f;
+        [SerializeField] private float trailTime = 0.35f;
+        [SerializeField] private float trailWidth = 0.075f;
         [SerializeField] private bool isHeavyBullet = false;
+        [SerializeField] private Color bulletLightColor = new Color(0.5f, 0.9f, 1f);
+        [SerializeField] private float bulletLightIntensity = 3.5f;
+        [SerializeField] private float bulletLightRange = 5.5f;
 
         private Vector3 _targetPosition;
         private Vector3 _hitNormal;
@@ -17,6 +20,7 @@ namespace SniperGame.Weapons
         private float _speed;
         private bool _isCharacterHit;
         private bool _isInitialized;
+        private Light _bulletLight;
 
         public void Initialize(Vector3 targetPosition, Vector3 hitNormal, GameObject hitEffectPrefab, float speed, bool isCharacterHit = false)
         {
@@ -29,11 +33,26 @@ namespace SniperGame.Weapons
 
             transform.LookAt(_targetPosition);
             SetupVisuals();
-            Destroy(gameObject, 4f); // Safety cleanup timeout
+            Destroy(gameObject, 5f); // Safety cleanup timeout
         }
 
         private void SetupVisuals()
         {
+            // 1. Dynamic Point Light illuminating the flight path
+            _bulletLight = GetComponent<Light>();
+            if (_bulletLight == null)
+            {
+                _bulletLight = gameObject.AddComponent<Light>();
+            }
+
+            _bulletLight.type = LightType.Point;
+            _bulletLight.color = isHeavyBullet ? new Color(1f, 0.72f, 0.2f) : bulletLightColor;
+            _bulletLight.intensity = isHeavyBullet ? 6.5f : bulletLightIntensity;
+            _bulletLight.range = isHeavyBullet ? 7.5f : bulletLightRange;
+            _bulletLight.shadows = LightShadows.None;
+            _bulletLight.enabled = true;
+
+            // 2. Trail Renderer Configuration
             var trail = GetComponent<TrailRenderer>();
             if (trail == null)
             {
@@ -47,11 +66,18 @@ namespace SniperGame.Weapons
 
             trail.time = trailTime;
             trail.widthMultiplier = trailWidth;
-            trail.minVertexDistance = 0.08f;
+            trail.minVertexDistance = 0.05f;
             trail.alignment = LineAlignment.View;
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
-            trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+
+            // Tubular, solid sniper contrail profile (broad core tapering to needle tip at tail)
+            AnimationCurve widthCurve = new AnimationCurve();
+            widthCurve.AddKey(new Keyframe(0f, 1f));
+            widthCurve.AddKey(new Keyframe(0.35f, 0.95f));
+            widthCurve.AddKey(new Keyframe(0.7f, 0.55f));
+            widthCurve.AddKey(new Keyframe(1f, 0f));
+            trail.widthCurve = widthCurve;
 
             Gradient grad = new Gradient();
             if (isHeavyBullet)
@@ -59,12 +85,13 @@ namespace SniperGame.Weapons
                 grad.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),
-                        new GradientColorKey(new Color(1f, 0.75f, 0.2f), 0.5f),
-                        new GradientColorKey(new Color(1f, 0.45f, 0.05f), 1f)
+                        new GradientColorKey(new Color(1f, 0.78f, 0.22f), 0.3f),
+                        new GradientColorKey(new Color(1f, 0.42f, 0.05f), 0.75f),
+                        new GradientColorKey(new Color(0.85f, 0.15f, 0.02f), 1f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(1f, 0f),
-                        new GradientAlphaKey(0.85f, 0.6f),
+                        new GradientAlphaKey(0.95f, 0.65f),
                         new GradientAlphaKey(0f, 1f)
                     }
                 );
@@ -74,11 +101,12 @@ namespace SniperGame.Weapons
                 grad.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),
-                        new GradientColorKey(new Color(0.8f, 0.95f, 1f), 1f)
+                        new GradientColorKey(new Color(0.4f, 0.88f, 1f), 0.35f),
+                        new GradientColorKey(new Color(0.12f, 0.6f, 1f), 1f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(1f, 0f),
-                        new GradientAlphaKey(0.85f, 0.6f),
+                        new GradientAlphaKey(0.85f, 0.55f),
                         new GradientAlphaKey(0f, 1f)
                     }
                 );
@@ -86,6 +114,7 @@ namespace SniperGame.Weapons
             trail.colorGradient = grad;
             trail.emitting = true;
 
+            // 3. Wake particles (ionization motes or molten slag sparks)
             var ps = GetComponentInChildren<ParticleSystem>();
             if (ps == null && sparksMaterial != null)
             {
@@ -106,22 +135,23 @@ namespace SniperGame.Weapons
 
                 if (isHeavyBullet)
                 {
-                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.38f);
+                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
                     main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3.5f);
+                    main.gravityModifier = 0.25f;
                     main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
-                    main.startColor = new Color(1f, 0.72f, 0.18f, 1f);
-                    em.rateOverDistance = 35f;
+                    main.startColor = new Color(1f, 0.7f, 0.18f, 1f);
+                    em.rateOverDistance = 45f;
 
                     var shape = ps.shape;
                     shape.shapeType = ParticleSystemShapeType.Sphere;
-                    shape.radius = 0.05f;
+                    shape.radius = 0.04f;
 
                     var col = ps.colorOverLifetime;
                     col.enabled = true;
                     Gradient colGrad = new Gradient();
                     colGrad.SetKeys(
                         new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.4f, 0.05f), 1f) },
-                        new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.5f), new GradientAlphaKey(0f, 1f) }
+                        new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.85f, 0.5f), new GradientAlphaKey(0f, 1f) }
                     );
                     col.color = colGrad;
 
@@ -131,11 +161,11 @@ namespace SniperGame.Weapons
                 }
                 else
                 {
-                    main.startLifetime = 0.12f;
+                    main.startLifetime = 0.22f;
                     main.startSpeed = 0f;
-                    main.startSize = 0.035f;
-                    main.startColor = new Color(0.85f, 0.98f, 1f, 0.9f);
-                    em.rateOverDistance = 25f;
+                    main.startSize = 0.045f;
+                    main.startColor = new Color(0.6f, 0.92f, 1f, 0.85f);
+                    em.rateOverDistance = 30f;
 
                     var shape = ps.shape;
                     shape.shapeType = ParticleSystemShapeType.Sphere;
@@ -145,7 +175,7 @@ namespace SniperGame.Weapons
                     col.enabled = true;
                     Gradient colGrad = new Gradient();
                     colGrad.SetKeys(
-                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(0.7f, 0.9f, 1f), 1f) },
+                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(0.4f, 0.85f, 1f), 1f) },
                         new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) }
                     );
                     col.color = colGrad;
@@ -179,7 +209,13 @@ namespace SniperGame.Weapons
             transform.position = _targetPosition;
             _isInitialized = false;
 
-            // 1. Spawn impact effect at exact hit location oriented along surface normal
+            // 1. Immediately extinguish dynamic bullet light so it doesn't linger at impact point
+            if (_bulletLight != null)
+            {
+                _bulletLight.enabled = false;
+            }
+
+            // 2. Spawn impact effect at exact hit location oriented along surface normal
             if (_hitEffectPrefab != null)
             {
                 Quaternion rot = (_hitNormal != Vector3.zero) ? Quaternion.LookRotation(_hitNormal) : Quaternion.identity;
@@ -192,8 +228,8 @@ namespace SniperGame.Weapons
                 }
             }
 
-            // 2. Smooth trail cleanup: stop emitting new points so the ribbon fades into the surface
-            float fadeTime = 0.15f;
+            // 3. Smooth trail ribbon dissipation: stop emitting new points so existing vapor streak fades out gracefully
+            float fadeTime = 0.35f;
             var trails = GetComponentsInChildren<TrailRenderer>(true);
             for (int i = 0; i < trails.Length; i++)
             {
@@ -207,7 +243,7 @@ namespace SniperGame.Weapons
                 particleSystems[i].Stop(true, ParticleSystemStopBehavior.StopEmitting);
             }
 
-            // 3. Immediately hide bullet head renderers
+            // 4. Immediately hide projectile head renderers
             var renderers = GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; i++)
             {
@@ -217,8 +253,8 @@ namespace SniperGame.Weapons
                 }
             }
 
-            // 4. Destroy bullet after trail ribbon completes its fade
-            Destroy(gameObject, fadeTime);
+            // 5. Destroy bullet GameObject after contrail ribbon completes its fade
+            Destroy(gameObject, fadeTime + 0.05f);
         }
     }
 }
