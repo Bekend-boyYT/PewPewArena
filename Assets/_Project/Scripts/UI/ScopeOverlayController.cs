@@ -199,7 +199,7 @@ namespace SniperGame.UI
         {
             if (scopeAnimator == null) return;
 
-            float targetStrafe = _isScoped ? Input.GetAxisRaw("Horizontal") : 0f;
+            float targetStrafe = _isScoped ? Settings.KeybindManager.GetHorizontalAxisRaw() : 0f;
             float smoothTime = Mathf.Abs(targetStrafe) > 0.05f ? tiltSmoothTime : returnSmoothTime;
 
             _currentStrafe = Mathf.SmoothDamp(_currentStrafe, targetStrafe, ref _strafeVelocity, smoothTime);
@@ -240,8 +240,8 @@ namespace SniperGame.UI
             // 2. Movement Step Bob
             if (enableWalkBob && _isScoped)
             {
-                float moveX = Input.GetAxisRaw("Horizontal");
-                float moveY = Input.GetAxisRaw("Vertical");
+                float moveX = Settings.KeybindManager.GetHorizontalAxisRaw();
+                float moveY = Settings.KeybindManager.GetVerticalAxisRaw();
                 bool isMoving = (Mathf.Abs(moveX) > 0.1f || Mathf.Abs(moveY) > 0.1f);
 
                 if (isMoving)

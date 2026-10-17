@@ -514,8 +514,8 @@ namespace SniperGame.Player
 
         private void CalculateMovement()
         {
-            float inputX = Input.GetAxisRaw("Horizontal");
-            float inputZ = Input.GetAxisRaw("Vertical");
+            float inputX = UI.Settings.KeybindManager.GetHorizontalAxisRaw();
+            float inputZ = UI.Settings.KeybindManager.GetVerticalAxisRaw();
 
             Vector3 wishDir = (transform.forward * inputZ + transform.right * inputX).normalized;
 
@@ -679,7 +679,7 @@ namespace SniperGame.Player
 
             _canWallRunNear = hitWall;
 
-            float forwardInput = Input.GetAxisRaw("Vertical");
+            float forwardInput = UI.Settings.KeybindManager.GetVerticalAxisRaw();
             bool isHoldingSpaceLongEnough = _spaceHoldTimer >= (wallRunHoldTime * 0.95f);
 
             if (hitWall && forwardInput > 0.1f && !_isSliding && (_isWallRunning ? (UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.WallJump) || Input.GetKey(KeyCode.Space)) : isHoldingSpaceLongEnough))
@@ -707,7 +707,7 @@ namespace SniperGame.Player
 
         private void HandleCrouchAndSlideInput()
         {
-            float inputZ = Input.GetAxisRaw("Vertical");
+            float inputZ = UI.Settings.KeybindManager.GetVerticalAxisRaw();
 
             // Sprinting breaks crouch immediately
             if (Input.GetKey(KeyCode.LeftShift) && inputZ > 0.1f && _isCrouched)
@@ -774,7 +774,7 @@ namespace SniperGame.Player
             _isSliding = true;
             _slideTimer = slideDuration;
 
-            Vector3 inputDir = (transform.forward * Input.GetAxisRaw("Vertical") + transform.right * Input.GetAxisRaw("Horizontal")).normalized;
+            Vector3 inputDir = (transform.forward * UI.Settings.KeybindManager.GetVerticalAxisRaw() + transform.right * UI.Settings.KeybindManager.GetHorizontalAxisRaw()).normalized;
             _slideDirection = inputDir.magnitude > 0.1f ? inputDir : transform.forward;
 
             _horizontalVelocity = _slideDirection * Mathf.Max(_horizontalVelocity.magnitude + 4f, slideBoostSpeed);

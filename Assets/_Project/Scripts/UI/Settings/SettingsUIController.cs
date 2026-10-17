@@ -624,6 +624,7 @@ namespace SniperGame.UI.Settings
                 resetSettingsBtn.onClick.AddListener(() =>
                 {
                     SettingsManager.ResetToDefaults();
+                    KeybindManager.ResetAllKeybinds();
                     RefreshAllUI();
                     if (gameObject.activeInHierarchy)
                     {
@@ -809,13 +810,13 @@ namespace SniperGame.UI.Settings
                 var row = FindChildRelaxed(keybindsSidePanel.transform, item.rowName);
                 if (row == null) continue;
 
-                bool isRebindable = item.action != KeyAction.Move;
+                bool isRebindable = true;
                 var btn = row.GetComponentInChildren<Button>(true);
                 var tmp = btn != null ? btn.GetComponentInChildren<TextMeshProUGUI>(true) : null;
                 if (tmp != null)
                 {
                     tmp.text = KeybindManager.GetKeyDisplayName(item.action);
-                    tmp.color = isRebindable ? goldText : lockedText;
+                    tmp.color = goldText;
                     tmp.fontStyle = FontStyles.Bold;
                     tmp.alignment = TextAlignmentOptions.Center;
                     tmp.characterSpacing = 1.5f;
@@ -829,7 +830,7 @@ namespace SniperGame.UI.Settings
                 if (btn != null)
                 {
                     btn.transition = Selectable.Transition.None;
-                    btn.interactable = isRebindable;
+                    btn.interactable = true;
 
                     var btnImg = btn.GetComponent<Image>();
                     if (btnImg != null)
@@ -1952,7 +1953,7 @@ namespace SniperGame.UI.Settings
             // 4. Style & Layout Keybind Rows
             var actionRows = new (string rowName, string displayLabel, bool isRebindable)[]
             {
-                ("Row_Move", "MOVE", false),
+                ("Row_Move", "MOVE", true),
                 ("Row_Jump", "JUMP", true),
                 ("Row_Crouch", "CROUCH", true),
                 ("Row_Slide", "SLIDE", true),
@@ -2836,7 +2837,7 @@ namespace SniperGame.UI.Settings
                 _accentBarRt.localScale = new Vector3(1f, sy, 1f);
             }
 
-            if (_actionLabel != null)
+            if (!KeybindManager.IsRebinding && _actionLabel != null)
             {
                 Color idleCol = new Color(0.81f, 0.84f, 0.90f, 1f);
                 Color hoverCol = new Color(1f, 0.88f, 0.35f, 1f);
