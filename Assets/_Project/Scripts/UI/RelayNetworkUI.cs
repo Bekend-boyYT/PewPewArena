@@ -70,6 +70,7 @@ namespace SniperGame.UI
         public static bool HostSniper2Allowed = true;
         public static int HostEquippedSniper = 0;
         public static int LocalEquippedSniper = -1;
+        public static bool ReturnToLoadoutFromInspection = false;
 
         private const string SelectedLoadoutKey = "SelectedLoadout";
         public const string LoadoutRequiredMessage = LoadoutRequiredPopup.DefaultPopupMessage;
@@ -88,6 +89,7 @@ namespace SniperGame.UI
             _hasSelectedLoadout = false;
             HostEquippedSniper = 0;
             LocalEquippedSniper = -1;
+            ReturnToLoadoutFromInspection = false;
         }
 
         public static int GetLocalEquippedSniper()
@@ -172,6 +174,12 @@ namespace SniperGame.UI
 
             EnsurePersistentBackground();
             AutoFindReferences();
+            if (loadoutPanel != null)
+            {
+                var loadoutTheme = loadoutPanel.GetComponent<LoadoutPanelTheme>();
+                if (loadoutTheme == null) loadoutTheme = loadoutPanel.AddComponent<LoadoutPanelTheme>();
+                loadoutTheme.Apply();
+            }
             if (createScreen != null)
             {
                 var createTheme = createScreen.GetComponent<CreatePanelTheme>();
@@ -185,7 +193,16 @@ namespace SniperGame.UI
             RefreshMapSelectionVisuals();
             RefreshWeaponToggleVisuals();
 
-            ShowScreen(mainScreen);
+            if (ReturnToLoadoutFromInspection && loadoutPanel != null)
+            {
+                ReturnToLoadoutFromInspection = false;
+                ShowScreen(loadoutPanel);
+                RefreshLoadoutVisuals(playFeedback: false);
+            }
+            else
+            {
+                ShowScreen(mainScreen);
+            }
 
             await InitializeUnityServicesAsync();
         }
@@ -900,6 +917,25 @@ namespace SniperGame.UI
                     outline.effectDistance = isSniper2 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
                 }
             }
+
+            if (loadoutPanel != null)
+            {
+                var loadoutTheme = loadoutPanel.GetComponent<LoadoutPanelTheme>();
+                if (loadoutTheme == null) loadoutTheme = loadoutPanel.AddComponent<LoadoutPanelTheme>();
+                loadoutTheme.Apply();
+                loadoutTheme.UpdateInspectSidePanels(hasValid ? selected : -1, animate: playFeedback);
+            }
+        }
+
+        public void OnInspectSniper(int index)
+        {
+            if (index != 0 && index != 1)
+            {
+                Debug.LogWarning($"[RelayUI] Invalid Sniper inspection index: {index}");
+                return;
+            }
+
+            SniperInspectionController.OpenInspection(index);
         }
 
         public void OnToggleWeaponSettingsClicked()

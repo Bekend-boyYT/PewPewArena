@@ -52,6 +52,17 @@ namespace PewPewArena.UI
         private TMP_FontAsset _bodyFont;
         private bool _applied;
 
+        private RectTransform _sniper1SidePanel;
+        private RectTransform _sniper2SidePanel;
+        private CanvasGroup _sniper1SideGroup;
+        private CanvasGroup _sniper2SideGroup;
+        private Button _sniper1InspectButton;
+        private Button _sniper2InspectButton;
+        private Coroutine _sidePanelAnimCoroutine;
+
+        public Button Sniper1InspectButton => _sniper1InspectButton;
+        public Button Sniper2InspectButton => _sniper2InspectButton;
+
         public void Apply()
         {
             if (_applied) return;
@@ -75,8 +86,14 @@ namespace PewPewArena.UI
                     containerRt.sizeDelta = new Vector2(1000f, CardH);
                 }
 
-                ApplyCard(container.Find("Sniper1Card"), Sniper1, -260f);
-                ApplyCard(container.Find("Sniper2Card"), Sniper2, 260f);
+                Transform card1 = container.Find("Sniper1Card");
+                Transform card2 = container.Find("Sniper2Card");
+
+                ApplyCard(card1, Sniper1, -260f);
+                ApplyCard(card2, Sniper2, 260f);
+
+                _sniper1SidePanel = ApplyInspectSidePanel(container, card1, Sniper1, 0, -705f, out _sniper1SideGroup, out _sniper1InspectButton);
+                _sniper2SidePanel = ApplyInspectSidePanel(container, card2, Sniper2, 1, 705f, out _sniper2SideGroup, out _sniper2InspectButton);
             }
 
             ApplyBackButton();
@@ -348,6 +365,270 @@ namespace PewPewArena.UI
                     badgeBg, badgeFrame, badgeIcon, badgeText, auraGroup, fills, (float[])data.Fills.Clone());
             }
         }
+
+        private RectTransform ApplyInspectSidePanel(Transform container, Transform card, CardData data, int sniperIndex,
+            float targetX, out CanvasGroup sideGroup, out Button inspectButton)
+        {
+            sideGroup = null;
+            inspectButton = null;
+            if (container == null) return null;
+
+            string panelName = (sniperIndex == 0) ? "Sniper1SidePanel" : "Sniper2SidePanel";
+
+            // Reuse existing side panel if present on card or container, otherwise create under container
+            Transform existing = container.Find(panelName);
+            if (existing == null && card != null)
+            {
+                existing = card.Find("SidePanel") ?? card.Find("InspectSidePanel");
+                if (existing != null)
+                {
+                    existing.SetParent(container, false);
+                    existing.name = panelName;
+                }
+            }
+
+            RectTransform sideRt;
+            if (existing != null)
+            {
+                sideRt = existing as RectTransform ?? existing.gameObject.AddComponent<RectTransform>();
+            }
+            else
+            {
+                var sideGo = new GameObject(panelName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+                sideGo.layer = container.gameObject.layer;
+                sideGo.transform.SetParent(container, false);
+                sideRt = sideGo.GetComponent<RectTransform>();
+            }
+
+            SetRect(sideRt, new Vector2(0.5f, 0.5f), new Vector2(targetX, 0f), new Vector2(346f, 496f));
+
+            sideGroup = sideRt.GetComponent<CanvasGroup>();
+            if (sideGroup == null) sideGroup = sideRt.gameObject.AddComponent<CanvasGroup>();
+
+            // Body & Chamfered Frame
+            var body = sideRt.GetComponent<Image>();
+            if (body == null) body = sideRt.gameObject.AddComponent<Image>();
+            body.sprite = LoadoutUISprites.CardFill;
+            body.type = Image.Type.Sliced;
+            body.color = new Color(0.02f, 0.05f, 0.09f, 0.92f);
+            body.raycastTarget = true;
+
+            var frame = GetOrCreateImage(sideRt, "SideFrame");
+            frame.sprite = LoadoutUISprites.CardFrame;
+            frame.type = Image.Type.Sliced;
+            frame.color = new Color(data.Theme.r, data.Theme.g, data.Theme.b, 0.88f);
+            Stretch(frame.rectTransform);
+            frame.transform.SetSiblingIndex(0);
+
+            var accent = GetOrCreateImage(sideRt, "CornerAccentTL");
+            accent.sprite = LoadoutUISprites.CornerTriangle;
+            accent.color = data.Theme;
+            SetRect(accent.rectTransform, new Vector2(0f, 1f), Vector2.zero, new Vector2(16f, 16f), new Vector2(0f, 1f));
+
+            // Glowing connector bridge linking side panel to selected sniper card
+            var connector = GetOrCreateImage(sideRt, "CardConnectorBeam");
+            connector.sprite = LoadoutUISprites.White;
+            connector.color = new Color(data.Theme.r, data.Theme.g, data.Theme.b, 0.78f);
+            float connectorX = (sniperIndex == 0) ? 189f : -189f;
+            SetRect(connector.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(connectorX, 0f), new Vector2(32f, 2.5f));
+
+            // Top Tag Row
+            var slashes = GetOrCreateImage(sideRt, "SideTagSlashes");
+            slashes.sprite = LoadoutUISprites.TagSlashes;
+            slashes.color = data.Theme;
+            SetRect(slashes.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-140f, 208f), new Vector2(30f, 12f), new Vector2(0f, 0.5f));
+
+            var tagTmp = GetOrCreateText(sideRt, "SideTagText");
+            SetRect(tagTmp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-102f, 208f), new Vector2(250f, 24f), new Vector2(0f, 0.5f));
+            StyleText(tagTmp, _bodyFont, 15f, 2f, data.Theme, TextAlignmentOptions.MidlineLeft);
+            tagTmp.text = "WEAPON SHOWCASE";
+
+            var underline = GetOrCreateImage(sideRt, "SideUnderline");
+            underline.color = new Color(data.Theme.r, data.Theme.g, data.Theme.b, 0.28f);
+            SetRect(underline.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-140f, 192f), new Vector2(280f, 1.5f), new Vector2(0f, 0.5f));
+
+            // Weapon Title & Subtitle
+            var titleTmp = GetOrCreateText(sideRt, "SideWeaponTitle");
+            SetRect(titleTmp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-140f, 156f), new Vector2(280f, 44f), new Vector2(0f, 0.5f));
+            StyleText(titleTmp, _bodyFont, 34f, 2f, Color.white, TextAlignmentOptions.MidlineLeft);
+            titleTmp.text = (sniperIndex == 0) ? "SNIPER 01" : "SNIPER 02";
+
+            var subTmp = GetOrCreateText(sideRt, "SideWeaponSubtitle");
+            SetRect(subTmp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-140f, 122f), new Vector2(280f, 22f), new Vector2(0f, 0.5f));
+            StyleText(subTmp, _bodyFont, 13f, 2.2f, StatText, TextAlignmentOptions.MidlineLeft);
+            subTmp.text = (sniperIndex == 0) ? "COSMIC 3D INSPECTION BAY" : "HEAVY ORDNANCE INSPECTION BAY";
+
+            // Bracketed Telemetry & Feature Box
+            var infoBay = GetOrCreateImage(sideRt, "SideInfoBay");
+            infoBay.sprite = LoadoutUISprites.White;
+            infoBay.color = new Color(data.Theme.r, data.Theme.g, data.Theme.b, 0.08f);
+            SetRect(infoBay.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(292f, 200f));
+
+            var infoBrackets = GetOrCreateImage(infoBay.transform, "InfoBrackets");
+            infoBrackets.sprite = LoadoutUISprites.BayBrackets;
+            infoBrackets.type = Image.Type.Sliced;
+            infoBrackets.fillCenter = false;
+            infoBrackets.color = new Color(data.Theme.r, data.Theme.g, data.Theme.b, 0.72f);
+            Stretch(infoBrackets.rectTransform);
+
+            string[] rowKeys = { "CALIBER", "VELOCITY", "OPTICS", "LAB MODE" };
+            string[] rowVals = (sniperIndex == 0)
+                ? new[] { ".338 LAPUA MAG", "500 M/S", "18° PRECISION", "360° + VFX + SLOW-MO" }
+                : new[] { ".50 BMG HEAVY", "550 M/S", "18° HIGH-MAG", "360° + VFX + SLOW-MO" };
+            float[] rowY = { 62f, 21f, -20f, -61f };
+
+            for (int i = 0; i < rowKeys.Length; i++)
+            {
+                var kTmp = GetOrCreateText(infoBay.transform, "InfoKey_" + i);
+                SetRect(kTmp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-126f, rowY[i]), new Vector2(110f, 22f), new Vector2(0f, 0.5f));
+                StyleText(kTmp, _bodyFont, 13f, 1.5f, StatText, TextAlignmentOptions.MidlineLeft);
+                kTmp.text = rowKeys[i];
+
+                var vTmp = GetOrCreateText(infoBay.transform, "InfoVal_" + i);
+                SetRect(vTmp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(126f, rowY[i]), new Vector2(165f, 22f), new Vector2(1f, 0.5f));
+                StyleText(vTmp, _bodyFont, 13f, 1.2f, data.Theme, TextAlignmentOptions.MidlineRight);
+                vTmp.text = rowVals[i];
+            }
+
+            // Inspect Button
+            Transform btnTr = sideRt.Find("InspectButton");
+            GameObject btnGo;
+            if (btnTr != null)
+            {
+                btnGo = btnTr.gameObject;
+            }
+            else
+            {
+                btnGo = new GameObject("InspectButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+                btnGo.layer = sideRt.gameObject.layer;
+                btnGo.transform.SetParent(sideRt, false);
+            }
+
+            var btnRt = btnGo.GetComponent<RectTransform>();
+            SetRect(btnRt, new Vector2(0.5f, 0.5f), new Vector2(0f, -172f), new Vector2(292f, 62f));
+
+            var btnBg = btnGo.GetComponent<Image>();
+            if (btnBg == null) btnBg = btnGo.AddComponent<Image>();
+            btnBg.sprite = LoadoutUISprites.ButtonFill;
+            btnBg.type = Image.Type.Sliced;
+            btnBg.color = data.Theme;
+            btnBg.raycastTarget = true;
+
+            var btnFrame = GetOrCreateImage(btnRt, "InspectBtnFrame");
+            btnFrame.sprite = LoadoutUISprites.ButtonFrame;
+            btnFrame.type = Image.Type.Sliced;
+            btnFrame.color = Color.Lerp(data.Theme, Color.white, 0.35f);
+            Stretch(btnFrame.rectTransform);
+            btnFrame.transform.SetSiblingIndex(0);
+
+            Color darkLabel = new Color(data.Theme.r * 0.16f, data.Theme.g * 0.14f, data.Theme.b * 0.10f + 0.02f, 1f);
+
+            var btnIcon = GetOrCreateImage(btnRt, "InspectBtnIcon");
+            btnIcon.sprite = LoadoutUISprites.IconCrosshair;
+            btnIcon.preserveAspect = true;
+            btnIcon.color = darkLabel;
+            SetRect(btnIcon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-58f, 0f), new Vector2(22f, 22f));
+
+            var btnText = GetOrCreateText(btnRt, "InspectBtnText");
+            SetRect(btnText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(14f, 0f), new Vector2(220f, 48f));
+            StyleText(btnText, _bodyFont, 22f, 3.5f, darkLabel, TextAlignmentOptions.Center);
+            btnText.text = "INSPECT";
+
+            inspectButton = btnGo.GetComponent<Button>();
+            if (inspectButton == null) inspectButton = btnGo.AddComponent<Button>();
+            inspectButton.targetGraphic = btnBg;
+            var colors = inspectButton.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.08f, 1.08f, 1.08f, 1f);
+            colors.pressedColor = new Color(0.85f, 0.88f, 0.92f, 1f);
+            colors.selectedColor = Color.white;
+            colors.fadeDuration = 0.08f;
+            inspectButton.colors = colors;
+
+            int capturedIndex = sniperIndex;
+            inspectButton.onClick.RemoveAllListeners();
+            inspectButton.onClick.AddListener(() =>
+            {
+                SniperInspectionController.OpenInspection(capturedIndex);
+            });
+
+            // Initially hidden until the player selects Sniper 1 or Sniper 2
+            sideRt.gameObject.SetActive(false);
+            return sideRt;
+        }
+
+        /// <summary>
+        /// Shows the side panel (with its Inspect button) next to the currently selected sniper
+        /// and hides the other sniper's side panel.
+        /// </summary>
+        public void UpdateInspectSidePanels(int selectedSniperIndex, bool animate = false)
+        {
+            if (!_applied) Apply();
+
+            bool show1 = (selectedSniperIndex == 0);
+            bool show2 = (selectedSniperIndex == 1);
+
+            if (_sidePanelAnimCoroutine != null)
+            {
+                StopCoroutine(_sidePanelAnimCoroutine);
+                _sidePanelAnimCoroutine = null;
+            }
+
+            if (_sniper1SidePanel != null)
+            {
+                _sniper1SidePanel.gameObject.SetActive(show1);
+                if (!show1 || !animate || !gameObject.activeInHierarchy)
+                {
+                    _sniper1SidePanel.anchoredPosition = new Vector2(-705f, 0f);
+                    if (_sniper1SideGroup != null) _sniper1SideGroup.alpha = show1 ? 1f : 0f;
+                }
+            }
+
+            if (_sniper2SidePanel != null)
+            {
+                _sniper2SidePanel.gameObject.SetActive(show2);
+                if (!show2 || !animate || !gameObject.activeInHierarchy)
+                {
+                    _sniper2SidePanel.anchoredPosition = new Vector2(705f, 0f);
+                    if (_sniper2SideGroup != null) _sniper2SideGroup.alpha = show2 ? 1f : 0f;
+                }
+            }
+
+            if (animate && gameObject.activeInHierarchy)
+            {
+                if (show1 && _sniper1SidePanel != null)
+                {
+                    _sidePanelAnimCoroutine = StartCoroutine(AnimateSidePanelIn(_sniper1SidePanel, _sniper1SideGroup, -670f, -705f));
+                }
+                else if (show2 && _sniper2SidePanel != null)
+                {
+                    _sidePanelAnimCoroutine = StartCoroutine(AnimateSidePanelIn(_sniper2SidePanel, _sniper2SideGroup, 670f, 705f));
+                }
+            }
+        }
+
+        private System.Collections.IEnumerator AnimateSidePanelIn(RectTransform panelRt, CanvasGroup group, float startX, float endX)
+        {
+            float duration = 0.20f;
+            float elapsed = 0f;
+            if (group != null) group.alpha = 0f;
+            panelRt.anchoredPosition = new Vector2(startX, 0f);
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float ease = 1f - Mathf.Pow(1f - t, 3f);
+
+                panelRt.anchoredPosition = new Vector2(Mathf.LerpUnclamped(startX, endX, ease), 0f);
+                if (group != null) group.alpha = ease;
+                yield return null;
+            }
+
+            panelRt.anchoredPosition = new Vector2(endX, 0f);
+            if (group != null) group.alpha = 1f;
+            _sidePanelAnimCoroutine = null;
+        }
         #endregion
 
         #region Back Button
@@ -443,6 +724,26 @@ namespace PewPewArena.UI
             }
             img.raycastTarget = false;
             return img;
+        }
+
+        private static TextMeshProUGUI GetOrCreateText(Transform parent, string name)
+        {
+            Transform t = parent.Find(name);
+            TextMeshProUGUI tmp;
+            if (t == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                go.layer = parent.gameObject.layer;
+                go.transform.SetParent(parent, false);
+                tmp = go.GetComponent<TextMeshProUGUI>();
+            }
+            else
+            {
+                tmp = t.GetComponent<TextMeshProUGUI>();
+                if (tmp == null) tmp = t.gameObject.AddComponent<TextMeshProUGUI>();
+            }
+            tmp.raycastTarget = false;
+            return tmp;
         }
 
         private static void SetRect(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size, Vector2? pivot = null)

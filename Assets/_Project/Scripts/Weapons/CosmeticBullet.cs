@@ -21,19 +21,50 @@ namespace SniperGame.Weapons
         private bool _isCharacterHit;
         private bool _isInitialized;
         private Light _bulletLight;
+        private float _simulationSpeed = 1f;
+        private System.Action<GameObject> _onImpactSpawned;
+
+        public void SetSimulationSpeed(float speedMultiplier)
+        {
+            _simulationSpeed = Mathf.Clamp(speedMultiplier, 0.05f, 2f);
+
+            var trails = GetComponentsInChildren<TrailRenderer>(true);
+            for (int i = 0; i < trails.Length; i++)
+            {
+                if (trails[i] != null)
+                {
+                    trails[i].time = trailTime / _simulationSpeed;
+                }
+            }
+
+            var particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                if (particleSystems[i] != null)
+                {
+                    var main = particleSystems[i].main;
+                    main.simulationSpeed = _simulationSpeed;
+                }
+            }
+        }
+
+        public void SetImpactCallback(System.Action<GameObject> onImpactSpawned)
+        {
+            _onImpactSpawned = onImpactSpawned;
+        }
 
         public void Initialize(Vector3 targetPosition, Vector3 hitNormal, GameObject hitEffectPrefab, float speed, bool isCharacterHit = false)
         {
             _targetPosition = targetPosition;
             _hitNormal = hitNormal;
             _hitEffectPrefab = hitEffectPrefab;
-            _speed = Mathf.Max(10f, speed);
+            _speed = Mathf.Max(2f, speed);
             _isCharacterHit = isCharacterHit;
             _isInitialized = true;
 
             transform.LookAt(_targetPosition);
             SetupVisuals();
-            Destroy(gameObject, 5f); // Safety cleanup timeout
+            Destroy(gameObject, 12f); // Safety cleanup timeout
         }
 
         private void SetupVisuals()
@@ -213,7 +244,7 @@ namespace SniperGame.Weapons
         {
             if (!_isInitialized) return;
 
-            float step = _speed * Time.deltaTime;
+            float step = _speed * _simulationSpeed * Time.deltaTime;
             float distanceToTarget = Vector3.Distance(transform.position, _targetPosition);
 
             if (distanceToTarget <= step)
@@ -247,7 +278,22 @@ namespace SniperGame.Weapons
                 if (cleanup != null)
                 {
                     cleanup.SetCharacterHit(_isCharacterHit);
+                    if (!Mathf.Approximately(_simulationSpeed, 1f))
+                    {
+                        cleanup.SetSimulationSpeed(_simulationSpeed);
+                    }
                 }
+                else if (!Mathf.Approximately(_simulationSpeed, 1f))
+                {
+                    var allPs = effect.GetComponentsInChildren<ParticleSystem>(true);
+                    for (int i = 0; i < allPs.Length; i++)
+                    {
+                        var main = allPs[i].main;
+                        main.simulationSpeed = _simulationSpeed;
+                    }
+                }
+
+                _onImpactSpawned?.Invoke(effect);
             }
 
             // 3. Smooth trail ribbon dissipation: stop emitting new points so existing vapor streak fades out gracefully

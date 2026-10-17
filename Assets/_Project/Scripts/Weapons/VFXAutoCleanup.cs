@@ -18,6 +18,27 @@ namespace SniperGame.Weapons
         [SerializeField] private ParticleSystem[] dustEmitters;
 
         private float _initialLightIntensity = 1f;
+        private float _simulationSpeed = 1f;
+
+        public void SetSimulationSpeed(float speedMultiplier)
+        {
+            _simulationSpeed = Mathf.Clamp(speedMultiplier, 0.05f, 2f);
+
+            var allPs = GetComponentsInChildren<ParticleSystem>(true);
+            for (int i = 0; i < allPs.Length; i++)
+            {
+                if (allPs[i] != null)
+                {
+                    var main = allPs[i].main;
+                    main.simulationSpeed = _simulationSpeed;
+                }
+            }
+
+            if (_simulationSpeed < 1f)
+            {
+                Destroy(gameObject, Mathf.Max(0.5f, lifetime / _simulationSpeed));
+            }
+        }
 
         private void Awake()
         {
@@ -72,14 +93,19 @@ namespace SniperGame.Weapons
         {
             if (flashLight == null) yield break;
 
-            yield return new WaitForSeconds(lightDuration);
+            float waitElapsed = 0f;
+            while (waitElapsed < lightDuration && flashLight != null)
+            {
+                waitElapsed += Time.deltaTime * _simulationSpeed;
+                yield return null;
+            }
 
             float fadeDuration = 0.04f;
             float elapsed = 0f;
 
             while (elapsed < fadeDuration && flashLight != null)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.deltaTime * _simulationSpeed;
                 flashLight.intensity = Mathf.Lerp(_initialLightIntensity, 0f, elapsed / fadeDuration);
                 yield return null;
             }
