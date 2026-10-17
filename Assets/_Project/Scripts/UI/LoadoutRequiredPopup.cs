@@ -21,6 +21,11 @@ namespace PewPewArena.UI
     public class LoadoutRequiredPopup : MonoBehaviour
     {
         public const string DefaultPopupMessage = "You must select your loadout before starting a game!";
+        public const string DefaultMapPopupMessage = "You must select a map before starting a game!";
+        private const string DefaultMainHeading = "SELECT YOUR\n<color=#1DC8EE>LOADOUT</color> FIRST";
+        private const string MapMainHeading = "SELECT A\n<color=#1DC8EE>MAP</color> FIRST";
+        private const string DefaultPrimaryButtonText = "GO TO LOADOUT";
+        private const string MapPrimaryButtonText = "CHOOSE MAP";
 
         private static readonly Color CyanBright = new Color(0.11f, 0.78f, 0.93f, 1f);
         private static readonly Color CyanLaser = new Color(0f, 0.90f, 1f, 0.95f);
@@ -50,7 +55,9 @@ namespace PewPewArena.UI
 
         private CanvasGroup _rootCanvasGroup;
         private RectTransform _cardTransform;
+        private TextMeshProUGUI _mainHeadingText;
         private TextMeshProUGUI _messageText;
+        private TextMeshProUGUI _primaryButtonLabel;
         private Button _goToLoadoutButton;
         private Button _closeButton;
         private TMP_FontAsset _font;
@@ -58,6 +65,7 @@ namespace PewPewArena.UI
         private bool _built;
 
         private Action _onGoToLoadout;
+        private Action _currentPrimaryAction;
         private Action _onClose;
 
         public bool IsVisible => gameObject.activeSelf;
@@ -72,17 +80,59 @@ namespace PewPewArena.UI
                 _font = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF") ?? fallbackFont;
             }
             _onGoToLoadout = onGoToLoadout;
+            _currentPrimaryAction = onGoToLoadout;
             _onClose = onClose;
             BuildIfNeeded();
         }
 
         public void Show(string message = DefaultPopupMessage)
         {
+            ShowCustom(
+                DefaultMainHeading,
+                string.IsNullOrEmpty(message) ? DefaultPopupMessage : message,
+                DefaultPrimaryButtonText,
+                _onGoToLoadout
+            );
+        }
+
+        public void ShowMapRequired(string message = DefaultMapPopupMessage, Action onChooseMap = null)
+        {
+            ShowCustom(
+                MapMainHeading,
+                string.IsNullOrEmpty(message) ? DefaultMapPopupMessage : message,
+                MapPrimaryButtonText,
+                onChooseMap ?? _onClose
+            );
+        }
+
+        public void ShowCustom(string headingRichText, string message, string primaryButtonText, Action onPrimaryClick)
+        {
             BuildIfNeeded();
+
+            _currentPrimaryAction = onPrimaryClick ?? _onGoToLoadout;
+
+            if (_mainHeadingText != null && !string.IsNullOrEmpty(headingRichText))
+            {
+                _mainHeadingText.text = headingRichText;
+            }
 
             if (_messageText != null)
             {
                 _messageText.text = string.IsNullOrEmpty(message) ? DefaultPopupMessage : message;
+            }
+
+            if (_primaryButtonLabel != null && !string.IsNullOrEmpty(primaryButtonText))
+            {
+                _primaryButtonLabel.text = primaryButtonText;
+                if (_goToLoadoutButton != null)
+                {
+                    var effect = _goToLoadoutButton.GetComponent<MainMenuButtonEffect>();
+                    if (effect != null)
+                    {
+                        effect.CalculateArrowPositions();
+                        effect.ApplyInstantIdleState();
+                    }
+                }
             }
 
             transform.SetAsLastSibling();
@@ -171,10 +221,10 @@ namespace PewPewArena.UI
             SetRect(topFlareCore.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(180f, 4f));
 
             // 6. Main Heading: "SELECT YOUR\nLOADOUT FIRST"
-            var mainHeading = CreateText(cardImg.transform, "PopupMainHeading", "SELECT YOUR\n<color=#1DC8EE>LOADOUT</color> FIRST", 48f, 2.5f, Color.white);
-            mainHeading.lineSpacing = -10f;
-            mainHeading.richText = true;
-            SetRect(mainHeading.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 68f), new Vector2(580f, 124f));
+            _mainHeadingText = CreateText(cardImg.transform, "PopupMainHeading", DefaultMainHeading, 48f, 2.5f, Color.white);
+            _mainHeadingText.lineSpacing = -10f;
+            _mainHeadingText.richText = true;
+            SetRect(_mainHeadingText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 68f), new Vector2(580f, 124f));
 
             // 7. Subtitle / Required Popup Message
             _messageText = CreateText(cardImg.transform, "PopupMessageText", DefaultPopupMessage, 16.5f, 3f, SubtitleColor);
@@ -185,12 +235,13 @@ namespace PewPewArena.UI
             _goToLoadoutButton = CreatePopupButton(
                 cardImg.transform,
                 "GoToLoadoutButton",
-                "GO TO LOADOUT",
+                DefaultPrimaryButtonText,
                 new Vector2(-135f, -92f),
                 new Vector2(250f, 52f),
                 isPrimary: true,
-                onClick: () => _onGoToLoadout?.Invoke()
+                onClick: () => _currentPrimaryAction?.Invoke()
             );
+            _primaryButtonLabel = _goToLoadoutButton.transform.Find("Label")?.GetComponent<TextMeshProUGUI>();
 
             _closeButton = CreatePopupButton(
                 cardImg.transform,

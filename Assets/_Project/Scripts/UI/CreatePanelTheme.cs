@@ -584,6 +584,10 @@ namespace PewPewArena.UI
                     if (komika != null) valText.font = komika;
                     else if (_font != null) valText.font = _font;
                     valText.fontSize = 16.5f;
+                    valText.enableAutoSizing = true;
+                    valText.fontSizeMin = 11.5f;
+                    valText.fontSizeMax = 16.5f;
+                    valText.textWrappingMode = TextWrappingModes.NoWrap;
                     valText.characterSpacing = 2.5f;
                     valText.fontStyle = FontStyles.Bold;
                     valText.color = Color.white;

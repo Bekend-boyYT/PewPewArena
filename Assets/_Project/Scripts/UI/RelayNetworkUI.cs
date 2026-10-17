@@ -74,11 +74,14 @@ namespace SniperGame.UI
 
         private const string SelectedLoadoutKey = "SelectedLoadout";
         public const string LoadoutRequiredMessage = LoadoutRequiredPopup.DefaultPopupMessage;
+        public const string MapRequiredMessage = LoadoutRequiredPopup.DefaultMapPopupMessage;
+        public const string DefaultMapButtonText = "Choose";
 
         private static bool _sessionLoadoutInitialized = false;
         private static bool _hasSelectedLoadout = false;
 
         private LoadoutRequiredPopup _loadoutRequiredPopup;
+        private MapSelectionPanel _mapSelectionPanel;
         private bool _returnToCreateScreenFromLoadout = false;
         private bool _isCreatingRelay = false;
 
@@ -146,11 +149,52 @@ namespace SniperGame.UI
 
         [SerializeField] private MapOption[] availableMaps = new MapOption[]
         {
-            new MapOption { displayName = "ARENA", sceneName = "Maintestgameplay" },
-            new MapOption { displayName = "ARENA 2", sceneName = "Map2Test" }
+            new MapOption { displayName = "Shipment Cargo", sceneName = "Maintestgameplay" },
+            new MapOption { displayName = "Sandoria", sceneName = "Map2Test" }
         };
 
-        private int _selectedMapIndex = 0;
+        private int _selectedMapIndex = -1;
+
+        public bool HasValidMapSelected()
+        {
+            NormalizeAvailableMaps();
+            return availableMaps != null && _selectedMapIndex >= 0 && _selectedMapIndex < availableMaps.Length;
+        }
+
+        private void NormalizeAvailableMaps()
+        {
+            if (availableMaps == null || availableMaps.Length == 0)
+            {
+                availableMaps = new MapOption[]
+                {
+                    new MapOption { displayName = "Shipment Cargo", sceneName = "Maintestgameplay" },
+                    new MapOption { displayName = "Sandoria", sceneName = "Map2Test" }
+                };
+                return;
+            }
+
+            for (int i = 0; i < availableMaps.Length; i++)
+            {
+                string scene = availableMaps[i].sceneName ?? string.Empty;
+                string name = availableMaps[i].displayName ?? string.Empty;
+
+                if (scene.Equals("Maintestgameplay", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("ARENA", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("ARENA 1", StringComparison.OrdinalIgnoreCase))
+                {
+                    availableMaps[i].displayName = "Shipment Cargo";
+                    if (string.IsNullOrEmpty(availableMaps[i].sceneName))
+                        availableMaps[i].sceneName = "Maintestgameplay";
+                }
+                else if (scene.Equals("Map2Test", StringComparison.OrdinalIgnoreCase) ||
+                         name.Equals("ARENA 2", StringComparison.OrdinalIgnoreCase))
+                {
+                    availableMaps[i].displayName = "Sandoria";
+                    if (string.IsNullOrEmpty(availableMaps[i].sceneName))
+                        availableMaps[i].sceneName = "Map2Test";
+                }
+            }
+        }
 
         [Header("Join Screen Elements")]
         [SerializeField] private TMP_InputField joinCodeInput;
@@ -172,6 +216,7 @@ namespace SniperGame.UI
                 HostEquippedSniper = 0;
             }
 
+            NormalizeAvailableMaps();
             EnsurePersistentBackground();
             AutoFindReferences();
             if (loadoutPanel != null)
@@ -188,6 +233,7 @@ namespace SniperGame.UI
                 createTheme.ApplyKomikaFonts();
             }
             EnsureLoadoutRequiredPopup();
+            EnsureMapSelectionPanel();
             SetupButtonListeners();
             RefreshLoadoutVisuals();
             RefreshMapSelectionVisuals();
@@ -462,7 +508,7 @@ namespace SniperGame.UI
             if (openCreateScreenButton != null) openCreateScreenButton.onClick.AddListener(OnOpenCreateScreen);
             if (createBackButton != null) createBackButton.onClick.AddListener(OnCreateBackClicked);
             if (createStartButton != null) createStartButton.onClick.AddListener(OnStartGameClicked);
-            if (mapOptionButton != null) mapOptionButton.onClick.AddListener(OnCycleMapClicked);
+            if (mapOptionButton != null) mapOptionButton.onClick.AddListener(OnOpenMapSelectionClicked);
             if (weaponToggleButton != null) weaponToggleButton.onClick.AddListener(OnToggleWeaponSettingsClicked);
 
             if (openJoinScreenButton != null) openJoinScreenButton.onClick.AddListener(OnOpenJoinScreen);
@@ -657,9 +703,10 @@ namespace SniperGame.UI
         }
         #endregion
 
-        #region Loadout Required Popup
+        #region Loadout & Map Popups / Panels
 
         public LoadoutRequiredPopup LoadoutPopup => _loadoutRequiredPopup;
+        public MapSelectionPanel MapPanel => _mapSelectionPanel;
 
         private void EnsureLoadoutRequiredPopup()
         {
@@ -696,6 +743,52 @@ namespace SniperGame.UI
             _loadoutRequiredPopup.Hide();
         }
 
+        private void EnsureMapSelectionPanel()
+        {
+            NormalizeAvailableMaps();
+
+            if (_mapSelectionPanel == null)
+            {
+                Transform existing = transform.Find("MapSelectionPanel");
+                if (existing != null)
+                {
+                    _mapSelectionPanel = existing.GetComponent<MapSelectionPanel>();
+                    if (_mapSelectionPanel == null)
+                    {
+                        _mapSelectionPanel = existing.gameObject.AddComponent<MapSelectionPanel>();
+                    }
+                }
+            }
+
+            if (_mapSelectionPanel == null)
+            {
+                var panelGo = new GameObject("MapSelectionPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(CanvasGroup), typeof(MapSelectionPanel));
+                panelGo.layer = gameObject.layer;
+                panelGo.transform.SetParent(this.transform, false);
+                _mapSelectionPanel = panelGo.GetComponent<MapSelectionPanel>();
+            }
+
+            TMP_FontAsset fallbackFont = null;
+            if (createStatusText != null && createStatusText.font != null) fallbackFont = createStatusText.font;
+            else if (gameCodeDisplay != null && gameCodeDisplay.font != null) fallbackFont = gameCodeDisplay.font;
+
+            TMP_FontAsset komikaFont = null;
+            if (createScreen != null)
+            {
+                var createTheme = createScreen.GetComponent<CreatePanelTheme>();
+                if (createTheme != null) komikaFont = createTheme.GetKomikaFont();
+            }
+
+            _mapSelectionPanel.Initialize(
+                fallbackFont,
+                komikaFont,
+                availableMaps,
+                onMapSelected: OnSelectMap,
+                onClose: HideMapSelectionPanel
+            );
+            _mapSelectionPanel.Hide();
+        }
+
         public void ShowLoadoutRequiredPopup()
         {
             EnsureLoadoutRequiredPopup();
@@ -705,11 +798,35 @@ namespace SniperGame.UI
             }
         }
 
+        public void ShowMapRequiredPopup()
+        {
+            EnsureLoadoutRequiredPopup();
+            if (_loadoutRequiredPopup != null)
+            {
+                _loadoutRequiredPopup.ShowMapRequired(
+                    MapRequiredMessage,
+                    onChooseMap: () =>
+                    {
+                        HideLoadoutRequiredPopup();
+                        OnOpenMapSelectionClicked();
+                    }
+                );
+            }
+        }
+
         public void HideLoadoutRequiredPopup()
         {
             if (_loadoutRequiredPopup != null && _loadoutRequiredPopup.IsVisible)
             {
                 _loadoutRequiredPopup.Hide();
+            }
+        }
+
+        public void HideMapSelectionPanel()
+        {
+            if (_mapSelectionPanel != null && _mapSelectionPanel.IsVisible)
+            {
+                _mapSelectionPanel.Hide();
             }
         }
 
@@ -729,6 +846,7 @@ namespace SniperGame.UI
         {
             ForceUnlockCursor();
             HideLoadoutRequiredPopup();
+            HideMapSelectionPanel();
 
             // Guarantee persistent background stays active and at sibling 0 behind all panels
             if (persistentBackground != null)
@@ -974,23 +1092,49 @@ namespace SniperGame.UI
             await CreateRelayGame();
         }
 
+        public void OnOpenMapSelectionClicked()
+        {
+            EnsureMapSelectionPanel();
+            if (_mapSelectionPanel != null)
+            {
+                _mapSelectionPanel.Show(_selectedMapIndex);
+            }
+        }
+
+        public void OnSelectMap(int mapIndex)
+        {
+            NormalizeAvailableMaps();
+            if (availableMaps == null || mapIndex < 0 || mapIndex >= availableMaps.Length)
+            {
+                Debug.LogWarning($"[RelayUI] Invalid map selection index: {mapIndex}");
+                return;
+            }
+
+            _selectedMapIndex = mapIndex;
+            RefreshMapSelectionVisuals();
+            HideMapSelectionPanel();
+            Debug.Log($"[RelayUI] Selected map: {availableMaps[_selectedMapIndex].displayName} ({availableMaps[_selectedMapIndex].sceneName})");
+        }
+
         public void OnCycleMapClicked()
         {
-            if (availableMaps == null || availableMaps.Length == 0) return;
-
-            _selectedMapIndex = (_selectedMapIndex + 1) % availableMaps.Length;
-            RefreshMapSelectionVisuals();
-            Debug.Log($"[RelayUI] Selected map: {availableMaps[_selectedMapIndex].displayName} ({availableMaps[_selectedMapIndex].sceneName})");
+            OnOpenMapSelectionClicked();
         }
 
         private void RefreshMapSelectionVisuals()
         {
-            if (availableMaps == null || availableMaps.Length == 0) return;
-            if (_selectedMapIndex < 0 || _selectedMapIndex >= availableMaps.Length) _selectedMapIndex = 0;
+            NormalizeAvailableMaps();
 
             if (mapOptionText != null)
             {
-                mapOptionText.text = availableMaps[_selectedMapIndex].displayName;
+                if (HasValidMapSelected())
+                {
+                    mapOptionText.text = availableMaps[_selectedMapIndex].displayName;
+                }
+                else
+                {
+                    mapOptionText.text = DefaultMapButtonText;
+                }
             }
         }
 
@@ -1007,6 +1151,7 @@ namespace SniperGame.UI
         {
             _returnToCreateScreenFromLoadout = false;
             HideLoadoutRequiredPopup();
+            HideMapSelectionPanel();
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
@@ -1115,6 +1260,13 @@ namespace SniperGame.UI
                 return false;
             }
 
+            if (!HasValidMapSelected())
+            {
+                Debug.LogWarning($"[RelayUI] Blocked game start: {MapRequiredMessage}");
+                ShowMapRequiredPopup();
+                return false;
+            }
+
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
             {
                 if (_isCreatingRelay && createStatusText != null)
@@ -1137,11 +1289,11 @@ namespace SniperGame.UI
             if (createStatusText != null) createStatusText.text = "Loading scene...";
             if (createStartButton != null) createStartButton.interactable = false;
 
-            string targetScene = (availableMaps != null && availableMaps.Length > _selectedMapIndex)
+            string targetScene = (availableMaps != null && _selectedMapIndex >= 0 && availableMaps.Length > _selectedMapIndex)
                 ? availableMaps[_selectedMapIndex].sceneName
                 : gameplaySceneName;
 
-            Debug.Log($"[RelayUI] Starting game on map scene: {targetScene}");
+            Debug.Log($"[RelayUI] Starting game on map: {availableMaps[_selectedMapIndex].displayName} (scene: {targetScene})");
             NetworkManager.Singleton.SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
             return true;
         }
