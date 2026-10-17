@@ -2,6 +2,8 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using SniperGame.Player;
 using SniperGame.UI;
 using SniperGame.Gameplay;
@@ -444,9 +446,41 @@ namespace SniperGame.Weapons
             }
         }
 
+        private bool IsGameplayScene()
+        {
+            string activeScene = SceneManager.GetActiveScene().name;
+            string objectScene = gameObject.scene.name;
+
+            if (activeScene == "01_MainMenu" || activeScene == "SniperInspection" || activeScene == "00_Boot" ||
+                objectScene == "01_MainMenu" || objectScene == "SniperInspection" || objectScene == "00_Boot")
+            {
+                return false;
+            }
+
+            if (activeScene == "Map2Test" || activeScene == "Maintestgameplay" ||
+                objectScene == "Map2Test" || objectScene == "Maintestgameplay")
+            {
+                return true;
+            }
+
+            if ((!string.IsNullOrEmpty(activeScene) && (activeScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || activeScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)) ||
+                (!string.IsNullOrEmpty(objectScene) && (objectScene.IndexOf("Map", System.StringComparison.OrdinalIgnoreCase) >= 0 || objectScene.IndexOf("Arena", System.StringComparison.OrdinalIgnoreCase) >= 0)))
+            {
+                return true;
+            }
+
+            return activeScene != "01_MainMenu" && !string.IsNullOrEmpty(activeScene);
+        }
+
         private void Update()
         {
             if (!IsOwner) return;
+
+            if (!IsGameplayScene())
+            {
+                ResetAimingState();
+                return;
+            }
 
             if (PauseMenu.IsPaused || (RoundManager.Instance != null && !RoundManager.Instance.CanPlayersFight()))
             {
@@ -497,7 +531,10 @@ namespace SniperGame.Weapons
             UpdateCameraZoom();
             UpdateCooldownIndicator();
 
-            bool shootPressed = Input.GetMouseButtonDown(0) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Shoot);
+            bool isPointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool cursorLocked = Cursor.lockState == CursorLockMode.Locked;
+
+            bool shootPressed = cursorLocked && !isPointerOverUI && (Input.GetMouseButtonDown(0) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Shoot));
             if (shootPressed)
             {
                 TryShoot();
@@ -526,6 +563,12 @@ namespace SniperGame.Weapons
 
         private void HandleAimingInput()
         {
+            if (Cursor.lockState != CursorLockMode.Locked || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()))
+            {
+                ResetAimingState();
+                return;
+            }
+
             bool rmbPressed = Input.GetMouseButton(1) || UI.Settings.KeybindManager.GetKey(UI.Settings.KeyAction.Aim);
 
             if (rmbPressed && !_wantsToScope)
@@ -675,6 +718,9 @@ namespace SniperGame.Weapons
 
         private void TryShoot()
         {
+            if (!IsGameplayScene()) return;
+            if (Cursor.lockState != CursorLockMode.Locked) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
             if (_isReloading || Time.time < nextFireTime) return;
 
             if (CurrentClipAmmo <= 0)
