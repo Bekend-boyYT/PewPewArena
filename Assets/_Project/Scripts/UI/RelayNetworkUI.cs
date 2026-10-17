@@ -549,7 +549,18 @@ namespace SniperGame.UI
             {
                 NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
                 NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
+                if (NetworkManager.Singleton.SceneManager != null)
+                {
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent -= HandleNetworkSceneEvent;
+                }
             }
+        }
+
+        private TMP_FontAsset GetFallbackFont()
+        {
+            if (createStatusText != null && createStatusText.font != null) return createStatusText.font;
+            if (gameCodeDisplay != null && gameCodeDisplay.font != null) return gameCodeDisplay.font;
+            return null;
         }
 
         private async Task InitializeUnityServicesAsync()
@@ -901,7 +912,10 @@ namespace SniperGame.UI
             }
 
             Time.timeScale = 1f;
-            SceneManager.LoadScene(tutorialSceneName);
+            var fallbackFont = GetFallbackFont();
+            var bgSprite = FindMenuBackgroundSprite();
+            var loader = LoadingScreenController.EnsureInstance(fallbackFont, bgSprite);
+            loader.LoadTutorialScene(tutorialSceneName, fallbackFont, bgSprite);
         }
 
         public void OnOpenSettingsScreen()
@@ -1292,9 +1306,15 @@ namespace SniperGame.UI
             string targetScene = (availableMaps != null && _selectedMapIndex >= 0 && availableMaps.Length > _selectedMapIndex)
                 ? availableMaps[_selectedMapIndex].sceneName
                 : gameplaySceneName;
+            string selectedMapName = (availableMaps != null && _selectedMapIndex >= 0 && availableMaps.Length > _selectedMapIndex)
+                ? availableMaps[_selectedMapIndex].displayName
+                : "Shipment Cargo";
 
-            Debug.Log($"[RelayUI] Starting game on map: {availableMaps[_selectedMapIndex].displayName} (scene: {targetScene})");
-            NetworkManager.Singleton.SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
+            Debug.Log($"[RelayUI] Starting game on map: {selectedMapName} (scene: {targetScene})");
+            var fallbackFont = GetFallbackFont();
+            var bgSprite = FindMenuBackgroundSprite();
+            var loader = LoadingScreenController.EnsureInstance(fallbackFont, bgSprite);
+            loader.LoadNetworkMatchScene(selectedMapName, targetScene, initiateServerLoad: true, fallbackFont, bgSprite);
             return true;
         }
 
@@ -1370,6 +1390,32 @@ namespace SniperGame.UI
                     if (joinStatusText != null)
                     {
                         joinStatusText.text = "<color=#00FF00>Connected!</color> Waiting for host...";
+                    }
+                    if (NetworkManager.Singleton.SceneManager != null)
+                    {
+                        NetworkManager.Singleton.SceneManager.OnSceneEvent -= HandleNetworkSceneEvent;
+                        NetworkManager.Singleton.SceneManager.OnSceneEvent += HandleNetworkSceneEvent;
+                    }
+                }
+            }
+        }
+
+        private void HandleNetworkSceneEvent(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.SceneEventType == SceneEventType.Load &&
+                NetworkManager.Singleton != null &&
+                !NetworkManager.Singleton.IsServer &&
+                sceneEvent.ClientId == NetworkManager.Singleton.LocalClientId)
+            {
+                string sceneName = sceneEvent.SceneName;
+                if (!string.IsNullOrEmpty(sceneName) && !sceneName.Equals("01_MainMenu", StringComparison.OrdinalIgnoreCase))
+                {
+                    var fallbackFont = GetFallbackFont();
+                    var bgSprite = FindMenuBackgroundSprite();
+                    var loader = LoadingScreenController.EnsureInstance(fallbackFont, bgSprite);
+                    if (!loader.IsShowing)
+                    {
+                        loader.LoadNetworkMatchScene(null, sceneName, initiateServerLoad: false, fallbackFont, bgSprite);
                     }
                 }
             }
