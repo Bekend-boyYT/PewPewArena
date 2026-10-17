@@ -1037,6 +1037,7 @@ namespace SniperGame.Weapons
                 {
                     cosmetic = bullet.AddComponent<CosmeticBullet>();
                 }
+                cosmetic.SetHeavyVariant(weaponSlot == 1);
                 cosmetic.Initialize(hitPosition, hitNormal, hPrefab, speed, isCharacterHit);
             }
             else

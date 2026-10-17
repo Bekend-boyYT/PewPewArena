@@ -7,6 +7,8 @@ namespace SniperGame.Weapons
         [Header("Trail & Particle Configuration")]
         [SerializeField] private Material trailMaterial;
         [SerializeField] private Material sparksMaterial;
+        [SerializeField] private Material heavyTrailMaterial;
+        [SerializeField] private Material heavySparksMaterial;
         [SerializeField] private float trailTime = 0.35f;
         [SerializeField] private float trailWidth = 0.075f;
         [SerializeField] private bool isHeavyBullet = false;
@@ -23,6 +25,16 @@ namespace SniperGame.Weapons
         private Light _bulletLight;
         private float _simulationSpeed = 1f;
         private System.Action<GameObject> _onImpactSpawned;
+
+        public void SetHeavyVariant(bool heavy)
+        {
+            isHeavyBullet = heavy;
+            if (heavy)
+            {
+                if (heavyTrailMaterial != null) trailMaterial = heavyTrailMaterial;
+                if (heavySparksMaterial != null) sparksMaterial = heavySparksMaterial;
+            }
+        }
 
         public void SetSimulationSpeed(float speedMultiplier)
         {
@@ -78,8 +90,8 @@ namespace SniperGame.Weapons
 
             _bulletLight.type = LightType.Point;
             _bulletLight.color = isHeavyBullet ? new Color(1f, 0.78f, 0.25f) : bulletLightColor;
-            _bulletLight.intensity = isHeavyBullet ? 5.5f : bulletLightIntensity;
-            _bulletLight.range = isHeavyBullet ? 7.5f : bulletLightRange;
+            _bulletLight.intensity = isHeavyBullet ? 4.5f : bulletLightIntensity;
+            _bulletLight.range = isHeavyBullet ? 6.5f : bulletLightRange;
             _bulletLight.shadows = LightShadows.None;
             _bulletLight.enabled = true;
 
@@ -90,9 +102,10 @@ namespace SniperGame.Weapons
                 trail = gameObject.AddComponent<TrailRenderer>();
             }
 
-            if (trailMaterial != null)
+            Material activeTrailMat = (isHeavyBullet && heavyTrailMaterial != null) ? heavyTrailMaterial : trailMaterial;
+            if (activeTrailMat != null)
             {
-                trail.material = trailMaterial;
+                trail.material = activeTrailMat;
             }
 
             trail.time = trailTime;
@@ -214,11 +227,11 @@ namespace SniperGame.Weapons
                 }
                 else
                 {
-                    main.startLifetime = 0.22f;
-                    main.startSpeed = 0f;
-                    main.startSize = 0.045f;
+                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.14f, 0.24f);
+                    main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.4f);
+                    main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.05f);
                     main.startColor = new Color(0.6f, 0.92f, 1f, 0.85f);
-                    em.rateOverDistance = 30f;
+                    em.rateOverDistance = 22f;
 
                     var shape = ps.shape;
                     shape.shapeType = ParticleSystemShapeType.Sphere;
@@ -236,6 +249,10 @@ namespace SniperGame.Weapons
                     var sol = ps.sizeOverLifetime;
                     sol.enabled = true;
                     sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0f));
+
+                    psr.renderMode = ParticleSystemRenderMode.Stretch;
+                    psr.lengthScale = 1.4f;
+                    psr.velocityScale = 0.08f;
                 }
             }
         }

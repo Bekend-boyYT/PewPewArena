@@ -99,6 +99,16 @@ namespace PewPewArena.UI
         private Transform _targetStageRoot;
         private Renderer[] _themeRingRenderers;
 
+        public enum VfxCameraPerspective
+        {
+            Auto = 0,
+            SideLane = 1,
+            MuzzleCloseUp = 2,
+            OverBarrel = 3,
+            TargetCloseUp = 4,
+            TopDown = 5
+        }
+
         // Interactive Rotation & Camera State
         private float _currentYaw;
         private float _currentPitch;
@@ -109,11 +119,16 @@ namespace PewPewArena.UI
         private Vector3 _defaultStagePosition = new Vector3(-0.14f, 0.03f, 0f);
         private Vector3 _currentCameraLookOffset = Vector3.zero;
         private Vector3 _targetCameraLookOffset = Vector3.zero;
+        private Vector2 _defaultCameraOrbitAngles = new Vector2(2.2f, 0f);
+        private Vector2 _currentCameraOrbitAngles = new Vector2(2.2f, 0f);
+        private Vector2 _targetCameraOrbitAngles = new Vector2(2.2f, 0f);
         private bool _isDraggingWeapon;
 
         // Firing, VFX & Slow Motion State
         private bool _isSlowMotion;
         private bool _isVfxDrawerOpen;
+        private VfxCameraPerspective _selectedVfxPerspective = VfxCameraPerspective.Auto;
+        private int _lastVfxActionIndex = 0; // 1=Muzzle, 2=Tracer, 3=Impact, 4=Full
         private Coroutine _firingAnimCoroutine;
         private Coroutine _muzzleLightCoroutine;
         private readonly List<GameObject> _spawnedVfxObjects = new List<GameObject>();
@@ -130,11 +145,13 @@ namespace PewPewArena.UI
         private Image _inspectVfxButtonBg;
         private Image _inspectVfxButtonFrame;
         private GameObject _vfxDrawerPanel;
+        private readonly List<CosmicButtonRefs> _perspectiveButtons = new List<CosmicButtonRefs>();
         private TextMeshProUGUI _activeModeBannerText;
         private CanvasGroup _activeModeBannerGroup;
 
         private ParticleSystem _sharedVfxParticleTemplate;
         private Material _sharedAdditiveParticleMat;
+        private SniperInspectionStageFX _stageFx;
 
         public float InspectionTimeScale => _isSlowMotion ? slowMotionMultiplier : 1f;
         public bool IsSlowMotionEnabled => _isSlowMotion;
@@ -178,6 +195,22 @@ namespace PewPewArena.UI
             BuildInspectionUI();
 
             ResetViewImmediate();
+
+            _stageFx = gameObject.GetComponent<SniperInspectionStageFX>();
+            if (_stageFx == null)
+            {
+                _stageFx = gameObject.AddComponent<SniperInspectionStageFX>();
+            }
+            _stageFx.Initialize(
+                this,
+                showcaseCamera,
+                weaponOrbitPivot,
+                _pedestalRoot,
+                _targetStageRoot,
+                _activeWeaponRoot,
+                GetThemeColor(SelectedSniperIndex),
+                SelectedSniperIndex,
+                bulletPrefab1 != null ? bulletPrefab1 : bulletPrefab2);
         }
 
         private void OnDestroy()
@@ -267,43 +300,43 @@ namespace PewPewArena.UI
         {
             Color themeColor = GetThemeColor(SelectedSniperIndex);
 
-            // 1. Skybox & Deep Cosmic Ambient Lighting
+            // 1. Skybox & Deep Cosmic Ambient Lighting (restrained for dark cosmic contrast)
             if (cosmicSkyboxMaterial != null)
             {
                 RenderSettings.skybox = cosmicSkyboxMaterial;
             }
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.08f, 0.12f, 0.24f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.10f, 0.14f, 0.28f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.04f, 0.05f, 0.11f, 1f);
+            RenderSettings.ambientSkyColor = new Color(0.03f, 0.05f, 0.11f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.04f, 0.06f, 0.13f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.02f, 0.02f, 0.06f, 1f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.02f, 0.03f, 0.08f, 1f);
+            RenderSettings.fogColor = new Color(0.01f, 0.02f, 0.05f, 1f);
             RenderSettings.fogDensity = 0.015f;
 
             Transform envRoot = GetOrCreateChild(transform, "CosmicEnvironment");
 
-            // 2. Three-Point Cinematic Rim / Key / Fill Lighting Rig
+            // 2. Three-Point Cinematic Rim / Key / Fill Lighting Rig (balanced so metal isn't blown out)
             _keyLight = CreateShowcaseLight(envRoot, "StudioKeyLight", LightType.Spot,
                 new Vector3(-0.95f, 1.15f, -1.35f),
                 Quaternion.LookRotation(_defaultStagePosition - new Vector3(-0.95f, 1.15f, -1.35f)),
-                new Color(0.95f, 0.97f, 1.00f, 1f), 4.2f, 8f, 58f);
+                new Color(0.92f, 0.95f, 1.00f, 1f), 1.65f, 8f, 58f);
             _keyLight.shadows = LightShadows.Soft;
 
             _rimLight = CreateShowcaseLight(envRoot, "CosmicRimLight", LightType.Spot,
                 new Vector3(0.45f, 1.10f, 1.45f),
                 Quaternion.LookRotation(_defaultStagePosition - new Vector3(0.45f, 1.10f, 1.45f)),
-                new Color(0.48f, 0.36f, 1.00f, 1f), 5.5f, 8f, 65f);
+                new Color(0.48f, 0.36f, 1.00f, 1f), 2.15f, 8f, 65f);
 
             _underGlowLight = CreateShowcaseLight(envRoot, "PedestalUnderGlowLight", LightType.Point,
                 _defaultStagePosition + new Vector3(0f, -0.36f, -0.15f),
                 Quaternion.identity,
-                Color.Lerp(themeColor, CosmicViolet, 0.25f), 2.6f, 3.2f, 45f);
+                Color.Lerp(themeColor, CosmicViolet, 0.25f), 0.95f, 3.0f, 45f);
 
             _muzzleFlashLight = CreateShowcaseLight(envRoot, "DynamicMuzzleLight", LightType.Point,
                 _defaultStagePosition + new Vector3(0.55f, 0.05f, 0f),
                 Quaternion.identity,
-                themeColor, 0f, 4.5f, 45f);
+                themeColor, 0f, 4.0f, 45f);
             _muzzleFlashLight.enabled = false;
 
             // 3. Holographic Presentation Pedestal beneath the sniper
@@ -344,13 +377,13 @@ namespace PewPewArena.UI
             Shader litShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             Material darkMetalMat = new Material(litShader)
             {
-                color = new Color(0.05f, 0.07f, 0.12f, 1f)
+                color = new Color(0.04f, 0.05f, 0.09f, 1f)
             };
-            if (darkMetalMat.HasProperty("_Smoothness")) darkMetalMat.SetFloat("_Smoothness", 0.78f);
-            if (darkMetalMat.HasProperty("_Metallic")) darkMetalMat.SetFloat("_Metallic", 0.85f);
+            if (darkMetalMat.HasProperty("_Smoothness")) darkMetalMat.SetFloat("_Smoothness", 0.72f);
+            if (darkMetalMat.HasProperty("_Metallic")) darkMetalMat.SetFloat("_Metallic", 0.82f);
 
-            Material glowRingMat = CreateEmissiveMaterial(themeColor, 2.4f);
-            Material violetRingMat = CreateEmissiveMaterial(CosmicViolet, 1.8f);
+            Material glowRingMat = CreateEmissiveMaterial(themeColor, 1.15f);
+            Material violetRingMat = CreateEmissiveMaterial(CosmicViolet, 0.95f);
 
             // Base metallic disc
             CreateCylinderPart(_pedestalRoot, "PedestalBase", new Vector3(0f, -0.04f, 0f), new Vector3(1.35f, 0.025f, 1.35f), darkMetalMat);
@@ -369,14 +402,6 @@ namespace PewPewArena.UI
             // Default position downrange to the right-front where the barrel points
             _targetStageRoot.position = new Vector3(1.55f, 0.06f, 0.72f);
             _targetStageRoot.LookAt(_defaultStagePosition);
-
-            Material targetRingMat = CreateEmissiveMaterial(Color.Lerp(themeColor, Color.white, 0.2f), 2.2f);
-            Material coreMat = CreateEmissiveMaterial(new Color(themeColor.r, themeColor.g, themeColor.b, 0.35f), 1.4f);
-
-            CreateCylinderPart(_targetStageRoot, "TargetDiscOuter", Vector3.zero, new Vector3(0.46f, 0.006f, 0.46f), targetRingMat)
-                .transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            CreateCylinderPart(_targetStageRoot, "TargetDiscCore", new Vector3(0f, 0f, 0.01f), new Vector3(0.22f, 0.005f, 0.22f), coreMat)
-                .transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         }
 
         private Renderer CreateCylinderPart(Transform parent, string name, Vector3 localPos, Vector3 localScale, Material mat)
@@ -767,18 +792,35 @@ namespace PewPewArena.UI
                 if (_isDraggingWeapon)
                 {
                     Vector2 delta = mouse.delta.ReadValue();
-                    _targetYaw -= delta.x * dragSensitivity;
-                    _targetPitch = Mathf.Clamp(_targetPitch + delta.y * dragSensitivity * 0.75f, minPitch, maxPitch);
+                    if (delta.sqrMagnitude > 0.001f)
+                    {
+                        _stageFx?.NotifyUserInput();
+                    }
+
+                    if (_isVfxDrawerOpen && _lastVfxActionIndex > 0)
+                    {
+                        // Orbit camera directly around the active VFX focus point so the barrel & target stay aligned
+                        _targetCameraOrbitAngles.y += delta.x * dragSensitivity * 0.85f;
+                        _targetCameraOrbitAngles.x = Mathf.Clamp(_targetCameraOrbitAngles.x - delta.y * dragSensitivity * 0.65f, -35f, 75f);
+                    }
+                    else
+                    {
+                        _targetYaw -= delta.x * dragSensitivity;
+                        _targetPitch = Mathf.Clamp(_targetPitch + delta.y * dragSensitivity * 0.75f, minPitch, maxPitch);
+                    }
                 }
 
-                // Scroll wheel zoom within safe non-clipping bounds
+                // Scroll wheel zoom within safe non-clipping bounds (allows closer macro zoom in VFX Lab)
                 if (!pointerOverUi)
                 {
                     float scrollY = mouse.scroll.ReadValue().y;
                     if (Mathf.Abs(scrollY) > 0.01f)
                     {
+                        _stageFx?.NotifyUserInput();
                         float zoomDelta = -Mathf.Sign(scrollY) * 0.11f;
-                        _targetCameraDist = Mathf.Clamp(_targetCameraDist + zoomDelta, minCameraDistance, maxCameraDistance);
+                        float minDist = _isVfxDrawerOpen ? 0.58f : minCameraDistance;
+                        float maxDist = _isVfxDrawerOpen ? 2.55f : maxCameraDistance;
+                        _targetCameraDist = Mathf.Clamp(_targetCameraDist + zoomDelta, minDist, maxDist);
                     }
                 }
             }
@@ -786,6 +828,7 @@ namespace PewPewArena.UI
             // 2. Touch Drag Support
             if (touch != null && touch.primaryTouch.press.isPressed && !pointerOverUi)
             {
+                _stageFx?.NotifyUserInput();
                 Vector2 touchDelta = touch.primaryTouch.delta.ReadValue();
                 _targetYaw -= touchDelta.x * dragSensitivity * 0.7f;
                 _targetPitch = Mathf.Clamp(_targetPitch + touchDelta.y * dragSensitivity * 0.5f, minPitch, maxPitch);
@@ -797,6 +840,7 @@ namespace PewPewArena.UI
                 Vector2 stick = gamepad.rightStick.ReadValue();
                 if (stick.sqrMagnitude > 0.02f)
                 {
+                    _stageFx?.NotifyUserInput();
                     _targetYaw -= stick.x * 110f * Time.unscaledDeltaTime;
                     _targetPitch = Mathf.Clamp(_targetPitch + stick.y * 75f * Time.unscaledDeltaTime, minPitch, maxPitch);
                 }
@@ -815,6 +859,7 @@ namespace PewPewArena.UI
 
                 if (Mathf.Abs(yawKey) > 0f || Mathf.Abs(pitchKey) > 0f)
                 {
+                    _stageFx?.NotifyUserInput();
                     _targetYaw += yawKey * 85f * Time.unscaledDeltaTime;
                     _targetPitch = Mathf.Clamp(_targetPitch + pitchKey * 60f * Time.unscaledDeltaTime, minPitch, maxPitch);
                 }
@@ -833,6 +878,11 @@ namespace PewPewArena.UI
         private void UpdateWeaponTransformAndCamera()
         {
             float dt = Time.unscaledDeltaTime;
+
+            if (!_isDraggingWeapon && !_isVfxDrawerOpen && _stageFx != null)
+            {
+                _targetYaw += _stageFx.ConsumeIdleYawDelta();
+            }
 
             // Smooth orbital rotation interpolation
             _currentYaw = Mathf.Lerp(_currentYaw, _targetYaw, dt * rotationSmoothing);
@@ -853,16 +903,26 @@ namespace PewPewArena.UI
                 _floatPivot.localRotation = Quaternion.Euler(0f, 0f, rollZ);
             }
 
-            // Smooth camera distance & focus offset
+            // Smooth camera distance, focus offset & orbital perspective angle
             _currentCameraDist = Mathf.Lerp(_currentCameraDist, _targetCameraDist, dt * 10f);
-            _currentCameraLookOffset = Vector3.Lerp(_currentCameraLookOffset, _targetCameraLookOffset, dt * 8f);
+            _currentCameraLookOffset = Vector3.Lerp(_currentCameraLookOffset, _targetCameraLookOffset, dt * 9f);
+            _currentCameraOrbitAngles = new Vector2(
+                Mathf.LerpAngle(_currentCameraOrbitAngles.x, _targetCameraOrbitAngles.x, dt * 9f),
+                Mathf.LerpAngle(_currentCameraOrbitAngles.y, _targetCameraOrbitAngles.y, dt * 9f));
 
             if (showcaseCamera != null)
             {
                 Vector3 focusPoint = _defaultStagePosition + _currentCameraLookOffset;
-                Vector3 camPos = focusPoint + new Vector3(0f, 0.06f, -_currentCameraDist);
+                Vector3 introOffset = _stageFx != null ? _stageFx.IntroCameraOffset : Vector3.zero;
+                Quaternion camOrbitRot = Quaternion.Euler(_currentCameraOrbitAngles.x, _currentCameraOrbitAngles.y, 0f);
+                Vector3 camPos = focusPoint + (camOrbitRot * new Vector3(0f, 0f, -_currentCameraDist)) + introOffset;
                 showcaseCamera.transform.position = camPos;
                 showcaseCamera.transform.LookAt(focusPoint);
+
+                if (_stageFx != null)
+                {
+                    _stageFx.ApplyCameraEffects(showcaseCamera.transform, _currentCameraDist);
+                }
             }
         }
 
@@ -876,6 +936,9 @@ namespace PewPewArena.UI
             _currentCameraDist = defaultCameraDistance;
             _targetCameraLookOffset = Vector3.zero;
             _currentCameraLookOffset = Vector3.zero;
+            _targetCameraOrbitAngles = _defaultCameraOrbitAngles;
+            _currentCameraOrbitAngles = _defaultCameraOrbitAngles;
+            _lastVfxActionIndex = 0;
 
             if (weaponOrbitPivot != null)
             {
@@ -889,10 +952,13 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnResetViewClicked()
         {
+            _stageFx?.NotifyUserInput();
             _targetYaw = defaultYaw;
             _targetPitch = defaultPitch;
             _targetCameraDist = defaultCameraDistance;
             _targetCameraLookOffset = Vector3.zero;
+            _targetCameraOrbitAngles = _defaultCameraOrbitAngles;
+            _lastVfxActionIndex = 0;
             ShowModeStatusBanner("VIEW RESET TO DEFAULT ANGLE");
         }
 
@@ -906,8 +972,11 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnShootClicked()
         {
-            // Ensure full weapon framing if camera was zoomed into impact stage
-            _targetCameraLookOffset = Vector3.zero;
+            if (!_isVfxDrawerOpen)
+            {
+                _targetCameraLookOffset = Vector3.zero;
+                _targetCameraOrbitAngles = _defaultCameraOrbitAngles;
+            }
 
             TriggerInspectionShot(spawnMuzzleFlash: true, spawnProjectileAndImpact: true, playAudio: true, playRecoilAnim: true);
         }
@@ -946,6 +1015,11 @@ namespace PewPewArena.UI
             Vector3 muzzleDir = GetMuzzleForwardDirection();
             Quaternion muzzleRot = Quaternion.LookRotation(muzzleDir);
 
+            if (spawnMuzzleFlash || playRecoilAnim)
+            {
+                _stageFx?.OnShotFired(muzzlePos, muzzleDir, SelectedSniperIndex == 1, playRecoilAnim);
+            }
+
             // 3. Muzzle Flash VFX + Dynamic Light Pulse
             if (spawnMuzzleFlash)
             {
@@ -964,7 +1038,8 @@ namespace PewPewArena.UI
             // 4. Projectile / Tracer & Target Impact VFX
             if (spawnProjectileAndImpact)
             {
-                Vector3 impactPos = muzzlePos + muzzleDir * 2.15f;
+                // Keep target within clear showcase framing (1.35m in front of muzzle)
+                Vector3 impactPos = muzzlePos + muzzleDir * 1.35f;
 
                 // Align the holographic target stage at the impact point so the shot lands on the energy target
                 if (_targetStageRoot != null)
@@ -983,12 +1058,14 @@ namespace PewPewArena.UI
                     if (cosmeticBullet != null)
                     {
                         // Calibrated showcase speed so tracer flight is clearly visible across the cosmic stage
-                        float showcaseSpeed = (SelectedSniperIndex == 0) ? 18f : 22f;
+                        float showcaseSpeed = (SelectedSniperIndex == 0) ? 14f : 17f;
+                        cosmeticBullet.SetHeavyVariant(SelectedSniperIndex == 1);
                         cosmeticBullet.Initialize(impactPos, -muzzleDir, impactPrefab, showcaseSpeed, isCharacterHit: false);
                         cosmeticBullet.SetSimulationSpeed(simSpeed);
                         cosmeticBullet.SetImpactCallback(impactInstance =>
                         {
                             RegisterAndConfigureVfx(impactInstance, InspectionTimeScale);
+                            _stageFx?.OnImpact(impactPos, -muzzleDir);
                         });
                     }
                     RegisterAndConfigureVfx(bulletGo, simSpeed);
@@ -997,6 +1074,7 @@ namespace PewPewArena.UI
                 {
                     GameObject impactGo = Instantiate(impactPrefab, impactPos, Quaternion.LookRotation(-muzzleDir));
                     RegisterAndConfigureVfx(impactGo, simSpeed);
+                    _stageFx?.OnImpact(impactPos, -muzzleDir);
                 }
             }
         }
@@ -1080,7 +1158,7 @@ namespace PewPewArena.UI
             if (_muzzleFlashLight == null) yield break;
 
             _muzzleFlashLight.transform.position = worldPos;
-            _muzzleFlashLight.intensity = (SelectedSniperIndex == 1) ? 8.5f : 6.5f;
+            _muzzleFlashLight.intensity = (SelectedSniperIndex == 1) ? 3.1f : 2.3f;
             _muzzleFlashLight.enabled = true;
 
             float duration = 0.14f;
@@ -1102,7 +1180,8 @@ namespace PewPewArena.UI
 
         /// <summary>
         /// Toggles the dedicated "Inspect VFX" drawer so the player can trigger and inspect
-        /// individual weapon effects (Muzzle Flash, Projectile/Tracer, Impact Sparks, or Full Cycle) on demand.
+        /// individual weapon effects (Muzzle Flash, Projectile/Tracer, Impact Sparks, or Full Cycle)
+        /// and switch between dedicated VFX camera perspectives.
         /// </summary>
         public void OnInspectVfxToggleClicked()
         {
@@ -1113,15 +1192,165 @@ namespace PewPewArena.UI
             }
 
             RefreshInspectVfxButtonVisuals();
+            RefreshPerspectiveButtonsVisuals();
 
             if (_isVfxDrawerOpen)
             {
-                ShowModeStatusBanner("VFX INSPECTION LAB ACTIVE — SELECT AN EFFECT TO DEMONSTRATE");
+                ShowModeStatusBanner("VFX LAB ACTIVE — CHOOSE AN EFFECT & CAMERA PERSPECTIVE");
             }
             else
             {
                 _targetCameraLookOffset = Vector3.zero;
+                _targetCameraOrbitAngles = _defaultCameraOrbitAngles;
                 _targetCameraDist = defaultCameraDistance;
+                _lastVfxActionIndex = 0;
+            }
+        }
+
+        /// <summary>
+        /// Sets the active VFX Lab camera perspective and immediately frames (or replays) the current VFX.
+        /// </summary>
+        public void SetVfxCameraPerspective(VfxCameraPerspective perspective)
+        {
+            _stageFx?.NotifyUserInput();
+            _selectedVfxPerspective = perspective;
+            RefreshPerspectiveButtonsVisuals();
+
+            if (_lastVfxActionIndex == 1)
+            {
+                OnInspectMuzzleFlashClicked();
+            }
+            else if (_lastVfxActionIndex == 2)
+            {
+                OnInspectProjectileTracerClicked();
+            }
+            else if (_lastVfxActionIndex == 3)
+            {
+                OnInspectImpactEffectClicked();
+            }
+            else if (_lastVfxActionIndex == 4)
+            {
+                OnInspectFullSequenceClicked();
+            }
+            else
+            {
+                // Preview the selected camera perspective immediately even before firing
+                ApplyVfxCameraFraming(perspective == VfxCameraPerspective.Auto ? VfxCameraPerspective.SideLane : perspective);
+                ShowModeStatusBanner($"VFX CAMERA PERSPECTIVE: {GetPerspectiveDisplayName(perspective)}");
+            }
+        }
+
+        private VfxCameraPerspective ResolveEffectivePerspective(VfxCameraPerspective defaultForAction)
+        {
+            return _selectedVfxPerspective == VfxCameraPerspective.Auto ? defaultForAction : _selectedVfxPerspective;
+        }
+
+        private static string GetPerspectiveDisplayName(VfxCameraPerspective p)
+        {
+            return p switch
+            {
+                VfxCameraPerspective.Auto => "AUTO SMART VIEW",
+                VfxCameraPerspective.SideLane => "SIDE FIRING LANE",
+                VfxCameraPerspective.MuzzleCloseUp => "MUZZLE CLOSE-UP",
+                VfxCameraPerspective.OverBarrel => "OVER-BARREL POV",
+                VfxCameraPerspective.TargetCloseUp => "TARGET IMPACT POV",
+                VfxCameraPerspective.TopDown => "TOP TACTICAL VIEW",
+                _ => "AUTO SMART VIEW"
+            };
+        }
+
+        /// <summary>
+        /// Aligns the weapon, downrange target stage, camera focus point, orbital angle, and zoom distance
+        /// for crystal-clear viewing of muzzle flash, tracer trajectory, and ballistic impact.
+        /// </summary>
+        private void ApplyVfxCameraFraming(VfxCameraPerspective effectivePerspective)
+        {
+            switch (effectivePerspective)
+            {
+                case VfxCameraPerspective.MuzzleCloseUp:
+                    _targetYaw = 72f;
+                    _targetPitch = 2f;
+                    break;
+                case VfxCameraPerspective.OverBarrel:
+                    _targetYaw = 24f;
+                    _targetPitch = -2f;
+                    break;
+                case VfxCameraPerspective.TopDown:
+                    _targetYaw = 90f;
+                    _targetPitch = 0f;
+                    break;
+                case VfxCameraPerspective.SideLane:
+                case VfxCameraPerspective.TargetCloseUp:
+                default:
+                    _targetYaw = 88f;
+                    _targetPitch = 0f;
+                    break;
+            }
+
+            // Snap weapon pivot immediately so muzzle flash & projectile spawn along the exact framed barrel line
+            _currentYaw = _targetYaw;
+            _currentPitch = _targetPitch;
+            if (weaponOrbitPivot != null)
+            {
+                weaponOrbitPivot.rotation = Quaternion.Euler(_currentPitch, _currentYaw, 0f);
+            }
+            if (_recoilPivot != null)
+            {
+                _recoilPivot.localPosition = Vector3.zero;
+                _recoilPivot.localRotation = Quaternion.identity;
+            }
+
+            Vector3 muzzlePos = _activeFirePoint != null
+                ? _activeFirePoint.position
+                : (_defaultStagePosition + new Vector3(0.55f, 0.05f, 0f));
+            Vector3 muzzleDir = GetMuzzleForwardDirection();
+            Vector3 targetPos = muzzlePos + muzzleDir * 1.35f;
+
+            if (_targetStageRoot != null)
+            {
+                _targetStageRoot.position = targetPos;
+                _targetStageRoot.rotation = Quaternion.LookRotation(-muzzleDir);
+            }
+
+            switch (effectivePerspective)
+            {
+                case VfxCameraPerspective.MuzzleCloseUp:
+                    // Front-quarter macro close-up centered directly on the muzzle flash cone
+                    _targetCameraLookOffset = (muzzlePos + muzzleDir * 0.14f) - _defaultStagePosition;
+                    _targetCameraOrbitAngles = new Vector2(10f, 28f);
+                    _targetCameraDist = 0.84f;
+                    break;
+
+                case VfxCameraPerspective.OverBarrel:
+                    // Shooter perspective behind & above the scope looking down the barrel toward the target
+                    _targetCameraLookOffset = (muzzlePos + muzzleDir * 0.45f) - _defaultStagePosition;
+                    _targetCameraOrbitAngles = new Vector2(12f, 20f);
+                    _targetCameraDist = 1.18f;
+                    break;
+
+                case VfxCameraPerspective.TargetCloseUp:
+                    // Macro close-up directly on the Holographic Target Stage
+                    _targetCameraLookOffset = targetPos - _defaultStagePosition;
+                    _targetCameraOrbitAngles = new Vector2(11f, -26f);
+                    _targetCameraDist = 0.88f;
+                    break;
+
+                case VfxCameraPerspective.TopDown:
+                    // High overhead bird's-eye view of the entire firing lane (muzzle -> tracer -> target)
+                    Vector3 laneMidTop = Vector3.Lerp(muzzlePos, targetPos, 0.42f);
+                    _targetCameraLookOffset = laneMidTop - _defaultStagePosition;
+                    _targetCameraOrbitAngles = new Vector2(56f, 0f);
+                    _targetCameraDist = 2.08f;
+                    break;
+
+                case VfxCameraPerspective.SideLane:
+                default:
+                    // Wide side ballistic gallery framing both the rifle on the left and the target on the right
+                    Vector3 laneCenter = Vector3.Lerp(_defaultStagePosition, targetPos, 0.52f);
+                    _targetCameraLookOffset = laneCenter - _defaultStagePosition;
+                    _targetCameraOrbitAngles = new Vector2(5f, 0f);
+                    _targetCameraDist = 2.12f;
+                    break;
             }
         }
 
@@ -1130,19 +1359,14 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnInspectMuzzleFlashClicked()
         {
-            _targetYaw = defaultYaw;
-            _targetPitch = defaultPitch;
-            _targetCameraDist = 1.18f;
-
-            Vector3 muzzleOffset = (_activeFirePoint != null)
-                ? (_activeFirePoint.position - _defaultStagePosition) * 0.55f
-                : new Vector3(0.32f, 0.04f, 0f);
-            _targetCameraLookOffset = muzzleOffset;
+            _lastVfxActionIndex = 1;
+            VfxCameraPerspective view = ResolveEffectivePerspective(VfxCameraPerspective.MuzzleCloseUp);
+            ApplyVfxCameraFraming(view);
 
             TriggerInspectionShot(spawnMuzzleFlash: true, spawnProjectileAndImpact: false, playAudio: true, playRecoilAnim: true);
             ShowModeStatusBanner(_isSlowMotion
-                ? "INSPECTING: MUZZLE FLASH & BARREL BLAST (SLOW MOTION 0.2x)"
-                : "INSPECTING: MUZZLE FLASH & BARREL BLAST");
+                ? $"MUZZLE FLASH [{GetPerspectiveDisplayName(view)}] (SLOW MO 0.2x)"
+                : $"MUZZLE FLASH [{GetPerspectiveDisplayName(view)}]");
         }
 
         /// <summary>
@@ -1150,17 +1374,16 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnInspectProjectileTracerClicked()
         {
-            _targetYaw = defaultYaw;
-            _targetPitch = defaultPitch;
-            _targetCameraDist = 1.68f;
-            _targetCameraLookOffset = new Vector3(0.45f, 0.02f, 0.15f);
+            _lastVfxActionIndex = 2;
+            VfxCameraPerspective view = ResolveEffectivePerspective(VfxCameraPerspective.SideLane);
+            ApplyVfxCameraFraming(view);
 
             GameObject bulletPrefab = (SelectedSniperIndex == 0) ? bulletPrefab1 : bulletPrefab2;
             if (bulletPrefab != null)
             {
                 Vector3 startPos = _activeFirePoint != null ? _activeFirePoint.position : (_defaultStagePosition + new Vector3(0.45f, 0.05f, 0f));
                 Vector3 dir = GetMuzzleForwardDirection();
-                Vector3 endPos = startPos + dir * 2.35f;
+                Vector3 endPos = startPos + dir * 1.35f;
 
                 if (_targetStageRoot != null)
                 {
@@ -1173,15 +1396,20 @@ namespace PewPewArena.UI
                 if (cosmeticBullet != null)
                 {
                     // Slower showcase velocity so the player can closely inspect the contrail & wake particles
-                    cosmeticBullet.Initialize(endPos, -dir, null, 7.5f, isCharacterHit: false);
+                    cosmeticBullet.SetHeavyVariant(SelectedSniperIndex == 1);
+                    cosmeticBullet.Initialize(endPos, -dir, null, 6.2f, isCharacterHit: false);
                     cosmeticBullet.SetSimulationSpeed(InspectionTimeScale);
+                    cosmeticBullet.SetImpactCallback(_ =>
+                    {
+                        _stageFx?.OnImpact(endPos, -dir);
+                    });
                 }
                 RegisterAndConfigureVfx(bulletGo, InspectionTimeScale);
             }
 
             ShowModeStatusBanner(_isSlowMotion
-                ? "INSPECTING: PROJECTILE, CONTRAIL & WAKE SPARKS (SLOW MOTION 0.2x)"
-                : "INSPECTING: PROJECTILE, CONTRAIL & WAKE SPARKS");
+                ? $"TRACER & TRAIL [{GetPerspectiveDisplayName(view)}] (SLOW MO 0.2x)"
+                : $"TRACER & TRAIL [{GetPerspectiveDisplayName(view)}]");
         }
 
         /// <summary>
@@ -1189,28 +1417,45 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnInspectImpactEffectClicked()
         {
-            Vector3 impactStagePos = _defaultStagePosition + new Vector3(0.55f, 0.04f, -0.15f);
+            _lastVfxActionIndex = 3;
+            VfxCameraPerspective view = ResolveEffectivePerspective(VfxCameraPerspective.TargetCloseUp);
+            ApplyVfxCameraFraming(view);
+
+            Vector3 muzzlePos = _activeFirePoint != null ? _activeFirePoint.position : (_defaultStagePosition + new Vector3(0.55f, 0.05f, 0f));
+            Vector3 muzzleDir = GetMuzzleForwardDirection();
+            Vector3 impactStagePos = muzzlePos + muzzleDir * 1.35f;
+            Vector3 normal = -muzzleDir;
+
             if (_targetStageRoot != null)
             {
                 _targetStageRoot.position = impactStagePos;
-                _targetStageRoot.rotation = Quaternion.LookRotation(showcaseCamera.transform.position - impactStagePos);
+                _targetStageRoot.rotation = Quaternion.LookRotation(normal);
             }
-
-            _targetCameraLookOffset = new Vector3(0.42f, 0.03f, -0.10f);
-            _targetCameraDist = 1.25f;
 
             GameObject impactPrefab = (SelectedSniperIndex == 0) ? hitEffectPrefab1 : hitEffectPrefab2;
             if (impactPrefab != null)
             {
-                Vector3 normal = (showcaseCamera.transform.position - impactStagePos).normalized;
                 GameObject impactGo = Instantiate(impactPrefab, impactStagePos, Quaternion.LookRotation(normal));
                 impactGo.transform.localScale = Vector3.one * 1.25f;
                 RegisterAndConfigureVfx(impactGo, InspectionTimeScale);
             }
+            _stageFx?.OnImpact(impactStagePos, normal);
 
             ShowModeStatusBanner(_isSlowMotion
-                ? "INSPECTING: BALLISTIC IMPACT, SPARKS & ENERGY BURST (SLOW MOTION 0.2x)"
-                : "INSPECTING: BALLISTIC IMPACT, SPARKS & ENERGY BURST");
+                ? $"IMPACT SPARKS [{GetPerspectiveDisplayName(view)}] (SLOW MO 0.2x)"
+                : $"IMPACT SPARKS [{GetPerspectiveDisplayName(view)}]");
+        }
+
+        public void OnInspectFullSequenceClicked()
+        {
+            _lastVfxActionIndex = 4;
+            VfxCameraPerspective view = ResolveEffectivePerspective(VfxCameraPerspective.SideLane);
+            ApplyVfxCameraFraming(view);
+
+            TriggerInspectionShot(spawnMuzzleFlash: true, spawnProjectileAndImpact: true, playAudio: true, playRecoilAnim: true);
+            ShowModeStatusBanner(_isSlowMotion
+                ? $"FULL SEQUENCE [{GetPerspectiveDisplayName(view)}] (SLOW MO 0.2x)"
+                : $"FULL SEQUENCE [{GetPerspectiveDisplayName(view)}]");
         }
 
         /// <summary>
@@ -1303,6 +1548,7 @@ namespace PewPewArena.UI
         /// </summary>
         public void OnBackClicked()
         {
+            _stageFx?.FadeOutAudio();
             CleanupSpawnedVfx();
             Time.timeScale = 1f;
             RelayNetworkUI.ReturnToLoadoutFromInspection = true;
@@ -1448,7 +1694,7 @@ namespace PewPewArena.UI
 
         private void BuildStatusBannerUI(RectTransform rootRt, Color theme)
         {
-            var bannerRt = CreateUiElement("ModeStatusBanner", rootRt, new Vector2(0.5f, 0f), new Vector2(0f, 198f), new Vector2(720f, 34f), new Vector2(0.5f, 0.5f));
+            var bannerRt = CreateUiElement("ModeStatusBanner", rootRt, new Vector2(0.5f, 0f), new Vector2(0f, 242f), new Vector2(760f, 34f), new Vector2(0.5f, 0.5f));
             _activeModeBannerGroup = bannerRt.gameObject.AddComponent<CanvasGroup>();
             _activeModeBannerGroup.alpha = 0f;
             _activeModeBannerGroup.interactable = false;
@@ -1469,46 +1715,114 @@ namespace PewPewArena.UI
 
         private void BuildVfxInspectionDrawerUI(RectTransform rootRt, Color theme)
         {
-            var drawerRt = CreateUiElement("VfxInspectionDrawer", rootRt, new Vector2(0.5f, 0f), new Vector2(0f, 138f), new Vector2(980f, 74f), new Vector2(0.5f, 0.5f));
+            var drawerRt = CreateUiElement("VfxInspectionDrawer", rootRt, new Vector2(0.5f, 0f), new Vector2(0f, 158f), new Vector2(1060f, 118f), new Vector2(0.5f, 0.5f));
             _vfxDrawerPanel = drawerRt.gameObject;
 
             var bg = drawerRt.gameObject.AddComponent<Image>();
             bg.sprite = LoadoutUISprites.CardFill;
             bg.type = Image.Type.Sliced;
-            bg.color = new Color(0.02f, 0.04f, 0.09f, 0.92f);
+            bg.color = new Color(0.02f, 0.04f, 0.09f, 0.94f);
 
             var frame = CreateUiImage("DrawerFrame", drawerRt, LoadoutUISprites.CardFrame, new Color(CosmicViolet.r, CosmicViolet.g, CosmicViolet.b, 0.85f), true);
             StretchRect(frame.rectTransform);
 
+            // --- TOP ROW: 4 individual on-demand VFX trigger buttons ---
+            float topRowY = 25f;
             var title = CreateUiText("DrawerLabel", drawerRt, "VFX LAB //", _bodyFont, 15f, 2.2f, CosmicViolet, TextAlignmentOptions.MidlineLeft);
-            SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-462f, 0f), new Vector2(110f, 36f), new Vector2(0f, 0.5f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-502f, topRowY), new Vector2(120f, 34f), new Vector2(0f, 0.5f));
 
-            // 4 individual on-demand VFX trigger buttons
             CreateCosmicButton(drawerRt, "VfxMuzzleBtn", "1. MUZZLE FLASH",
-                new Vector2(0.5f, 0.5f), new Vector2(-245f, 0f), new Vector2(195f, 48f), new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), new Vector2(-265f, topRowY), new Vector2(205f, 44f), new Vector2(0.5f, 0.5f),
                 theme, false, LoadoutUISprites.IconDamage, OnInspectMuzzleFlashClicked);
 
             CreateCosmicButton(drawerRt, "VfxTracerBtn", "2. TRACER & TRAIL",
-                new Vector2(0.5f, 0.5f), new Vector2(-35f, 0f), new Vector2(195f, 48f), new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), new Vector2(-45f, topRowY), new Vector2(205f, 44f), new Vector2(0.5f, 0.5f),
                 theme, false, LoadoutUISprites.IconFireRate, OnInspectProjectileTracerClicked);
 
             CreateCosmicButton(drawerRt, "VfxImpactBtn", "3. IMPACT SPARKS",
-                new Vector2(0.5f, 0.5f), new Vector2(175f, 0f), new Vector2(195f, 48f), new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), new Vector2(175f, topRowY), new Vector2(205f, 44f), new Vector2(0.5f, 0.5f),
                 theme, false, LoadoutUISprites.IconCrosshair, OnInspectImpactEffectClicked);
 
             CreateCosmicButton(drawerRt, "VfxFullShotBtn", "4. FULL SEQUENCE",
-                new Vector2(0.5f, 0.5f), new Vector2(380f, 0f), new Vector2(190f, 48f), new Vector2(0.5f, 0.5f),
-                CosmicViolet, false, null, () =>
-                {
-                    _targetCameraLookOffset = Vector3.zero;
-                    _targetCameraDist = defaultCameraDistance;
-                    OnShootClicked();
-                    ShowModeStatusBanner(_isSlowMotion
-                        ? "INSPECTING: FULL FIRING SEQUENCE (SLOW MOTION 0.2x)"
-                        : "INSPECTING: FULL FIRING SEQUENCE");
-                });
+                new Vector2(0.5f, 0.5f), new Vector2(395f, topRowY), new Vector2(205f, 44f), new Vector2(0.5f, 0.5f),
+                CosmicViolet, false, null, OnInspectFullSequenceClicked);
 
+            // Subtle divider between VFX row and Camera Perspective row
+            var rowDiv = CreateUiImage("DrawerRowDivider", drawerRt, LoadoutUISprites.White, new Color(CosmicViolet.r, CosmicViolet.g, CosmicViolet.b, 0.22f), false);
+            SetRect(rowDiv.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(1010f, 1f));
+
+            // --- BOTTOM ROW: 6 Camera Perspective selector buttons for crystal-clear VFX viewing ---
+            float botRowY = -28f;
+            var camLabel = CreateUiText("PerspectiveLabel", drawerRt, "PERSPECTIVE //", _bodyFont, 13f, 2.0f, MutedText, TextAlignmentOptions.MidlineLeft);
+            SetRect(camLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-502f, botRowY), new Vector2(135f, 30f), new Vector2(0f, 0.5f));
+
+            _perspectiveButtons.Clear();
+            string[] perspLabels =
+            {
+                "AUTO VIEW",
+                "SIDE LANE",
+                "MUZZLE POV",
+                "OVER BARREL",
+                "TARGET POV",
+                "TOP VIEW"
+            };
+            VfxCameraPerspective[] perspValues =
+            {
+                VfxCameraPerspective.Auto,
+                VfxCameraPerspective.SideLane,
+                VfxCameraPerspective.MuzzleCloseUp,
+                VfxCameraPerspective.OverBarrel,
+                VfxCameraPerspective.TargetCloseUp,
+                VfxCameraPerspective.TopDown
+            };
+
+            for (int i = 0; i < perspLabels.Length; i++)
+            {
+                VfxCameraPerspective captured = perspValues[i];
+                float btnX = -292f + i * 142f;
+                var btnRef = CreateCosmicButton(drawerRt, $"PerspectiveBtn_{i}", perspLabels[i],
+                    new Vector2(0.5f, 0.5f), new Vector2(btnX, botRowY), new Vector2(134f, 36f), new Vector2(0.5f, 0.5f),
+                    theme, false, null, () => SetVfxCameraPerspective(captured));
+                if (btnRef.Label != null)
+                {
+                    btnRef.Label.fontSize = 13f;
+                    btnRef.Label.characterSpacing = 1.6f;
+                }
+                _perspectiveButtons.Add(btnRef);
+            }
+
+            RefreshPerspectiveButtonsVisuals();
             _vfxDrawerPanel.SetActive(false);
+        }
+
+        private void RefreshPerspectiveButtonsVisuals()
+        {
+            Color theme = GetThemeColor(SelectedSniperIndex);
+            int activeIdx = (int)_selectedVfxPerspective;
+
+            for (int i = 0; i < _perspectiveButtons.Count; i++)
+            {
+                var btn = _perspectiveButtons[i];
+                bool isSelected = (i == activeIdx);
+                if (btn.Bg != null)
+                {
+                    btn.Bg.color = isSelected
+                        ? new Color(theme.r, theme.g, theme.b, 0.92f)
+                        : new Color(0.06f, 0.10f, 0.18f, 0.88f);
+                }
+                if (btn.Frame != null)
+                {
+                    btn.Frame.color = isSelected
+                        ? Color.white
+                        : new Color(theme.r, theme.g, theme.b, 0.45f);
+                }
+                if (btn.Label != null)
+                {
+                    btn.Label.color = isSelected
+                        ? new Color(0.02f, 0.05f, 0.10f, 1f)
+                        : new Color(0.82f, 0.90f, 0.98f, 1f);
+                }
+            }
         }
 
         private void BuildBottomControlDeckUI(RectTransform rootRt, Color theme)

@@ -470,11 +470,11 @@ MonoBehaviour:
   sniper1ModelPrefab: {fileID: 4507843972025579413, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
   sniper2ModelPrefab: {fileID: 2500924936944056406, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
   muzzleFlashPrefab1: {fileID: 3003336575500683960, guid: c75d34f0d0a31fd4998cd1995e00d9da, type: 3}
-  bulletPrefab1: {fileID: 4902780824844457583, guid: 23302659b9df1ca4788970bdb4bea73b, type: 3}
+  bulletPrefab1: {fileID: 1248078153461381362, guid: 9d0821a5a01f3544c8a0b9294c2af289, type: 3}
   hitEffectPrefab1: {fileID: 484365077167131744, guid: 801f382f17b9b154e9088603a8829560, type: 3}
   gunshotClip1: {fileID: 8300000, guid: 5ba52a3d687d41446b3747bc59e7a896, type: 3}
   muzzleFlashPrefab2: {fileID: 1755746549281700376, guid: b5400e72d4b81f8459adb8e2dbe864b4, type: 3}
-  bulletPrefab2: {fileID: 9004964136365580237, guid: 24eba6981d7dd8f4fa1b8763f8a6cf1d, type: 3}
+  bulletPrefab2: {fileID: 1248078153461381362, guid: 9d0821a5a01f3544c8a0b9294c2af289, type: 3}
   hitEffectPrefab2: {fileID: 3842634530626216332, guid: a116360ad18febb4987c2b2b36d408c5, type: 3}
   gunshotClip2: {fileID: 8300000, guid: b5332dbea449b8a4184057aaad68a9a5, type: 3}
   defaultYaw: 68
