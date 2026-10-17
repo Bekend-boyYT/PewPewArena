@@ -70,6 +70,40 @@ namespace SniperGame.UI
         public static bool HostSniper2Allowed = true;
         public static int HostEquippedSniper = 0;
 
+        private const string SelectedLoadoutKey = "SelectedLoadout";
+        public const string LoadoutRequiredMessage = LoadoutRequiredPopup.DefaultPopupMessage;
+
+        private static bool _sessionLoadoutInitialized = false;
+        private static bool _hasSelectedLoadout = false;
+
+        private LoadoutRequiredPopup _loadoutRequiredPopup;
+        private bool _returnToCreateScreenFromLoadout = false;
+        private bool _isCreatingRelay = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSessionLoadoutState()
+        {
+            _sessionLoadoutInitialized = false;
+            _hasSelectedLoadout = false;
+            HostEquippedSniper = 0;
+        }
+
+        public static bool HasValidLoadoutSelected()
+        {
+            if (!_hasSelectedLoadout) return false;
+            if (!PlayerPrefs.HasKey(SelectedLoadoutKey)) return false;
+            int selected = PlayerPrefs.GetInt(SelectedLoadoutKey, -1);
+            return selected == 0 || selected == 1;
+        }
+
+        public static void ClearLoadoutSelection()
+        {
+            _hasSelectedLoadout = false;
+            HostEquippedSniper = 0;
+            PlayerPrefs.DeleteKey(SelectedLoadoutKey);
+            PlayerPrefs.Save();
+        }
+
         [System.Serializable]
         public struct MapOption
         {
@@ -97,8 +131,15 @@ namespace SniperGame.UI
         {
             ForceUnlockCursor();
 
+            if (!_sessionLoadoutInitialized)
+            {
+                _sessionLoadoutInitialized = true;
+                ClearLoadoutSelection();
+            }
+
             EnsurePersistentBackground();
             AutoFindReferences();
+            EnsureLoadoutRequiredPopup();
             SetupButtonListeners();
             RefreshLoadoutVisuals();
             RefreshMapSelectionVisuals();
@@ -559,11 +600,78 @@ namespace SniperGame.UI
         }
         #endregion
 
+        #region Loadout Required Popup
+
+        public LoadoutRequiredPopup LoadoutPopup => _loadoutRequiredPopup;
+
+        private void EnsureLoadoutRequiredPopup()
+        {
+            if (_loadoutRequiredPopup == null)
+            {
+                Transform existing = transform.Find("LoadoutRequiredPopup");
+                if (existing != null)
+                {
+                    _loadoutRequiredPopup = existing.GetComponent<LoadoutRequiredPopup>();
+                    if (_loadoutRequiredPopup == null)
+                    {
+                        _loadoutRequiredPopup = existing.gameObject.AddComponent<LoadoutRequiredPopup>();
+                    }
+                }
+            }
+
+            if (_loadoutRequiredPopup == null)
+            {
+                var popupGo = new GameObject("LoadoutRequiredPopup", typeof(RectTransform), typeof(CanvasRenderer), typeof(CanvasGroup), typeof(LoadoutRequiredPopup));
+                popupGo.layer = gameObject.layer;
+                popupGo.transform.SetParent(this.transform, false);
+                _loadoutRequiredPopup = popupGo.GetComponent<LoadoutRequiredPopup>();
+            }
+
+            TMP_FontAsset fallbackFont = null;
+            if (createStatusText != null && createStatusText.font != null) fallbackFont = createStatusText.font;
+            else if (gameCodeDisplay != null && gameCodeDisplay.font != null) fallbackFont = gameCodeDisplay.font;
+
+            _loadoutRequiredPopup.Initialize(
+                fallbackFont,
+                onGoToLoadout: OnPopupGoToLoadoutClicked,
+                onClose: HideLoadoutRequiredPopup
+            );
+            _loadoutRequiredPopup.Hide();
+        }
+
+        public void ShowLoadoutRequiredPopup()
+        {
+            EnsureLoadoutRequiredPopup();
+            if (_loadoutRequiredPopup != null)
+            {
+                _loadoutRequiredPopup.Show(LoadoutRequiredMessage);
+            }
+        }
+
+        public void HideLoadoutRequiredPopup()
+        {
+            if (_loadoutRequiredPopup != null && _loadoutRequiredPopup.IsVisible)
+            {
+                _loadoutRequiredPopup.Hide();
+            }
+        }
+
+        private void OnPopupGoToLoadoutClicked()
+        {
+            _returnToCreateScreenFromLoadout = (createScreen != null && createScreen.activeSelf);
+            HideLoadoutRequiredPopup();
+            ShowScreen(loadoutPanel != null ? loadoutPanel : playPanel);
+            RefreshLoadoutVisuals();
+        }
+
+        #endregion
+
         #region Screen Navigation
 
         public void ShowScreen(GameObject screenToShow)
         {
             ForceUnlockCursor();
+            HideLoadoutRequiredPopup();
 
             // Guarantee persistent background stays active and at sibling 0 behind all panels
             if (persistentBackground != null)
@@ -583,6 +691,13 @@ namespace SniperGame.UI
             if (_settingsContainer != null) _settingsContainer.SetActive(isSettings);
             if (_settingsInnerPanel != null && _settingsInnerPanel != _settingsContainer) _settingsInnerPanel.SetActive(isSettings);
             if (settingsPanel != null && settingsPanel != _settingsContainer && settingsPanel != _settingsInnerPanel) settingsPanel.SetActive(isSettings);
+
+            if (screenToShow == createScreen)
+            {
+                RefreshMapSelectionVisuals();
+                RefreshWeaponToggleVisuals();
+                if (createStartButton != null) createStartButton.interactable = true;
+            }
 
             if (openCreateScreenButton != null) openCreateScreenButton.interactable = true;
             if (openJoinScreenButton != null) openJoinScreenButton.interactable = true;
@@ -663,18 +778,39 @@ namespace SniperGame.UI
 
         public void OnOpenLoadoutScreen()
         {
+            _returnToCreateScreenFromLoadout = false;
             ShowScreen(loadoutPanel != null ? loadoutPanel : playPanel);
             RefreshLoadoutVisuals();
         }
 
         public void OnLoadoutBackClicked()
         {
+            if (_returnToCreateScreenFromLoadout && createScreen != null)
+            {
+                _returnToCreateScreenFromLoadout = false;
+                if ((NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening) || _isCreatingRelay)
+                {
+                    ShowScreen(createScreen);
+                    return;
+                }
+
+                OnOpenCreateScreen();
+                return;
+            }
+
             ShowScreen(playPanel != null ? playPanel : mainScreen);
         }
 
         public void OnSelectSniper(int index)
         {
-            PlayerPrefs.SetInt("SelectedLoadout", index);
+            if (index != 0 && index != 1)
+            {
+                Debug.LogWarning($"[RelayUI] Invalid Sniper loadout index: {index}");
+                return;
+            }
+
+            _hasSelectedLoadout = true;
+            PlayerPrefs.SetInt(SelectedLoadoutKey, index);
             PlayerPrefs.Save();
             HostEquippedSniper = index;
             RefreshLoadoutVisuals(playFeedback: true);
@@ -683,34 +819,38 @@ namespace SniperGame.UI
 
         private void RefreshLoadoutVisuals(bool playFeedback = false)
         {
-            int selected = PlayerPrefs.GetInt("SelectedLoadout", 0);
-            HostEquippedSniper = selected;
+            bool hasValid = HasValidLoadoutSelected();
+            int selected = hasValid ? PlayerPrefs.GetInt(SelectedLoadoutKey, -1) : -1;
+            HostEquippedSniper = hasValid ? selected : 0;
+
             if (sniper1Button != null)
             {
+                bool isSniper1 = hasValid && selected == 0;
                 var card1 = sniper1Button.GetComponent<LoadoutCardEffect>();
                 if (card1 != null)
                 {
-                    card1.SetEquipped(selected == 0, playFeedback);
+                    card1.SetEquipped(isSniper1, playFeedback);
                 }
                 var outline = sniper1Button.GetComponent<Outline>();
                 if (outline != null)
                 {
-                    outline.effectColor = selected == 0 ? new Color(0f, 0.83f, 1f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
-                    outline.effectDistance = selected == 0 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
+                    outline.effectColor = isSniper1 ? new Color(0f, 0.83f, 1f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
+                    outline.effectDistance = isSniper1 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
                 }
             }
             if (sniper2Button != null)
             {
+                bool isSniper2 = hasValid && selected == 1;
                 var card2 = sniper2Button.GetComponent<LoadoutCardEffect>();
                 if (card2 != null)
                 {
-                    card2.SetEquipped(selected == 1, playFeedback);
+                    card2.SetEquipped(isSniper2, playFeedback);
                 }
                 var outline = sniper2Button.GetComponent<Outline>();
                 if (outline != null)
                 {
-                    outline.effectColor = selected == 1 ? new Color(1f, 0.69f, 0.23f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
-                    outline.effectDistance = selected == 1 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
+                    outline.effectColor = isSniper2 ? new Color(1f, 0.69f, 0.23f, 0.9f) : new Color(0.23f, 0.27f, 0.35f, 0.4f);
+                    outline.effectDistance = isSniper2 ? new Vector2(2.5f, -2.5f) : new Vector2(1.5f, -1.5f);
                 }
             }
         }
@@ -732,13 +872,20 @@ namespace SniperGame.UI
 
         private async void OnOpenCreateScreen()
         {
+            _returnToCreateScreenFromLoadout = false;
+
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
             ShowScreen(createScreen);
             RefreshMapSelectionVisuals();
             RefreshWeaponToggleVisuals();
 
             if (createStatusText != null) createStatusText.text = "Generating Relay code...";
             if (gameCodeDisplay != null) gameCodeDisplay.text = "LOADING...";
-            if (createStartButton != null) createStartButton.interactable = false;
+            if (createStartButton != null) createStartButton.interactable = true;
             if (createBackButton != null) createBackButton.interactable = true;
 
             await CreateRelayGame();
@@ -775,6 +922,9 @@ namespace SniperGame.UI
 
         private void OnCreateBackClicked()
         {
+            _returnToCreateScreenFromLoadout = false;
+            HideLoadoutRequiredPopup();
+
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 NetworkManager.Singleton.Shutdown();
@@ -822,6 +972,7 @@ namespace SniperGame.UI
 
         private async Task CreateRelayGame()
         {
+            _isCreatingRelay = true;
             try
             {
                 var regions = await RelayService.Instance.ListRegionsAsync();
@@ -866,23 +1017,54 @@ namespace SniperGame.UI
                 if (createBackButton != null) createBackButton.interactable = true;
                 Debug.LogError($"[RelayUI] Error during CreateAllocation: {e.Message}");
             }
+            finally
+            {
+                _isCreatingRelay = false;
+            }
+        }
+
+        public bool TryStartGame()
+        {
+            if (!HasValidLoadoutSelected())
+            {
+                Debug.LogWarning($"[RelayUI] Blocked game start: {LoadoutRequiredMessage}");
+                ShowLoadoutRequiredPopup();
+                return false;
+            }
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+            {
+                if (_isCreatingRelay && createStatusText != null)
+                {
+                    createStatusText.text = "Generating Relay code... Please wait.";
+                }
+                Debug.LogWarning("[RelayUI] Cannot start game yet: Host server is not active.");
+                return false;
+            }
+
+            int selectedLoadout = PlayerPrefs.GetInt(SelectedLoadoutKey, -1);
+            if (selectedLoadout != 0 && selectedLoadout != 1)
+            {
+                ShowLoadoutRequiredPopup();
+                return false;
+            }
+
+            HostEquippedSniper = selectedLoadout;
+            if (createStatusText != null) createStatusText.text = "Loading scene...";
+            if (createStartButton != null) createStartButton.interactable = false;
+
+            string targetScene = (availableMaps != null && availableMaps.Length > _selectedMapIndex)
+                ? availableMaps[_selectedMapIndex].sceneName
+                : gameplaySceneName;
+
+            Debug.Log($"[RelayUI] Starting game on map scene: {targetScene}");
+            NetworkManager.Singleton.SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
+            return true;
         }
 
         private void OnStartGameClicked()
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
-            {
-                HostEquippedSniper = PlayerPrefs.GetInt("SelectedLoadout", 0);
-                if (createStatusText != null) createStatusText.text = "Loading scene...";
-                if (createStartButton != null) createStartButton.interactable = false;
-
-                string targetScene = (availableMaps != null && availableMaps.Length > _selectedMapIndex)
-                    ? availableMaps[_selectedMapIndex].sceneName
-                    : gameplaySceneName;
-
-                Debug.Log($"[RelayUI] Starting game on map scene: {targetScene}");
-                NetworkManager.Singleton.SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
-            }
+            TryStartGame();
         }
 
         private async void OnJoinConfirmClicked()

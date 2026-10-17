@@ -151,6 +151,39 @@ namespace PewPewArena.UI
         public bool IsHovered => _isHovered;
         public bool IsPressed => _isPressed;
 
+        public void ConfigureColors(
+            Color fillIdle, Color fillHover,
+            Color borderIdle, Color borderHover,
+            Color textIdle, Color textHover,
+            Color? clickText = null,
+            Color? arrowCol = null)
+        {
+            fillIdleColor = fillIdle;
+            fillHoverColor = fillHover;
+            borderIdleColor = borderIdle;
+            borderHoverColor = borderHover;
+            idleTextColor = textIdle;
+            hoverTextColor = textHover;
+            clickTextColor = clickText.HasValue ? clickText.Value : textHover;
+            if (arrowCol.HasValue)
+            {
+                arrowColor = arrowCol.Value;
+                if (arrowImage != null) arrowImage.color = arrowColor;
+                if (rightArrowImage != null) rightArrowImage.color = arrowColor;
+            }
+        }
+
+        public void ConfigureArrows(Vector2 size, float margin = 12f, float slideDistance = 6f)
+        {
+            arrowSize = size;
+            arrowMargin = margin;
+            arrowSlideDistance = slideDistance;
+            if (arrowTransform != null) arrowTransform.sizeDelta = arrowSize;
+            if (rightArrowTransform != null) rightArrowTransform.sizeDelta = arrowSize;
+            CalculateArrowPositions();
+            ApplyInstantIdleState();
+        }
+
         private void Awake()
         {
             InitializeComponents();
@@ -195,7 +228,8 @@ namespace PewPewArena.UI
 
             if (buttonBgImage != null)
             {
-                buttonBgImage.sprite = JoinUISprites.ButtonFill;
+                if (buttonBgImage.sprite == null)
+                    buttonBgImage.sprite = JoinUISprites.ButtonFill;
                 buttonBgImage.type = Image.Type.Sliced;
                 buttonBgImage.color = fillIdleColor;
                 buttonBgImage.raycastTarget = true;
@@ -233,7 +267,8 @@ namespace PewPewArena.UI
             if (buttonBorderImage != null)
             {
                 buttonBorderImage.gameObject.SetActive(true);
-                buttonBorderImage.sprite = JoinUISprites.ButtonFrame;
+                if (buttonBorderImage.sprite == null)
+                    buttonBorderImage.sprite = JoinUISprites.ButtonFrame;
                 buttonBorderImage.type = Image.Type.Sliced;
                 buttonBorderImage.color = borderIdleColor;
                 buttonBorderImage.raycastTarget = false;
