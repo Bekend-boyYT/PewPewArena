@@ -69,6 +69,7 @@ namespace SniperGame.UI
 
         public static bool HostSniper2Allowed = true;
         public static int HostEquippedSniper = 0;
+        public static int LocalEquippedSniper = -1;
 
         private const string SelectedLoadoutKey = "SelectedLoadout";
         public const string LoadoutRequiredMessage = LoadoutRequiredPopup.DefaultPopupMessage;
@@ -86,11 +87,40 @@ namespace SniperGame.UI
             _sessionLoadoutInitialized = false;
             _hasSelectedLoadout = false;
             HostEquippedSniper = 0;
+            LocalEquippedSniper = -1;
+        }
+
+        public static int GetLocalEquippedSniper()
+        {
+            if (LocalEquippedSniper == 0 || LocalEquippedSniper == 1)
+            {
+                return LocalEquippedSniper;
+            }
+
+            if (HostEquippedSniper == 0 || HostEquippedSniper == 1)
+            {
+                LocalEquippedSniper = HostEquippedSniper;
+                return LocalEquippedSniper;
+            }
+
+            if (PlayerPrefs.HasKey(SelectedLoadoutKey))
+            {
+                int saved = PlayerPrefs.GetInt(SelectedLoadoutKey, -1);
+                if (saved == 0 || saved == 1)
+                {
+                    LocalEquippedSniper = saved;
+                    HostEquippedSniper = saved;
+                    return LocalEquippedSniper;
+                }
+            }
+
+            return 0;
         }
 
         public static bool HasValidLoadoutSelected()
         {
             if (!_hasSelectedLoadout) return false;
+            if (LocalEquippedSniper == 0 || LocalEquippedSniper == 1) return true;
             if (!PlayerPrefs.HasKey(SelectedLoadoutKey)) return false;
             int selected = PlayerPrefs.GetInt(SelectedLoadoutKey, -1);
             return selected == 0 || selected == 1;
@@ -100,6 +130,7 @@ namespace SniperGame.UI
         {
             _hasSelectedLoadout = false;
             HostEquippedSniper = 0;
+            LocalEquippedSniper = -1;
             PlayerPrefs.DeleteKey(SelectedLoadoutKey);
             PlayerPrefs.Save();
         }
@@ -134,11 +165,20 @@ namespace SniperGame.UI
             if (!_sessionLoadoutInitialized)
             {
                 _sessionLoadoutInitialized = true;
-                ClearLoadoutSelection();
+                _hasSelectedLoadout = false;
+                LocalEquippedSniper = -1;
+                HostEquippedSniper = 0;
             }
 
             EnsurePersistentBackground();
             AutoFindReferences();
+            if (createScreen != null)
+            {
+                var createTheme = createScreen.GetComponent<CreatePanelTheme>();
+                if (createTheme == null) createTheme = createScreen.AddComponent<CreatePanelTheme>();
+                createTheme.Apply();
+                createTheme.ApplyKomikaFonts();
+            }
             EnsureLoadoutRequiredPopup();
             SetupButtonListeners();
             RefreshLoadoutVisuals();
@@ -692,8 +732,13 @@ namespace SniperGame.UI
             if (_settingsInnerPanel != null && _settingsInnerPanel != _settingsContainer) _settingsInnerPanel.SetActive(isSettings);
             if (settingsPanel != null && settingsPanel != _settingsContainer && settingsPanel != _settingsInnerPanel) settingsPanel.SetActive(isSettings);
 
-            if (screenToShow == createScreen)
+            if (screenToShow == createScreen && createScreen != null)
             {
+                var createTheme = createScreen.GetComponent<CreatePanelTheme>();
+                if (createTheme == null) createTheme = createScreen.AddComponent<CreatePanelTheme>();
+                createTheme.Apply();
+                createTheme.ApplyKomikaFonts();
+
                 RefreshMapSelectionVisuals();
                 RefreshWeaponToggleVisuals();
                 if (createStartButton != null) createStartButton.interactable = true;
@@ -810,9 +855,10 @@ namespace SniperGame.UI
             }
 
             _hasSelectedLoadout = true;
+            LocalEquippedSniper = index;
+            HostEquippedSniper = index;
             PlayerPrefs.SetInt(SelectedLoadoutKey, index);
             PlayerPrefs.Save();
-            HostEquippedSniper = index;
             RefreshLoadoutVisuals(playFeedback: true);
             Debug.Log($"[RelayUI] Selected Sniper loadout: {index + 1}");
         }
@@ -820,8 +866,9 @@ namespace SniperGame.UI
         private void RefreshLoadoutVisuals(bool playFeedback = false)
         {
             bool hasValid = HasValidLoadoutSelected();
-            int selected = hasValid ? PlayerPrefs.GetInt(SelectedLoadoutKey, -1) : -1;
+            int selected = hasValid ? GetLocalEquippedSniper() : -1;
             HostEquippedSniper = hasValid ? selected : 0;
+            LocalEquippedSniper = hasValid ? selected : -1;
 
             if (sniper1Button != null)
             {
@@ -866,7 +913,7 @@ namespace SniperGame.UI
         {
             if (weaponToggleText != null)
             {
-                weaponToggleText.text = HostSniper2Allowed ? "<color=#00FF88>ENABLED</color>" : "<color=#FF4444>DISABLED</color>";
+                weaponToggleText.text = HostSniper2Allowed ? "<color=#00E5FF>ENABLED</color>" : "<color=#FF4444>DISABLED</color>";
             }
         }
 
@@ -1042,13 +1089,14 @@ namespace SniperGame.UI
                 return false;
             }
 
-            int selectedLoadout = PlayerPrefs.GetInt(SelectedLoadoutKey, -1);
+            int selectedLoadout = GetLocalEquippedSniper();
             if (selectedLoadout != 0 && selectedLoadout != 1)
             {
                 ShowLoadoutRequiredPopup();
                 return false;
             }
 
+            LocalEquippedSniper = selectedLoadout;
             HostEquippedSniper = selectedLoadout;
             if (createStatusText != null) createStatusText.text = "Loading scene...";
             if (createStartButton != null) createStartButton.interactable = false;

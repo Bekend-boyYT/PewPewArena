@@ -54,6 +54,8 @@ namespace SniperGame.Gameplay
             NetworkVariableWritePermission.Server
         );
 
+        public bool IsWeaponSwitchingAllowed => IsSniper2Allowed != null && IsSniper2Allowed.Value;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -362,6 +364,7 @@ namespace SniperGame.Gameplay
                     if (weapon != null)
                     {
                         weapon.ResetAmmo();
+                        weapon.OnRoundResetServer();
                     }
                 }
             }

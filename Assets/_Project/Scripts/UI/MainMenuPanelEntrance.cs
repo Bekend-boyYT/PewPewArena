@@ -49,6 +49,12 @@ namespace PewPewArena.UI
                 if (joinTheme == null) joinTheme = gameObject.AddComponent<JoinPanelTheme>();
                 joinTheme.Apply();
             }
+            else if (gameObject.name == "CreateScreen")
+            {
+                var createTheme = GetComponent<CreatePanelTheme>();
+                if (createTheme == null) createTheme = gameObject.AddComponent<CreatePanelTheme>();
+                createTheme.Apply();
+            }
 
             EnsureCanvasGroup();
             CacheElements();

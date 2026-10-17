@@ -6,6 +6,7 @@ using SniperGame.Player;
 using SniperGame.UI;
 using SniperGame.Gameplay;
 using SniperGame.Audio;
+using PewPewArena.UI;
 
 namespace SniperGame.Weapons
 {
@@ -100,6 +101,14 @@ namespace SniperGame.Weapons
             NetworkVariableWritePermission.Owner
         );
 
+        public NetworkVariable<int> InitialLoadoutIndex = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner
+        );
+
+        private bool _subscribedToRoundManager = false;
+
         private int _activeWeaponSlot = 0;
         private int _ammoSlot1 = 5;
         private int _ammoSlot2 = 3;
@@ -132,14 +141,13 @@ namespace SniperGame.Weapons
 
             ResolveWeaponReferences();
 
-            ActiveWeaponIndex.OnValueChanged += (prev, current) =>
-            {
-                ApplyWeaponVisuals(current);
-            };
+            ActiveWeaponIndex.OnValueChanged += HandleActiveWeaponIndexChanged;
+            InitialLoadoutIndex.OnValueChanged += HandleInitialLoadoutIndexChanged;
 
-            if (RoundManager.Instance != null)
+            if (RoundManager.Instance != null && !_subscribedToRoundManager)
             {
                 RoundManager.Instance.IsSniper2Allowed.OnValueChanged += HandleSniper2AllowedChanged;
+                _subscribedToRoundManager = true;
             }
 
             if (!IsOwner)
@@ -149,17 +157,10 @@ namespace SniperGame.Weapons
                 return;
             }
 
-            int startingSlot = 0;
-            if (RoundManager.Instance != null && !RoundManager.Instance.IsSniper2Allowed.Value)
-            {
-                startingSlot = RoundManager.Instance.HostSelectedSniper.Value;
-            }
-            else
-            {
-                startingSlot = PlayerPrefs.GetInt("SelectedLoadout", 0);
-            }
+            int startingSlot = RelayNetworkUI.GetLocalEquippedSniper();
             if (startingSlot != 0 && startingSlot != 1) startingSlot = 0;
 
+            InitialLoadoutIndex.Value = startingSlot;
             ActiveWeaponIndex.Value = startingSlot;
             EquipWeapon(startingSlot);
             ResetAmmo();
@@ -169,9 +170,26 @@ namespace SniperGame.Weapons
         {
             base.OnNetworkDespawn();
 
-            if (RoundManager.Instance != null)
+            ActiveWeaponIndex.OnValueChanged -= HandleActiveWeaponIndexChanged;
+            InitialLoadoutIndex.OnValueChanged -= HandleInitialLoadoutIndexChanged;
+
+            if (RoundManager.Instance != null && _subscribedToRoundManager)
             {
                 RoundManager.Instance.IsSniper2Allowed.OnValueChanged -= HandleSniper2AllowedChanged;
+                _subscribedToRoundManager = false;
+            }
+        }
+
+        private void HandleActiveWeaponIndexChanged(int previous, int current)
+        {
+            ApplyWeaponVisuals(current);
+        }
+
+        private void HandleInitialLoadoutIndexChanged(int previous, int current)
+        {
+            if (!IsOwner && !CanSwitchWeapons())
+            {
+                ApplyWeaponVisuals(ActiveWeaponIndex.Value);
             }
         }
 
@@ -179,13 +197,14 @@ namespace SniperGame.Weapons
         {
             if (!IsOwner) return;
 
-            if (!current && RoundManager.Instance != null)
+            if (!current)
             {
-                int forcedSlot = RoundManager.Instance.HostSelectedSniper.Value;
-                if (ActiveWeaponIndex.Value != forcedSlot)
+                // Weapon switching disabled by host: enforce player's own loadout weapon
+                int ownSlot = InitialLoadoutIndex.Value;
+                if (ActiveWeaponIndex.Value != ownSlot)
                 {
-                    ActiveWeaponIndex.Value = forcedSlot;
-                    EquipWeapon(forcedSlot);
+                    ActiveWeaponIndex.Value = ownSlot;
+                    EquipWeapon(ownSlot);
                 }
             }
         }
@@ -194,7 +213,7 @@ namespace SniperGame.Weapons
         {
             ResolveWeaponReferences();
 
-            int preferredSlot = PlayerPrefs.GetInt("SelectedLoadout", 0);
+            int preferredSlot = RelayNetworkUI.GetLocalEquippedSniper();
             if (preferredSlot != 0 && preferredSlot != 1) preferredSlot = 0;
 
             SetWeaponSlotActive(preferredSlot);
@@ -202,19 +221,25 @@ namespace SniperGame.Weapons
 
         private void Start()
         {
+            if (RoundManager.Instance != null && !_subscribedToRoundManager)
+            {
+                RoundManager.Instance.IsSniper2Allowed.OnValueChanged += HandleSniper2AllowedChanged;
+                _subscribedToRoundManager = true;
+            }
+
             if (IsOwner)
             {
-                if (RoundManager.Instance != null && !RoundManager.Instance.IsSniper2Allowed.Value)
+                if (!CanSwitchWeapons())
                 {
-                    int forcedSlot = RoundManager.Instance.HostSelectedSniper.Value;
-                    if (ActiveWeaponIndex.Value != forcedSlot)
+                    int ownSlot = InitialLoadoutIndex.Value;
+                    if (ActiveWeaponIndex.Value != ownSlot)
                     {
-                        ActiveWeaponIndex.Value = forcedSlot;
-                        EquipWeapon(forcedSlot);
+                        ActiveWeaponIndex.Value = ownSlot;
+                        EquipWeapon(ownSlot);
                     }
                     else
                     {
-                        SetWeaponSlotActive(forcedSlot);
+                        SetWeaponSlotActive(ownSlot);
                     }
                 }
                 else
@@ -289,9 +314,36 @@ namespace SniperGame.Weapons
             if (firePoint == null) firePoint = firePoint1;
         }
 
+        public bool CanSwitchWeapons()
+        {
+            if (RoundManager.Instance != null)
+            {
+                return RoundManager.Instance.IsSniper2Allowed.Value;
+            }
+            return RelayNetworkUI.HostSniper2Allowed;
+        }
+
         public void SwitchWeapon(int newSlot)
         {
-            // In-match weapon switching is disabled. Players spawn strictly with their chosen loadout sniper.
+            if (!IsOwner) return;
+            if (newSlot < 0 || newSlot > 1) return;
+            if (newSlot == ActiveWeaponIndex.Value) return;
+
+            if (!CanSwitchWeapons())
+            {
+                return;
+            }
+
+            if (_isReloading)
+            {
+                if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
+                _isReloading = false;
+            }
+
+            ResetAimingState();
+
+            ActiveWeaponIndex.Value = newSlot;
+            EquipWeapon(newSlot);
         }
 
         private void EquipWeapon(int slot)
@@ -400,6 +452,31 @@ namespace SniperGame.Weapons
             {
                 ResetAimingState();
                 return;
+            }
+
+            if (CanSwitchWeapons())
+            {
+                int targetSlot = -1;
+                bool key1Pressed = (Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame) ||
+                                   Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1);
+                bool key2Pressed = (Keyboard.current != null && Keyboard.current.digit2Key.wasPressedThisFrame) ||
+                                   Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2);
+
+                if (key1Pressed) targetSlot = 0;
+                else if (key2Pressed) targetSlot = 1;
+                else
+                {
+                    float scroll = Input.mouseScrollDelta.y;
+                    if (Mathf.Abs(scroll) > 0.05f)
+                    {
+                        targetSlot = (ActiveWeaponIndex.Value == 0) ? 1 : 0;
+                    }
+                }
+
+                if (targetSlot != -1 && targetSlot != ActiveWeaponIndex.Value)
+                {
+                    SwitchWeapon(targetSlot);
+                }
             }
 
             bool reloadPressed = (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || UI.Settings.KeybindManager.GetKeyDown(UI.Settings.KeyAction.Reload);
@@ -757,6 +834,27 @@ namespace SniperGame.Weapons
             }
         }
 
+        public void OnRoundResetServer()
+        {
+            ResetWeaponForNewRoundClientRpc();
+        }
+
+        [ClientRpc]
+        private void ResetWeaponForNewRoundClientRpc()
+        {
+            ResetAmmoLocal();
+
+            if (IsOwner && !CanSwitchWeapons())
+            {
+                int ownSlot = InitialLoadoutIndex.Value;
+                if (ActiveWeaponIndex.Value != ownSlot)
+                {
+                    ActiveWeaponIndex.Value = ownSlot;
+                    EquipWeapon(ownSlot);
+                }
+            }
+        }
+
         private void UpdateAmmoDisplay()
         {
             if (CombatHUD.Instance != null)
@@ -773,6 +871,11 @@ namespace SniperGame.Weapons
             int weaponSlot,
             ServerRpcParams serverRpcParams = default)
         {
+            if (RoundManager.Instance != null && !RoundManager.Instance.IsSniper2Allowed.Value)
+            {
+                weaponSlot = InitialLoadoutIndex.Value;
+            }
+
             direction.Normalize();
 
             Vector3 hitPoint = origin + direction * range;
