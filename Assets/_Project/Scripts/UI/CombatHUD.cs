@@ -77,6 +77,7 @@ namespace SniperGame.UI
         [SerializeField] private TextMeshProUGUI enemyScoreGlowText;
         [SerializeField] private TextMeshProUGUI roundBannerText;
         [SerializeField] private TextMeshProUGUI timerText;
+        [SerializeField] private TextMeshProUGUI timerGlowText;
         [SerializeField] private TextMeshProUGUI announcementText;
         [SerializeField] private GameObject matchEndPanel;
         [SerializeField] private TextMeshProUGUI matchEndTitle;
@@ -501,9 +502,26 @@ public void SetScopeActive(bool isScoped)
 
             int minutes = Mathf.FloorToInt(timeRemaining / 60f);
             int seconds = Mathf.FloorToInt(timeRemaining % 60f);
+            string timeStr = $"{minutes:00}:{seconds:00}";
 
-            timerText.text = $"{minutes:00}:{seconds:00}";
-            timerText.color = (timeRemaining <= 10f) ? new Color(1f, 0.25f, 0.25f) : Color.white;
+            bool isWarning = timeRemaining <= 10f;
+            Color normalColor = new Color(0.88f, 0.98f, 1f, 1f);
+            Color warningColor = new Color(1f, 0.28f, 0.28f, 1f);
+
+            timerText.text = timeStr;
+            timerText.color = isWarning ? warningColor : normalColor;
+
+            if (timerGlowText == null)
+            {
+                Transform glowT = timerText.transform.parent != null ? timerText.transform.parent.Find("TimerValueGlow") : null;
+                if (glowT != null) timerGlowText = glowT.GetComponent<TextMeshProUGUI>();
+            }
+
+            if (timerGlowText != null)
+            {
+                timerGlowText.text = timeStr;
+                timerGlowText.color = isWarning ? new Color(1f, 0.2f, 0.2f, 0.28f) : new Color(0.25f, 0.95f, 1f, 0.26f);
+            }
         }
 
         public void ShowMatchEndScreen(bool isWinner)
