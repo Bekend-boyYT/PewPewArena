@@ -68,6 +68,11 @@ namespace SniperGame.UI
 
         [Header("Ammo UI Elements")]
         [SerializeField] private TextMeshProUGUI ammoText;
+        [SerializeField] private TextMeshProUGUI ammoGlowText;
+        [SerializeField] private TextMeshProUGUI ammoMagLabel;
+        [SerializeField] private TextMeshProUGUI ammoSubLabel;
+        [SerializeField] private Image[] ammoBulletIcons;
+        [SerializeField] private GameObject ammoRoot;
 
         [Header("Match & Round UI")]
         [SerializeField] private TextMeshProUGUI scoreText;
@@ -122,7 +127,9 @@ namespace SniperGame.UI
             if (hudContainer != null && !hudContainer.activeSelf) hudContainer.SetActive(true);
             if (healthSlider != null && !healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
             if (staminaSlider != null && !staminaSlider.gameObject.activeSelf) staminaSlider.gameObject.SetActive(true);
-            if (ammoText != null && !ammoText.gameObject.activeSelf) ammoText.gameObject.SetActive(true);
+            ResolveAmmoElements();
+            if (ammoRoot != null && !ammoRoot.activeSelf) ammoRoot.SetActive(true);
+            else if (ammoText != null && !ammoText.gameObject.activeSelf) ammoText.gameObject.SetActive(true);
             if (scoreText != null && !scoreText.gameObject.activeSelf) scoreText.gameObject.SetActive(true);
             ResolveScoreboardElements();
             if (timerText != null && !timerText.gameObject.activeSelf) timerText.gameObject.SetActive(true);
@@ -574,18 +581,120 @@ public void SetScopeActive(bool isScoped)
             if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = 1f;
         }
 
+        private void ResolveAmmoElements()
+        {
+            if (ammoRoot == null)
+            {
+                if (ammoText != null)
+                {
+                    if (ammoText.transform.parent != null && ammoText.transform.parent.name.Contains("Ammo"))
+                        ammoRoot = ammoText.transform.parent.gameObject;
+                    else
+                        ammoRoot = ammoText.gameObject;
+                }
+            }
+
+            if (ammoRoot != null)
+            {
+                if (ammoGlowText == null)
+                {
+                    Transform t = ammoRoot.transform.Find("AmmoValueGlow");
+                    if (t != null) ammoGlowText = t.GetComponent<TextMeshProUGUI>();
+                }
+                if (ammoMagLabel == null)
+                {
+                    Transform t = ammoRoot.transform.Find("AmmoMagLabel");
+                    if (t != null) ammoMagLabel = t.GetComponent<TextMeshProUGUI>();
+                }
+                if (ammoSubLabel == null)
+                {
+                    Transform t = ammoRoot.transform.Find("AmmoSubLabel");
+                    if (t != null) ammoSubLabel = t.GetComponent<TextMeshProUGUI>();
+                }
+                if (ammoBulletIcons == null || ammoBulletIcons.Length == 0)
+                {
+                    Transform row = ammoRoot.transform.Find("BulletsRow");
+                    if (row != null)
+                    {
+                        ammoBulletIcons = row.GetComponentsInChildren<Image>(true);
+                    }
+                }
+            }
+        }
+
         public void UpdateAmmo(int currentClip, int maxClip, bool isReloading)
         {
-            if (ammoText == null) return;
+            ResolveAmmoElements();
+
+            if (ammoText == null && ammoRoot == null) return;
+
+            string formattedValue;
+            Color textColor;
+            Color glowColor;
 
             if (isReloading)
             {
-                ammoText.text = "<color=#FFCC00>RELOADING...</color>";
+                formattedValue = "RELOAD";
+                textColor = new Color(1f, 0.82f, 0.2f, 1f); // Vibrant amber
+                glowColor = new Color(1f, 0.75f, 0.15f, 0.35f);
             }
             else
             {
-                string ammoColor = (currentClip == 0) ? "<color=#FF3333>" : "<color=#FFFFFF>";
-                ammoText.text = $"{ammoColor}{currentClip}</color> / {maxClip}";
+                if (currentClip == 0)
+                {
+                    textColor = new Color(1f, 0.25f, 0.25f, 1f); // Alert red
+                    glowColor = new Color(1f, 0.2f, 0.2f, 0.38f);
+                }
+                else
+                {
+                    textColor = new Color(0.2f, 0.98f, 0.92f, 1f); // Sci-fi cyan
+                    glowColor = new Color(0.1f, 0.9f, 0.85f, 0.35f);
+                }
+                formattedValue = $"{currentClip:D2} / {maxClip:D2}";
+            }
+
+            if (ammoText != null)
+            {
+                ammoText.text = formattedValue;
+                ammoText.color = textColor;
+            }
+
+            if (ammoGlowText != null)
+            {
+                ammoGlowText.text = formattedValue;
+                ammoGlowText.color = glowColor;
+            }
+
+            if (ammoBulletIcons != null && ammoBulletIcons.Length > 0)
+            {
+                Color loadedBullet = new Color(0.15f, 1f, 0.88f, 1f); // Glowing cyan
+                Color spentBullet = new Color(0.12f, 0.42f, 0.45f, 0.22f); // Translucent empty
+                Color reloadingBullet = new Color(1f, 0.82f, 0.2f, 0.45f); // Amber pulse
+
+                for (int i = 0; i < ammoBulletIcons.Length; i++)
+                {
+                    if (ammoBulletIcons[i] == null) continue;
+
+                    if (i < maxClip)
+                    {
+                        if (!ammoBulletIcons[i].gameObject.activeSelf)
+                            ammoBulletIcons[i].gameObject.SetActive(true);
+
+                        if (isReloading)
+                        {
+                            ammoBulletIcons[i].color = reloadingBullet;
+                        }
+                        else
+                        {
+                            ammoBulletIcons[i].color = (i < currentClip) ? loadedBullet : spentBullet;
+                        }
+                    }
+                    else
+                    {
+                        if (ammoBulletIcons[i].gameObject.activeSelf)
+                            ammoBulletIcons[i].gameObject.SetActive(false);
+                    }
+                }
             }
         }
 
