@@ -79,6 +79,10 @@ namespace SniperGame.UI
         [SerializeField] private TextMeshProUGUI timerText;
         [SerializeField] private TextMeshProUGUI timerGlowText;
         [SerializeField] private TextMeshProUGUI announcementText;
+        [SerializeField] private TextMeshProUGUI announcementGlowText;
+        [SerializeField] private TextMeshProUGUI announcementSubText;
+        [SerializeField] private CanvasGroup announcementCanvasGroup;
+        [SerializeField] private GameObject announcementRoot;
         [SerializeField] private GameObject matchEndPanel;
         [SerializeField] private TextMeshProUGUI matchEndTitle;
         [SerializeField] private Button restartButton;
@@ -140,8 +144,9 @@ namespace SniperGame.UI
                     hipCrosshair.SetActive(show);
                 }
             };
-            if (cooldownBarRoot != null) cooldownBarRoot.SetActive(false);
-            if (announcementText != null) announcementText.gameObject.SetActive(false);
+            ResolveAnnouncementElements();
+            if (announcementRoot != null) announcementRoot.SetActive(false);
+            else if (announcementText != null) announcementText.gameObject.SetActive(false);
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
             if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
             if (rematchStatusText != null) rematchStatusText.text = "";
@@ -393,22 +398,180 @@ public void SetScopeActive(bool isScoped)
             damageVignetteGroup.alpha = 0f;
         }
 
+        private void ResolveAnnouncementElements()
+        {
+            if (announcementRoot == null && announcementText != null)
+            {
+                announcementRoot = announcementText.gameObject;
+            }
+
+            if (announcementRoot != null)
+            {
+                if (announcementCanvasGroup == null)
+                    announcementCanvasGroup = announcementRoot.GetComponent<CanvasGroup>();
+
+                if (announcementSubText == null)
+                {
+                    Transform t = announcementRoot.transform.Find("AnnouncementSubText");
+                    if (t != null) announcementSubText = t.GetComponent<TextMeshProUGUI>();
+                }
+
+                if (announcementGlowText == null)
+                {
+                    Transform t = announcementRoot.transform.Find("AnnouncementGlow");
+                    if (t != null) announcementGlowText = t.GetComponent<TextMeshProUGUI>();
+                }
+            }
+        }
+
         public void ShowAnnouncement(string text, Color color, float duration)
         {
-            if (announcementText == null) return;
+            ResolveAnnouncementElements();
+            if (announcementText == null && announcementRoot == null) return;
             if (_announcementCoroutine != null) StopCoroutine(_announcementCoroutine);
             _announcementCoroutine = StartCoroutine(AnnouncementRoutine(text, color, duration));
         }
 
         private IEnumerator AnnouncementRoutine(string text, Color color, float duration)
         {
-            announcementText.text = text;
-            announcementText.color = color;
-            announcementText.gameObject.SetActive(true);
+            ResolveAnnouncementElements();
 
-            yield return new WaitForSeconds(duration);
+            string clean = string.IsNullOrEmpty(text) ? string.Empty : text.Trim();
+            string sub = "[ MATCH NOTICE ]";
+            Color mainColor = color;
+            Color glowColor = color;
+            float targetFontSize = 54f;
 
-            announcementText.gameObject.SetActive(false);
+            if (clean == "3")
+            {
+                sub = "[ PREPARE ]";
+                mainColor = new Color(0.2f, 0.95f, 1f); // Vibrant cyber-cyan
+                glowColor = new Color(0.1f, 0.9f, 1f, 0.38f);
+                targetFontSize = 76f;
+            }
+            else if (clean == "2")
+            {
+                sub = "[ READY ]";
+                mainColor = new Color(1f, 0.82f, 0.2f); // Vibrant amber/gold
+                glowColor = new Color(1f, 0.75f, 0.15f, 0.38f);
+                targetFontSize = 76f;
+            }
+            else if (clean == "1")
+            {
+                sub = "[ STEADY ]";
+                mainColor = new Color(1f, 0.45f, 0.18f); // Alert orange
+                glowColor = new Color(1f, 0.38f, 0.15f, 0.38f);
+                targetFontSize = 76f;
+            }
+            else if (clean.StartsWith("GO", System.StringComparison.OrdinalIgnoreCase))
+            {
+                clean = "GO!";
+                sub = "[ ENGAGE TARGETS ]";
+                mainColor = new Color(0.15f, 1f, 0.52f); // Neon green
+                glowColor = new Color(0.12f, 1f, 0.48f, 0.42f);
+                targetFontSize = 80f;
+            }
+            else if (clean.Contains("WON"))
+            {
+                sub = "[ ROUND VICTORY ]";
+                mainColor = new Color(0.15f, 1f, 0.52f);
+                glowColor = new Color(0.12f, 1f, 0.48f, 0.38f);
+                targetFontSize = 54f;
+            }
+            else if (clean.Contains("LOST"))
+            {
+                sub = "[ ROUND DEFEAT ]";
+                mainColor = new Color(1f, 0.24f, 0.24f);
+                glowColor = new Color(1f, 0.18f, 0.18f, 0.38f);
+                targetFontSize = 54f;
+            }
+            else if (clean.Contains("TIME"))
+            {
+                sub = "[ ROUND TERMINATED ]";
+                mainColor = new Color(1f, 0.78f, 0.2f);
+                glowColor = new Color(1f, 0.7f, 0.15f, 0.38f);
+                targetFontSize = 54f;
+            }
+            else if (clean.Contains("INTERMISSION"))
+            {
+                sub = "[ SYSTEM RECHARGING ]";
+                mainColor = new Color(0.35f, 0.9f, 1f);
+                glowColor = new Color(0.3f, 0.85f, 1f, 0.38f);
+                targetFontSize = 48f;
+            }
+            else
+            {
+                glowColor = new Color(color.r, color.g, color.b, 0.35f);
+            }
+
+            if (announcementText != null)
+            {
+                announcementText.text = clean;
+                announcementText.color = mainColor;
+                announcementText.fontSize = targetFontSize;
+            }
+
+            if (announcementGlowText != null)
+            {
+                announcementGlowText.text = clean;
+                announcementGlowText.color = glowColor;
+                announcementGlowText.fontSize = targetFontSize + 3f;
+            }
+
+            if (announcementSubText != null)
+            {
+                announcementSubText.text = sub;
+                announcementSubText.color = new Color(0.35f, 0.95f, 1f, 0.92f);
+                announcementSubText.fontSize = 16f;
+            }
+
+            GameObject targetRoot = announcementRoot != null ? announcementRoot : (announcementText != null ? announcementText.gameObject : null);
+            if (targetRoot == null) yield break;
+
+            Transform rootT = targetRoot.transform;
+            if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = 0f;
+            rootT.localScale = Vector3.one * 1.35f;
+            targetRoot.SetActive(true);
+
+            float punchInDuration = Mathf.Min(0.14f, duration * 0.28f);
+            float fadeOutDuration = Mathf.Min(0.18f, duration * 0.32f);
+            float holdDuration = Mathf.Max(0f, duration - punchInDuration - fadeOutDuration);
+
+            // Punch In: scale 1.35 -> 1.0, alpha 0 -> 1
+            float elapsed = 0f;
+            while (elapsed < punchInDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / punchInDuration);
+                float easeOut = Mathf.Sin(t * Mathf.PI * 0.5f);
+                rootT.localScale = Vector3.LerpUnclamped(Vector3.one * 1.35f, Vector3.one, easeOut);
+                if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = easeOut;
+                yield return null;
+            }
+
+            rootT.localScale = Vector3.one;
+            if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = 1f;
+
+            // Hold
+            if (holdDuration > 0f)
+            {
+                yield return new WaitForSecondsRealtime(holdDuration);
+            }
+
+            // Fade Out: scale 1.0 -> 1.08, alpha 1 -> 0
+            elapsed = 0f;
+            while (elapsed < fadeOutDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / fadeOutDuration);
+                rootT.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 1.08f, t);
+                if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = 1f - t;
+                yield return null;
+            }
+
+            targetRoot.SetActive(false);
+            rootT.localScale = Vector3.one;
+            if (announcementCanvasGroup != null) announcementCanvasGroup.alpha = 1f;
         }
 
         public void UpdateAmmo(int currentClip, int maxClip, bool isReloading)
