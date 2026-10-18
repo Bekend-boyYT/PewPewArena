@@ -71,6 +71,11 @@ namespace SniperGame.UI
 
         [Header("Match & Round UI")]
         [SerializeField] private TextMeshProUGUI scoreText;
+        [SerializeField] private TextMeshProUGUI youScoreText;
+        [SerializeField] private TextMeshProUGUI youScoreGlowText;
+        [SerializeField] private TextMeshProUGUI enemyScoreText;
+        [SerializeField] private TextMeshProUGUI enemyScoreGlowText;
+        [SerializeField] private TextMeshProUGUI roundBannerText;
         [SerializeField] private TextMeshProUGUI timerText;
         [SerializeField] private TextMeshProUGUI announcementText;
         [SerializeField] private GameObject matchEndPanel;
@@ -114,6 +119,7 @@ namespace SniperGame.UI
             if (staminaSlider != null && !staminaSlider.gameObject.activeSelf) staminaSlider.gameObject.SetActive(true);
             if (ammoText != null && !ammoText.gameObject.activeSelf) ammoText.gameObject.SetActive(true);
             if (scoreText != null && !scoreText.gameObject.activeSelf) scoreText.gameObject.SetActive(true);
+            ResolveScoreboardElements();
             if (timerText != null && !timerText.gameObject.activeSelf) timerText.gameObject.SetActive(true);
             if (damageVignetteGroup != null && !damageVignetteGroup.gameObject.activeSelf) damageVignetteGroup.gameObject.SetActive(true);
 
@@ -428,6 +434,41 @@ public void SetScopeActive(bool isScoped)
             }
         }
 
+        private void ResolveScoreboardElements()
+        {
+            if (scoreText == null) return;
+            Transform root = scoreText.transform;
+            if (youScoreText == null)
+            {
+                Transform t = root.Find("YouScoreText");
+                if (t != null) youScoreText = t.GetComponent<TextMeshProUGUI>();
+            }
+            if (youScoreGlowText == null)
+            {
+                Transform t = root.Find("YouScoreGlow");
+                if (t != null) youScoreGlowText = t.GetComponent<TextMeshProUGUI>();
+            }
+            if (enemyScoreText == null)
+            {
+                Transform t = root.Find("EnemyScoreText");
+                if (t != null) enemyScoreText = t.GetComponent<TextMeshProUGUI>();
+            }
+            if (enemyScoreGlowText == null)
+            {
+                Transform t = root.Find("EnemyScoreGlow");
+                if (t != null) enemyScoreGlowText = t.GetComponent<TextMeshProUGUI>();
+            }
+            if (roundBannerText == null)
+            {
+                Transform t = root.Find("RoundText");
+                if (t != null) roundBannerText = t.GetComponent<TextMeshProUGUI>();
+            }
+            if (youScoreText != null || roundBannerText != null || enemyScoreText != null)
+            {
+                scoreText.text = string.Empty;
+            }
+        }
+
         public void UpdateMatchScore(int hostScore, int clientScore, int currentRound)
         {
             if (scoreText == null) return;
@@ -435,6 +476,21 @@ public void SetScopeActive(bool isScoped)
             bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
             int myScore = isHost ? hostScore : clientScore;
             int enemyScore = isHost ? clientScore : hostScore;
+
+            ResolveScoreboardElements();
+
+            if (youScoreText != null || roundBannerText != null || enemyScoreText != null)
+            {
+                scoreText.text = string.Empty;
+                string myStr = myScore.ToString();
+                string enemyStr = enemyScore.ToString();
+                if (youScoreText != null) youScoreText.text = myStr;
+                if (youScoreGlowText != null) youScoreGlowText.text = myStr;
+                if (enemyScoreText != null) enemyScoreText.text = enemyStr;
+                if (enemyScoreGlowText != null) enemyScoreGlowText.text = enemyStr;
+                if (roundBannerText != null) roundBannerText.text = $"ROUND {currentRound}";
+                return;
+            }
 
             scoreText.text = $"ROUND {currentRound}  |  <color=#00FF66>YOU: {myScore}</color> - <color=#FF4444>ENEMY: {enemyScore}</color>";
         }
