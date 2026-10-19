@@ -358,7 +358,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8b58659b538726e41a636d5e24da5103, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -508,7 +508,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8b58659b538726e41a636d5e24da5103, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -672,7 +672,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8b58659b538726e41a636d5e24da5103, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1198,7 +1198,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8b58659b538726e41a636d5e24da5103, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1662,7 +1662,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1594748115747365367, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1605633144415515444, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_Name
@@ -1747,7 +1747,7 @@ PrefabInstance:
     - target: {fileID: 3951769746388613449, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 0c7130bd77558754f809b2b061ccf4fe, type: 3}
+      objectReference: {fileID: 21300000, guid: 8b58659b538726e41a636d5e24da5103, type: 3}
     - target: {fileID: 3977389076047406290, guid: 1530047c5aa60a74d9ca541abd078655, type: 3}
       propertyPath: m_fontAsset
       value: 
