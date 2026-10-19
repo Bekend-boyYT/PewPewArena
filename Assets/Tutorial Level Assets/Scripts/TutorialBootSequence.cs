@@ -595,7 +595,6 @@ public class TutorialBootSequence : MonoBehaviour
         CreateCodeColumns(0.38f, 18, 0.8f, 1.15f, 0.52f);
         CreateCodeColumns(0.7f, 12, 1.2f, 1.6f, 0.36f);
         CreateRevealCells();
-        SetRevealCellsVisible(false);
         codeVisionRoot.SetActive(false);
     }
 
