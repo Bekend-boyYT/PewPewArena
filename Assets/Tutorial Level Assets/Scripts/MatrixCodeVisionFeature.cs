@@ -10,7 +10,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
 {
     [SerializeField] private Shader matrixShader;
     [SerializeField] private LayerMask entityLayerMask = 1 << 8;
-    [SerializeField, Range(0.1f, 1f)] private float rainDensity = 0.34f;
+    [SerializeField, Range(0.1f, 2.5f)] private float rainDensity = 0.9f;
     [SerializeField, Min(0.1f)] private float nodeDensity = 7.5f;
     [SerializeField, Min(0f)] private float entityBoost = 1f;
 
