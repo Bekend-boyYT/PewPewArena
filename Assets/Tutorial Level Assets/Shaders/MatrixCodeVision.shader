@@ -93,18 +93,22 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
             float GeometryEdge(float2 uv, float centerDepth, float3 centerNormal)
             {
                 float2 texel = _ScreenSize.zw * 1.5;
-                float depthX = LinearEyeDepth(SampleSceneDepth(uv + float2(texel.x, 0)), _ZBufferParams);
-                float depthY = LinearEyeDepth(SampleSceneDepth(uv + float2(0, texel.y)), _ZBufferParams);
                 float eyeDepth = LinearEyeDepth(centerDepth, _ZBufferParams);
-                float depthEdge = max(abs(depthX - eyeDepth), abs(depthY - eyeDepth)) / max(eyeDepth, 0.1);
+                float depthLeft = LinearEyeDepth(SampleSceneDepth(uv - float2(texel.x, 0)), _ZBufferParams);
+                float depthRight = LinearEyeDepth(SampleSceneDepth(uv + float2(texel.x, 0)), _ZBufferParams);
+                float depthDown = LinearEyeDepth(SampleSceneDepth(uv - float2(0, texel.y)), _ZBufferParams);
+                float depthUp = LinearEyeDepth(SampleSceneDepth(uv + float2(0, texel.y)), _ZBufferParams);
+                float depthEdge = max(max(abs(depthLeft - eyeDepth), abs(depthRight - eyeDepth)), max(abs(depthDown - eyeDepth), abs(depthUp - eyeDepth))) / max(eyeDepth, 0.1);
                 float normalEdge = 0.0;
                 if (_MatrixHasNormals > 0.5)
                 {
-                    float3 normalX = SampleSceneNormals(uv + float2(texel.x, 0));
-                    float3 normalY = SampleSceneNormals(uv + float2(0, texel.y));
-                    normalEdge = max(length(normalX - centerNormal), length(normalY - centerNormal));
+                    float3 normalLeft = SampleSceneNormals(uv - float2(texel.x, 0));
+                    float3 normalRight = SampleSceneNormals(uv + float2(texel.x, 0));
+                    float3 normalDown = SampleSceneNormals(uv - float2(0, texel.y));
+                    float3 normalUp = SampleSceneNormals(uv + float2(0, texel.y));
+                    normalEdge = max(max(length(normalLeft - centerNormal), length(normalRight - centerNormal)), max(length(normalDown - centerNormal), length(normalUp - centerNormal)));
                 }
-                return saturate(depthEdge * 18.0 + normalEdge * 1.5);
+                return saturate(depthEdge * 24.0 + normalEdge * 2.2);
             }
 
             float4 Frag(Varyings input) : SV_Target
@@ -123,10 +127,7 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 #else
                     bool sky = rawDepth >= 0.99999;
                 #endif
-                float3 sceneSignal = scene.rgb * float3(0.06, 0.16, 0.08);
-                float screenRain = RainProjection(uv * float2(72.0, 36.0), 12.1, 1.0);
-                float3 matrixBase = float3(0.004, 0.018, 0.008);
-                if (sky) return float4(sceneSignal + matrixBase + float3(0.42, 1.0, 0.54) * screenRain * 1.8, 1.0);
+                if (sky) return float4(0.0, 0.0, 0.0, 1.0);
 
                 float deviceDepth = rawDepth;
                 #if !UNITY_REVERSED_Z
@@ -136,17 +137,24 @@ Shader "Hidden/PewPewArena/MatrixCodeVision"
                 float3 normalWS = _MatrixHasNormals > 0.5
                     ? normalize(SampleSceneNormals(uv))
                     : normalize(cross(ddx(worldPosition), ddy(worldPosition)));
-                float rain = max(WorldRain(worldPosition, normalWS), screenRain * 0.3);
+                float rain = WorldRain(worldPosition, normalWS);
                 float edge = GeometryEdge(uv, rawDepth, normalWS);
+                float edgeRain = WorldRain(worldPosition * 2.2, normalWS);
                 float3 nodeCell = floor(worldPosition * _MatrixNodeDensity);
                 float nodeHash = Hash21(nodeCell);
-                float node = step(0.992, nodeHash) * exp(-length(frac(worldPosition * _MatrixNodeDensity) - 0.5) * 9.0);
-                float entityCode = saturate(entity) * _MatrixEntityBoost;
-                float worldCode = step(0.82, Hash21(floor(worldPosition * 11.0))) * 0.22;
-                float emission = rain * 2.2 + edge * 1.5 + node * 5.0 + worldCode + entityCode * 6.5;
-                float3 green = float3(0.42, 1.0, 0.54) * emission;
-                float3 whiteGreen = float3(1.8, 2.5, 1.9) * saturate(node * 0.8 + entityCode);
-                return float4(sceneSignal + matrixBase + green + whiteGreen, 1.0);
+                float nodeCore = step(0.996, nodeHash) * exp(-length(frac(worldPosition * _MatrixNodeDensity) - 0.5) * 12.0);
+                float edgeNode = step(0.986, Hash21(floor(worldPosition * (_MatrixNodeDensity * 1.7)))) * edge * exp(-length(frac(worldPosition * (_MatrixNodeDensity * 1.7)) - 0.5) * 14.0);
+                float node = max(nodeCore, edgeNode);
+                float entityMask = saturate(entity) * _MatrixEntityBoost;
+                float entityRain = WorldRain(worldPosition * 3.0, normalWS);
+                float worldCode = step(0.9, Hash21(floor(worldPosition * 11.0))) * 0.2;
+                float contourRain = edge * edgeRain;
+                float emission = rain * (1.8 + edge * 1.8) + edge * 2.2 + contourRain * 2.0 + node * 7.0 + worldCode;
+                float3 green = float3(0.12, 1.0, 0.28) * emission;
+                float3 whiteGreen = float3(2.0, 2.8, 2.2) * node;
+                float3 entitySilhouette = float3(2.1, 2.8, 2.3) * entityMask * (0.9 + entityRain * 0.8);
+                float3 entityGlyphs = float3(0.12, 1.0, 0.28) * entityMask * entityRain * 3.0;
+                return float4(green + whiteGreen + entitySilhouette + entityGlyphs, 1.0);
             }
             ENDHLSL
         }

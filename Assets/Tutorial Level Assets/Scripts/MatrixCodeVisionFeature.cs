@@ -10,7 +10,7 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
 {
     [SerializeField] private Shader matrixShader;
     [SerializeField] private LayerMask entityLayerMask = 1 << 8;
-    [SerializeField, Range(0.1f, 1f)] private float rainDensity = 0.34f;
+    [SerializeField, Range(0.1f, 2.5f)] private float rainDensity = 0.9f;
     [SerializeField, Min(0.1f)] private float nodeDensity = 7.5f;
     [SerializeField, Min(0f)] private float entityBoost = 1f;
 
@@ -146,21 +146,22 @@ public sealed class MatrixCodeVisionFeature : ScriptableRendererFeature
             UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
             UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
             UniversalLightData lightData = frameData.Get<UniversalLightData>();
-            if (!resources.activeColorTexture.IsValid() || !resources.activeDepthTexture.IsValid()) return;
+            if (!resources.cameraColor.IsValid() || !resources.activeColorTexture.IsValid() || !resources.activeDepthTexture.IsValid()) return;
             TextureHandle depthTexture = resources.cameraDepthTexture.IsValid() ? resources.cameraDepthTexture : resources.activeDepthTexture;
             bool hasNormals = resources.cameraNormalsTexture.IsValid();
 
-            TextureDesc colorDescriptor = renderGraph.GetTextureDesc(resources.activeColorTexture);
+            TextureDesc colorDescriptor = renderGraph.GetTextureDesc(resources.cameraColor);
             colorDescriptor.name = "Matrix Code Vision Source";
             colorDescriptor.depthBufferBits = DepthBits.None;
             colorDescriptor.msaaSamples = MSAASamples.None;
             colorDescriptor.clearBuffer = false;
             TextureHandle sourceColor = renderGraph.CreateTexture(colorDescriptor);
-            renderGraph.AddCopyPass(resources.activeColorTexture, sourceColor, "Copy Matrix Vision Source");
+            renderGraph.AddBlitPass(resources.cameraColor, sourceColor, Vector2.one, Vector2.zero, passName: "Copy Matrix Vision Source");
 
             TextureDesc maskDescriptor = colorDescriptor;
             maskDescriptor.name = "Matrix Entity Mask";
             maskDescriptor.colorFormat = GraphicsFormat.R8_UNorm;
+            maskDescriptor.msaaSamples = renderGraph.GetTextureDesc(resources.activeDepthTexture).msaaSamples;
             maskDescriptor.clearBuffer = true;
             maskDescriptor.clearColor = Color.clear;
             TextureHandle entityMask = renderGraph.CreateTexture(maskDescriptor);

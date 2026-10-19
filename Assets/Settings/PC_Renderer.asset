@@ -73,9 +73,9 @@ MonoBehaviour:
   entityLayerMask:
     serializedVersion: 2
     m_Bits: 256
-  rainDensity: 0.34
+  rainDensity: 0.9
   nodeDensity: 7.5
-  entityBoost: 1
+  entityBoost: 1.35
 --- !u!114 &7833122117494664109
 MonoBehaviour:
   m_ObjectHideFlags: 1
