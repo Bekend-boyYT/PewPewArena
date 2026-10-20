@@ -673,6 +673,7 @@ namespace SniperGame.UI
                     string goName = img.gameObject.name;
                     if (sName.IndexOf("Backround", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                         sName.IndexOf("Screenshot", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        sName.IndexOf("High", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                         goName.IndexOf("Backround", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                         goName.IndexOf("Background", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     {
