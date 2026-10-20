@@ -49,7 +49,7 @@ public class ShootingCubeSpawner : MonoBehaviour
         if (playerCamera == null) return;
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, maxShootDistance, ~0, QueryTriggerInteraction.Ignore)) return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, maxShootDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
         if (hit.transform != cube) return;
 
         Destroy(cube.gameObject);

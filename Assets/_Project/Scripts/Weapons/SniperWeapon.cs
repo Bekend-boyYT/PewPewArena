@@ -784,7 +784,7 @@ namespace SniperGame.Weapons
             Vector3 predictedNormal = -direction;
             bool predictedCharHit = false;
 
-            RaycastHit[] localHits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
+            RaycastHit[] localHits = Physics.RaycastAll(origin, direction, range, hitMask & Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
             System.Array.Sort(localHits, (a, b) => a.distance.CompareTo(b.distance));
             foreach (var hit in localHits)
             {
@@ -928,7 +928,7 @@ namespace SniperGame.Weapons
             Vector3 hitNormal = -direction;
             bool isCharacterHit = false;
 
-            RaycastHit[] hits = Physics.RaycastAll(origin, direction, range, hitMask, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.RaycastAll(origin, direction, range, hitMask & Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             foreach (var hit in hits)
