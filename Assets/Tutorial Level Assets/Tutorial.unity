@@ -769980,7 +769980,7 @@ GameObject:
   - component: {fileID: 1661802078}
   - component: {fileID: 1661802077}
   - component: {fileID: 1661802076}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: ShootTroughWall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
