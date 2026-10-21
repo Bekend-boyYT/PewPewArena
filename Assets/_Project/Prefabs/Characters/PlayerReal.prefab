@@ -311,6 +311,7 @@ GameObject:
   - component: {fileID: 1929936526607197833}
   - component: {fileID: 6758972497625613032}
   - component: {fileID: 9102837465019283741}
+  - component: {fileID: 8291048271039485721}
   m_Layer: 0
   m_Name: PlayerReal
   m_TagString: Untagged
@@ -353,7 +354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3759555964
+  GlobalObjectIdHash: 1134403843
   InScenePlacedSourceGlobalObjectIdHash: 3759555964
   DeferredDespawnTick: 0
   Ownership: 1
@@ -399,6 +400,7 @@ MonoBehaviour:
   soundPlayer: {fileID: 1930027797558389159}
   cameraTransform: {fileID: 6304926110293085849}
   visualsRoot: {fileID: 0}
+  playerAnimationDriver: {fileID: 8291048271039485721}
   baseFOV: 80
   lookSensitivity: 2
   lookXLimit: 85
@@ -509,6 +511,7 @@ MonoBehaviour:
     m_InternalValue: 100
   visualsRoot: {fileID: 0}
   playerMovement: {fileID: 7206338747347228105}
+  playerAnimationDriver: {fileID: 8291048271039485721}
 --- !u!114 &5542764710180273911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -845,6 +848,27 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0.1}
+--- !u!114 &9102837465019283741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6795404076253420896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7236981d644eccbf18fc1709d6e140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.CharacterVisibility
+  enableCharacterLight: 1
+  lightColor: {r: 1, g: 0.98, b: 0.95, a: 1}
+  lightIntensity: 1.35
+  lightRange: 3.5
+  lightOffset: {x: 0, y: 1.35, z: 0.35}
+  outlineMaterial: {fileID: 2100000, guid: 69e5413beba3422bb87c85c47780ad45, type: 2}
+  enemyOutlineColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  outlineWidth: 2
+  visualsRoot: {fileID: 0}
 --- !u!1 &6998575843586527320
 GameObject:
   m_ObjectHideFlags: 0
@@ -1462,7 +1486,7 @@ Transform:
   m_PrefabInstance: {fileID: 8196545655820487216}
   m_PrefabAsset: {fileID: 0}
 
---- !u!114 &9102837465019283741
+--- !u!114 &8291048271039485721
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1471,15 +1495,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 6795404076253420896}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7236981d644eccbf18fc1709d6e140, type: 3}
+  m_Script: {fileID: 11500000, guid: 074661ba540842fa9de4a50022428cab, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.CharacterVisibility
-  enableCharacterLight: 1
-  lightColor: {r: 1, g: 0.98, b: 0.95, a: 1}
-  lightIntensity: 1.35
-  lightRange: 3.5
-  lightOffset: {x: 0, y: 1.35, z: 0.35}
-  outlineMaterial: {fileID: 2100000, guid: 69e5413beba3422bb87c85c47780ad45, type: 2}
-  enemyOutlineColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  outlineWidth: 2
-  visualsRoot: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::SniperGame.Player.PlayerAnimationDriver
+  soldierAnimator: {fileID: 0}
+  playerMovement: {fileID: 7206338747347228105}
+  playerHealth: {fileID: 3846762729415087274}

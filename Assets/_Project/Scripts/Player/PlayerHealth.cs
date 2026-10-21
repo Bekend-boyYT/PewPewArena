@@ -1,121 +1,138 @@
-using Unity.Netcode;
-using UnityEngine;
-using UnityEngine.Rendering;
-using SniperGame.UI;
-using SniperGame.Gameplay;
-
-namespace SniperGame.Player
-{
-    public class PlayerHealth : NetworkBehaviour
-    {
-        [Header("Health Settings")]
-        [SerializeField] private int maxHealth = 100;
-
-        public NetworkVariable<int> CurrentHealth = new NetworkVariable<int>(
-            100,
-            NetworkVariableReadPermission.Everyone,
-            NetworkVariableWritePermission.Server
-        );
-
-        [Header("Components to Disable on Death")]
-        [Tooltip("Sleep hier het 3D-lichaamsmodel van de soldaat in")]
-        [SerializeField] private GameObject visualsRoot;
-        [SerializeField] private PlayerMovement playerMovement;
-
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
-
-            CurrentHealth.OnValueChanged += OnHealthChanged;
-
-            // Voor de lokale speler: model op Shadows Only zetten zodat je niet in je eigen lichaam kijkt
-            if (IsOwner && visualsRoot != null)
-            {
-                var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
-                foreach (var r in renderers)
-                {
-                    r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
-                }
-            }
-
-            if (IsOwner && CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateHealth(CurrentHealth.Value, maxHealth);
-            }
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            CurrentHealth.OnValueChanged -= OnHealthChanged;
-            base.OnNetworkDespawn();
-        }
-
-        private void OnHealthChanged(int previousValue, int newValue)
-        {
-            if (IsOwner && CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.UpdateHealth(newValue, maxHealth);
-            }
-
-            if (newValue <= 0)
-            {
-                HandleDeath();
-            }
-            else if (previousValue <= 0 && newValue > 0)
-            {
-                HandleRevive();
-            }
-        }
-
-        public void TakeDamage(int damageAmount, ulong attackerClientId)
-        {
-            if (!IsServer || CurrentHealth.Value <= 0) return;
-
-            int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
-            CurrentHealth.Value = newHp;
-
-            ClientRpcParams clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { OwnerClientId } }
-            };
-            OnTakeDamageFeedbackClientRpc(clientRpcParams);
-
-            if (newHp <= 0 && RoundManager.Instance != null)
-            {
-                RoundManager.Instance.OnPlayerDied(OwnerClientId);
-            }
-        }
-
-        [ClientRpc]
-        private void OnTakeDamageFeedbackClientRpc(ClientRpcParams clientRpcParams = default)
-        {
-            if (CombatHUD.Instance != null)
-            {
-                CombatHUD.Instance.TriggerDamageFlash();
-            }
-
-            if (playerMovement != null)
-            {
-                playerMovement.AddRecoil(Random.Range(2.5f, 4.5f), Random.Range(-2.5f, 2.5f));
-            }
-        }
-
-        private void HandleDeath()
-        {
-            if (playerMovement != null) playerMovement.enabled = false;
-            if (visualsRoot != null) visualsRoot.SetActive(false);
-        }
-
-        private void HandleRevive()
-        {
-            if (playerMovement != null) playerMovement.enabled = true;
-            if (visualsRoot != null) visualsRoot.SetActive(true);
-        }
-
-        public void ResetHealthServer()
-        {
-            if (!IsServer) return;
-            CurrentHealth.Value = maxHealth;
-        }
-    }
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.Rendering;
+using SniperGame.UI;
+using SniperGame.Gameplay;
+
+namespace SniperGame.Player
+{
+    public class PlayerHealth : NetworkBehaviour
+    {
+        [Header("Health Settings")]
+        [SerializeField] private int maxHealth = 100;
+
+        public NetworkVariable<int> CurrentHealth = new NetworkVariable<int>(
+            100,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+        [Header("Components to Disable on Death")]
+        [Tooltip("Sleep hier het 3D-lichaamsmodel van de soldaat in")]
+        [SerializeField] private GameObject visualsRoot;
+        [SerializeField] private PlayerMovement playerMovement;
+        [SerializeField] private PlayerAnimationDriver playerAnimationDriver;
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            CurrentHealth.OnValueChanged += OnHealthChanged;
+            if (playerAnimationDriver == null) playerAnimationDriver = GetComponent<PlayerAnimationDriver>();
+
+            // Voor de lokale speler: model op Shadows Only zetten zodat je niet in je eigen lichaam kijkt
+            if (IsOwner && visualsRoot != null)
+            {
+                var renderers = visualsRoot.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in renderers)
+                {
+                    r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                }
+            }
+
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateHealth(CurrentHealth.Value, maxHealth);
+            }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            CurrentHealth.OnValueChanged -= OnHealthChanged;
+            base.OnNetworkDespawn();
+        }
+
+        private void OnHealthChanged(int previousValue, int newValue)
+        {
+            if (IsOwner && CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.UpdateHealth(newValue, maxHealth);
+            }
+
+            if (newValue <= 0)
+            {
+                HandleDeath();
+            }
+            else if (previousValue <= 0 && newValue > 0)
+            {
+                HandleRevive();
+            }
+        }
+
+        public void TakeDamage(int damageAmount, ulong attackerClientId)
+        {
+            if (!IsServer || CurrentHealth.Value <= 0) return;
+
+            int newHp = Mathf.Max(0, CurrentHealth.Value - damageAmount);
+            CurrentHealth.Value = newHp;
+
+            ClientRpcParams clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { OwnerClientId } }
+            };
+            OnTakeDamageFeedbackClientRpc(clientRpcParams);
+
+            if (newHp <= 0 && RoundManager.Instance != null)
+            {
+                RoundManager.Instance.OnPlayerDied(OwnerClientId);
+            }
+        }
+
+        [ClientRpc]
+        private void OnTakeDamageFeedbackClientRpc(ClientRpcParams clientRpcParams = default)
+        {
+            if (CombatHUD.Instance != null)
+            {
+                CombatHUD.Instance.TriggerDamageFlash();
+            }
+
+            if (playerMovement != null)
+            {
+                playerMovement.AddRecoil(Random.Range(2.5f, 4.5f), Random.Range(-2.5f, 2.5f));
+            }
+        }
+
+        private void HandleDeath()
+        {
+            if (playerMovement != null) playerMovement.enabled = false;
+            if (playerAnimationDriver != null)
+            {
+                playerAnimationDriver.TriggerDie();
+            }
+            if (TryGetComponent<CharacterController>(out var cc))
+            {
+                cc.enabled = false;
+            }
+        }
+
+        private void HandleRevive()
+        {
+            if (TryGetComponent<CharacterController>(out var cc))
+            {
+                cc.enabled = true;
+            }
+            if (playerMovement != null) playerMovement.enabled = true;
+            if (visualsRoot != null) visualsRoot.SetActive(true);
+            if (playerAnimationDriver != null)
+            {
+                playerAnimationDriver.TriggerRevive();
+            }
+        }
+
+        public void ResetHealthServer()
+        {
+            if (!IsServer) return;
+            CurrentHealth.Value = maxHealth;
+        }
+    }
 }
