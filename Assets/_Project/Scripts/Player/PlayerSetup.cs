@@ -9,9 +9,27 @@ namespace SniperGame.Player
         [SerializeField] private Camera playerCamera;
         [SerializeField] private AudioListener audioListener;
 
+        [Header("Character Visibility & Lighting")]
+        [SerializeField] private CharacterVisibility characterVisibility;
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+
+            // Configure character lighting and enemy outline
+            if (characterVisibility == null)
+            {
+                characterVisibility = GetComponent<CharacterVisibility>();
+                if (characterVisibility == null)
+                {
+                    characterVisibility = gameObject.AddComponent<CharacterVisibility>();
+                }
+            }
+
+            if (characterVisibility != null)
+            {
+                characterVisibility.Configure(IsOwner);
+            }
 
             if (IsOwner)
             {
