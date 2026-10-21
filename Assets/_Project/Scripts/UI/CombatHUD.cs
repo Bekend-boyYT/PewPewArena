@@ -7,6 +7,7 @@ using TMPro;
 using Coffee.UIExtensions;
 using SniperGame.Player;
 using SniperGame.Gameplay;
+using PewPewArena.UI;
 
 namespace SniperGame.UI
 {
@@ -99,6 +100,10 @@ namespace SniperGame.UI
         [SerializeField] private Button acceptRematchButton;
         [SerializeField] private Button declineRematchButton;
 
+        [Header("Match End UI Customization")]
+        [SerializeField] private Sprite hoverArrowSprite;
+        [SerializeField] private Sprite hoverArrowRightSprite;
+
         [Header("Health Gradients")]
         [SerializeField] private Gradient aliveGradient;
         [SerializeField] private Gradient lowHealthGradient;
@@ -114,6 +119,7 @@ namespace SniperGame.UI
         private Coroutine _hitmarkerCoroutine;
         private Coroutine _announcementCoroutine;
         private Coroutine _damageFlashCoroutine;
+        private Coroutine _matchEndFadeRoutine;
         private int _currentParticleState = -1;
 
         private void Awake()
@@ -201,6 +207,7 @@ namespace SniperGame.UI
                 returnToMenuButton.onClick.AddListener(OnReturnToMenuClicked);
             }
 
+            ApplyMatchEndTheme();
             InitializeUIParticles();
         }
 
@@ -803,9 +810,12 @@ public void SetScopeActive(bool isScoped)
             if (rematchStatusText != null) rematchStatusText.text = "";
             if (restartButton != null) restartButton.interactable = true;
 
-            if (matchEndTitle != null)
+            ApplyMatchEndTheme(isWinner);
+
+            if (_matchEndFadeRoutine != null) StopCoroutine(_matchEndFadeRoutine);
+            if (gameObject.activeInHierarchy)
             {
-                matchEndTitle.text = isWinner ? "<color=#00FF66>VICTORY!</color>" : "<color=#FF2222>DEFEAT</color>";
+                _matchEndFadeRoutine = StartCoroutine(FadeMatchEndRoutine());
             }
 
             Cursor.lockState = CursorLockMode.None;
@@ -814,6 +824,12 @@ public void SetScopeActive(bool isScoped)
 
         public void HideMatchEndScreen()
         {
+            if (_matchEndFadeRoutine != null)
+            {
+                StopCoroutine(_matchEndFadeRoutine);
+                _matchEndFadeRoutine = null;
+            }
+
             if (matchEndPanel != null) matchEndPanel.SetActive(false);
             if (rematchPromptPanel != null) rematchPromptPanel.SetActive(false);
             if (rematchStatusText != null) rematchStatusText.text = "";
@@ -825,7 +841,13 @@ public void SetScopeActive(bool isScoped)
 
         private void OnRestartButtonClicked()
         {
-            if (restartButton != null) restartButton.interactable = false;
+            if (restartButton != null)
+            {
+                restartButton.interactable = false;
+                var effect = restartButton.GetComponent<MainMenuButtonEffect>();
+                if (effect != null) effect.ApplyInstantIdleState();
+            }
+
             if (rematchStatusText != null) rematchStatusText.text = "<color=#FFCC00>Waiting for opponent...</color>";
 
             if (RoundManager.Instance != null)
@@ -836,7 +858,17 @@ public void SetScopeActive(bool isScoped)
 
         public void ShowRematchPrompt()
         {
-            if (rematchPromptPanel != null) rematchPromptPanel.SetActive(true);
+            if (rematchPromptPanel != null)
+            {
+                rematchPromptPanel.SetActive(true);
+                ApplyMatchEndTheme();
+                var effects = rematchPromptPanel.GetComponentsInChildren<MainMenuButtonEffect>(true);
+                for (int i = 0; i < effects.Length; i++)
+                {
+                    if (effects[i] != null) effects[i].ApplyInstantIdleState();
+                }
+            }
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
@@ -871,6 +903,8 @@ public void SetScopeActive(bool isScoped)
             if (restartButton != null)
             {
                 restartButton.interactable = true;
+                var effect = restartButton.GetComponent<MainMenuButtonEffect>();
+                if (effect != null) effect.ApplyInstantIdleState();
             }
         }
 
@@ -882,6 +916,497 @@ public void SetScopeActive(bool isScoped)
             }
             SceneManager.LoadScene("01_MainMenu");
         }
+
+        #region Match End AAA Visual Theme
+        [ContextMenu("Apply Match End Theme")]
+        public void ApplyMatchEndTheme(bool? isWinner = null)
+        {
+            if (matchEndPanel == null) return;
+
+            // AAA Tactical Palette (matching PauseMenu, PlayPanel, LoadoutPanel & SettingsPanel)
+            Color dimmerBg = new Color(0.015f, 0.025f, 0.045f, 0.88f);         // Fullscreen tactical dimmer
+            Color cardSlateBg = new Color(0.043f, 0.059f, 0.090f, 0.95f);      // #0B0F17 Deep Obsidian Command Card
+            Color cardBorderColor = new Color(0.149f, 0.231f, 0.329f, 0.85f);  // #263B54 Tactical Steel-Cyan Border
+            Color neonCyan = new Color(0f, 0.898f, 1f, 0.90f);                 // #00E5FF Electric Cyan Accent
+            Color neonCyanSubtle = new Color(0f, 0.898f, 1f, 0.55f);           // #00E5FF Laser Divider
+            Color textIdleSilver = new Color(0.85f, 0.90f, 0.93f, 1f);         // #D9E6ED Signature Button Idle
+            Color textHoverWhite = Color.white;                                // #FFFFFF Signature Button Hover
+            Color textClickCyan = new Color(0.70f, 1.0f, 0.90f, 1f);           // #B3FFE6 Signature Button Click
+            Color footerSlate = new Color(0.424f, 0.510f, 0.600f, 0.85f);      // #6C8299 Footer Hint
+
+            // 1. Full-Screen Tactical Dimmer on MatchEndPanel
+            var panelRt = matchEndPanel.GetComponent<RectTransform>();
+            if (panelRt != null)
+            {
+                panelRt.anchorMin = Vector2.zero;
+                panelRt.anchorMax = Vector2.one;
+                panelRt.pivot = new Vector2(0.5f, 0.5f);
+                panelRt.anchoredPosition = Vector2.zero;
+                panelRt.sizeDelta = Vector2.zero;
+                panelRt.localScale = Vector3.one;
+            }
+
+            var panelImg = matchEndPanel.GetComponent<Image>();
+            if (panelImg != null)
+            {
+                panelImg.sprite = null;
+                panelImg.color = dimmerBg;
+                panelImg.raycastTarget = true;
+            }
+
+            var panelOutline = matchEndPanel.GetComponent<Outline>();
+            if (panelOutline != null) panelOutline.enabled = false;
+
+            // 2. Edge Atmosphere Radial Glows
+            var leftGlow = GetOrCreateImage(matchEndPanel.transform, "LeftAtmoGlow", new Vector2(-460f, 0f), new Vector2(400f, 800f));
+            leftGlow.sprite = JoinUISprites.AtmosphereGlow;
+            leftGlow.color = new Color(0f, 0.85f, 1f, 0.08f);
+            leftGlow.raycastTarget = false;
+            leftGlow.transform.SetSiblingIndex(0);
+
+            var rightGlow = GetOrCreateImage(matchEndPanel.transform, "RightAtmoGlow", new Vector2(460f, 0f), new Vector2(400f, 800f));
+            rightGlow.sprite = JoinUISprites.AtmosphereGlow;
+            rightGlow.color = new Color(0f, 0.85f, 1f, 0.08f);
+            rightGlow.raycastTarget = false;
+            rightGlow.transform.SetSiblingIndex(1);
+
+            // 3. Centered Tactical Command Card ("MatchEndCardBg" 500x520)
+            Transform oldCardTr = matchEndPanel.transform.Find("Image");
+            string cardName = oldCardTr != null ? "Image" : "MatchEndCardBg";
+            var cardBgImg = GetOrCreateImage(matchEndPanel.transform, cardName, Vector2.zero, new Vector2(500f, 520f));
+            cardBgImg.name = "MatchEndCardBg";
+            cardBgImg.sprite = JoinUISprites.CardFill;
+            cardBgImg.type = Image.Type.Sliced;
+            cardBgImg.color = cardSlateBg;
+            cardBgImg.raycastTarget = true;
+            cardBgImg.transform.SetSiblingIndex(2);
+
+            var cardOutline = cardBgImg.GetComponent<Outline>();
+            if (cardOutline == null) cardOutline = cardBgImg.gameObject.AddComponent<Outline>();
+            cardOutline.enabled = true;
+            cardOutline.effectColor = cardBorderColor;
+            cardOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            // Top & Bottom Laser Accents inside MatchEndCardBg
+            var topAccent = GetOrCreateImage(cardBgImg.transform, "TopLaserAccent", new Vector2(0f, 258.5f), new Vector2(500f, 3f));
+            topAccent.sprite = null;
+            topAccent.color = neonCyan;
+            topAccent.raycastTarget = false;
+
+            var bottomAccent = GetOrCreateImage(cardBgImg.transform, "BottomLaserAccent", new Vector2(0f, -259f), new Vector2(180f, 2f));
+            bottomAccent.sprite = null;
+            bottomAccent.color = new Color(0f, 0.898f, 1f, 0.45f);
+            bottomAccent.raycastTarget = false;
+
+            // 4. Sub-Header ("pathetic opponent" / "pathetic loser")
+            var subtitleTmp = GetOrCreateText(matchEndPanel.transform, "MatchEndSubtitle", new Vector2(0f, 195f), new Vector2(440f, 24f));
+            if (isWinner.HasValue)
+            {
+                subtitleTmp.text = isWinner.Value ? "pathetic opponent" : "pathetic loser";
+            }
+            else
+            {
+                subtitleTmp.text = "pathetic opponent";
+            }
+            subtitleTmp.color = new Color(0f, 0.898f, 1f, 0.85f);
+            subtitleTmp.fontSize = 14f;
+            subtitleTmp.characterSpacing = 4f;
+            subtitleTmp.fontStyle = FontStyles.Bold;
+            subtitleTmp.alignment = TextAlignmentOptions.Center;
+            subtitleTmp.raycastTarget = false;
+
+            // 5. Hero Title ("VICTORY!" / "DEFEAT")
+            if (matchEndTitle != null)
+            {
+                var titleRt = matchEndTitle.rectTransform;
+                titleRt.anchoredPosition = new Vector2(0f, 142f);
+                titleRt.sizeDelta = new Vector2(440f, 68f);
+                matchEndTitle.fontSize = 54f;
+                matchEndTitle.characterSpacing = 5f;
+                matchEndTitle.fontStyle = FontStyles.Bold;
+                matchEndTitle.alignment = TextAlignmentOptions.Center;
+                matchEndTitle.raycastTarget = false;
+
+                if (isWinner.HasValue)
+                {
+                    matchEndTitle.text = isWinner.Value
+                        ? "<color=#00FFAA>VICTORY!</color>"
+                        : "<color=#FF2E4C>DEFEAT</color>";
+                }
+            }
+
+            // 6. Sleek Laser Divider Bar (340 x 2px)
+            Transform oldDivTr = matchEndPanel.transform.Find("Image (1)");
+            string divName = oldDivTr != null ? "Image (1)" : "MatchEndLaserDivider";
+            var laserDividerImg = GetOrCreateImage(matchEndPanel.transform, divName, new Vector2(0f, 95f), new Vector2(340f, 2f));
+            laserDividerImg.name = "MatchEndLaserDivider";
+            laserDividerImg.sprite = null;
+            laserDividerImg.color = neonCyanSubtle;
+            laserDividerImg.raycastTarget = false;
+
+            // 7. Signature AAA Bordered Buttons with HoverArrows & MainMenuButtonEffect
+            StyleCombatButton(restartButton, new Vector2(0f, 25f), "REMATCH", textIdleSilver, textHoverWhite, textClickCyan, new Vector2(320f, 52f), 26f);
+            StyleCombatButton(returnToMenuButton, new Vector2(0f, -45f), "MAIN MENU", textIdleSilver, textHoverWhite, textClickCyan, new Vector2(320f, 52f), 26f);
+
+            // 8. RematchStatusText
+            if (rematchStatusText != null)
+            {
+                var statusRt = rematchStatusText.rectTransform;
+                statusRt.anchoredPosition = new Vector2(0f, -115f);
+                statusRt.sizeDelta = new Vector2(420f, 32f);
+                rematchStatusText.fontSize = 15f;
+                rematchStatusText.characterSpacing = 2f;
+                rematchStatusText.fontStyle = FontStyles.Bold;
+                rematchStatusText.alignment = TextAlignmentOptions.Center;
+            }
+
+            // 9. Tactical Footer Status Hint
+            var footerHintTmp = GetOrCreateText(matchEndPanel.transform, "MatchEndFooterHint", new Vector2(0f, -215f), new Vector2(400f, 24f));
+            footerHintTmp.text = "[ COMBAT PROTOCOL TERMINATED ]";
+            footerHintTmp.color = footerSlate;
+            footerHintTmp.fontSize = 12f;
+            footerHintTmp.characterSpacing = 3f;
+            footerHintTmp.fontStyle = FontStyles.Bold;
+            footerHintTmp.alignment = TextAlignmentOptions.Center;
+            footerHintTmp.raycastTarget = false;
+
+            // 10. Tactical Rematch Consent Prompt Panel
+            if (rematchPromptPanel != null)
+            {
+                var promptRt = rematchPromptPanel.GetComponent<RectTransform>();
+                if (promptRt != null)
+                {
+                    promptRt.anchorMin = new Vector2(0.5f, 0.5f);
+                    promptRt.anchorMax = new Vector2(0.5f, 0.5f);
+                    promptRt.pivot = new Vector2(0.5f, 0.5f);
+                    promptRt.anchoredPosition = Vector2.zero;
+                    promptRt.sizeDelta = new Vector2(500f, 240f);
+                    promptRt.localScale = Vector3.one;
+                }
+
+                var promptImg = rematchPromptPanel.GetComponent<Image>();
+                if (promptImg != null)
+                {
+                    promptImg.sprite = JoinUISprites.CardFill;
+                    promptImg.type = Image.Type.Sliced;
+                    promptImg.color = new Color(0.043f, 0.059f, 0.090f, 0.98f);
+                    promptImg.raycastTarget = true;
+                }
+
+                var promptOutline = rematchPromptPanel.GetComponent<Outline>();
+                if (promptOutline == null) promptOutline = rematchPromptPanel.AddComponent<Outline>();
+                promptOutline.enabled = true;
+                promptOutline.effectColor = cardBorderColor;
+                promptOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+                var promptTopAccent = GetOrCreateImage(rematchPromptPanel.transform, "PromptTopAccent", new Vector2(0f, 118.5f), new Vector2(500f, 3f));
+                promptTopAccent.sprite = null;
+                promptTopAccent.color = neonCyan;
+                promptTopAccent.raycastTarget = false;
+
+                // Hide legacy BackroundLines
+                var bgLines = rematchPromptPanel.transform.Find("BackroundLines");
+                if (bgLines != null) bgLines.gameObject.SetActive(false);
+
+                // Subtitle
+                var promptSub = GetOrCreateText(rematchPromptPanel.transform, "PromptSubtitle", new Vector2(0f, 75f), new Vector2(400f, 20f));
+                promptSub.text = "You want to rematch?";
+                promptSub.color = new Color(0f, 0.898f, 1f, 0.85f);
+                promptSub.fontSize = 12f;
+                promptSub.characterSpacing = 3f;
+                promptSub.fontStyle = FontStyles.Bold;
+                promptSub.alignment = TextAlignmentOptions.Center;
+                promptSub.raycastTarget = false;
+
+                // Title
+                Transform titleTr = rematchPromptPanel.transform.Find("Titel");
+                if (titleTr != null)
+                {
+                    var promptTitleRt = titleTr.GetComponent<RectTransform>();
+                    if (promptTitleRt != null)
+                    {
+                        promptTitleRt.anchoredPosition = new Vector2(0f, 42f);
+                        promptTitleRt.sizeDelta = new Vector2(440f, 40f);
+                    }
+                    var promptTitleTmp = titleTr.GetComponent<TextMeshProUGUI>();
+                    if (promptTitleTmp != null)
+                    {
+                        promptTitleTmp.text = "REMATCH CHALLENGE";
+                        promptTitleTmp.color = Color.white;
+                        promptTitleTmp.fontSize = 28f;
+                        promptTitleTmp.characterSpacing = 4f;
+                        promptTitleTmp.fontStyle = FontStyles.Bold;
+                        promptTitleTmp.alignment = TextAlignmentOptions.Center;
+                    }
+                }
+
+                // Message
+                var promptMsg = GetOrCreateText(rematchPromptPanel.transform, "PromptMessage", new Vector2(0f, 6f), new Vector2(440f, 24f));
+                promptMsg.text = "OPPONENT HAS REQUESTED A REMATCH";
+                promptMsg.color = new Color(0.85f, 0.90f, 0.93f, 0.90f);
+                promptMsg.fontSize = 14f;
+                promptMsg.characterSpacing = 2f;
+                promptMsg.fontStyle = FontStyles.Bold;
+                promptMsg.alignment = TextAlignmentOptions.Center;
+                promptMsg.raycastTarget = false;
+
+                StyleCombatButton(acceptRematchButton, new Vector2(-110f, -55f), "ACCEPT", textIdleSilver, textHoverWhite, textClickCyan, new Vector2(190f, 48f), 22f);
+                StyleCombatButton(declineRematchButton, new Vector2(110f, -55f), "DECLINE", textIdleSilver, textHoverWhite, textClickCyan, new Vector2(190f, 48f), 22f);
+            }
+        }
+
+        private Image GetOrCreateImage(Transform parent, string name, Vector2 pos, Vector2 size)
+        {
+            var tr = parent.Find(name);
+            Image img;
+            if (tr == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                go.layer = parent.gameObject.layer;
+                go.transform.SetParent(parent, false);
+                img = go.GetComponent<Image>();
+            }
+            else
+            {
+                tr.gameObject.SetActive(true);
+                img = tr.GetComponent<Image>();
+                if (img == null) img = tr.gameObject.AddComponent<Image>();
+            }
+
+            var rt = img.rectTransform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+            rt.localScale = Vector3.one;
+
+            return img;
+        }
+
+        private TextMeshProUGUI GetOrCreateText(Transform parent, string name, Vector2 pos, Vector2 size)
+        {
+            var tr = parent.Find(name);
+            TextMeshProUGUI tmp;
+            if (tr == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+                go.layer = parent.gameObject.layer;
+                go.transform.SetParent(parent, false);
+                tmp = go.GetComponent<TextMeshProUGUI>();
+            }
+            else
+            {
+                tr.gameObject.SetActive(true);
+                tmp = tr.GetComponent<TextMeshProUGUI>();
+                if (tmp == null) tmp = tr.gameObject.AddComponent<TextMeshProUGUI>();
+            }
+
+            if (matchEndTitle != null && matchEndTitle.font != null)
+            {
+                tmp.font = matchEndTitle.font;
+            }
+
+            var rt = tmp.rectTransform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+            rt.localScale = Vector3.one;
+
+            return tmp;
+        }
+
+        private void StyleCombatButton(Button btn, Vector2 pos, string label, Color textNormal, Color textHover, Color textClick, Vector2? size = null, float fontSize = 26f)
+        {
+            if (btn == null) return;
+
+            var rt = btn.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = pos;
+                rt.sizeDelta = size.HasValue ? size.Value : new Vector2(320f, 52f);
+                rt.localScale = Vector3.one;
+            }
+
+            var img = btn.targetGraphic as Image ?? btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.raycastTarget = true;
+            }
+
+            var outline = btn.GetComponent<Outline>();
+            if (outline != null) outline.enabled = false;
+
+            btn.transition = Selectable.Transition.None;
+
+            var tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmp != null)
+            {
+                if (matchEndTitle != null && matchEndTitle.font != null)
+                {
+                    tmp.font = matchEndTitle.font;
+                }
+
+                tmp.text = label;
+                tmp.color = textNormal;
+                tmp.fontSize = fontSize;
+                tmp.characterSpacing = 3f;
+                tmp.fontStyle = FontStyles.Bold;
+                tmp.alignment = TextAlignmentOptions.Center;
+                tmp.raycastTarget = false;
+            }
+
+            if (hoverArrowSprite == null)
+            {
+                hoverArrowSprite = MainMenuButtonEffect.GetDefaultLeftArrow();
+            }
+            if (hoverArrowRightSprite == null)
+            {
+                hoverArrowRightSprite = MainMenuButtonEffect.GetDefaultRightArrow();
+            }
+
+            Transform leftArrowTr = btn.transform.Find("HoverArrow") ?? btn.transform.Find("Arrow");
+            if (leftArrowTr != null && hoverArrowSprite != null)
+            {
+                var arrowImg = leftArrowTr.GetComponent<Image>();
+                if (arrowImg != null && arrowImg.sprite == null)
+                {
+                    arrowImg.sprite = hoverArrowSprite;
+                }
+            }
+
+            Transform rightArrowTr = btn.transform.Find("HoverArrowRight") ?? btn.transform.Find("RightArrow") ?? btn.transform.Find("ArrowRight");
+            if (rightArrowTr != null && hoverArrowRightSprite != null)
+            {
+                var rightArrowImg = rightArrowTr.GetComponent<Image>();
+                if (rightArrowImg != null && rightArrowImg.sprite == null)
+                {
+                    rightArrowImg.sprite = hoverArrowRightSprite;
+                }
+            }
+
+            var effect = btn.GetComponent<MainMenuButtonEffect>();
+            if (effect == null) effect = btn.gameObject.AddComponent<MainMenuButtonEffect>();
+
+            if (hoverArrowSprite != null) effect.ArrowSprite = hoverArrowSprite;
+            if (hoverArrowRightSprite != null) effect.RightArrowSprite = hoverArrowRightSprite;
+
+            effect.InitializeComponents();
+            effect.CalculateArrowPositions();
+            effect.ApplyInstantIdleState();
+        }
+
+        private IEnumerator FadeMatchEndRoutine()
+        {
+            if (matchEndPanel == null) yield break;
+
+            var cg = matchEndPanel.GetComponent<CanvasGroup>();
+            if (cg == null) cg = matchEndPanel.AddComponent<CanvasGroup>();
+
+            var cardBg = matchEndPanel.transform.Find("MatchEndCardBg") as RectTransform;
+            if (cardBg == null) cardBg = matchEndPanel.transform.Find("Image") as RectTransform;
+            var laserDivider = matchEndPanel.transform.Find("MatchEndLaserDivider") as RectTransform;
+            if (laserDivider == null) laserDivider = matchEndPanel.transform.Find("Image (1)") as RectTransform;
+            var titleTr = matchEndTitle != null ? matchEndTitle.rectTransform : null;
+            var subtitleTr = matchEndPanel.transform.Find("MatchEndSubtitle") as RectTransform;
+
+            RectTransform[] btnRects = new RectTransform[]
+            {
+                restartButton != null ? restartButton.GetComponent<RectTransform>() : null,
+                returnToMenuButton != null ? returnToMenuButton.GetComponent<RectTransform>() : null
+            };
+            Vector2[] btnTargetPositions = new Vector2[]
+            {
+                new Vector2(0f, 25f),
+                new Vector2(0f, -45f)
+            };
+
+            // Reset all button hover arrows immediately on open
+            var effects = matchEndPanel.GetComponentsInChildren<MainMenuButtonEffect>(true);
+            for (int i = 0; i < effects.Length; i++)
+            {
+                if (effects[i] != null) effects[i].ApplyInstantIdleState();
+            }
+
+            float duration = 0.24f;
+            float elapsed = 0f;
+            cg.alpha = 0f;
+
+            Vector3 cardStartScale = Vector3.one * 0.95f;
+            Vector3 cardTargetScale = Vector3.one;
+
+            if (cardBg != null) cardBg.localScale = cardStartScale;
+            if (laserDivider != null) laserDivider.localScale = new Vector3(0f, 1f, 1f);
+            if (titleTr != null) titleTr.anchoredPosition = new Vector2(0f, 134f);
+            if (subtitleTr != null) subtitleTr.anchoredPosition = new Vector2(0f, 189f);
+
+            for (int i = 0; i < btnRects.Length; i++)
+            {
+                if (btnRects[i] != null)
+                    btnRects[i].anchoredPosition = btnTargetPositions[i] - new Vector2(0f, 12f);
+            }
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float progress = Mathf.Clamp01(elapsed / duration);
+                float ease = Mathf.SmoothStep(0f, 1f, progress);
+
+                cg.alpha = Mathf.Clamp01(progress * 1.35f);
+
+                if (cardBg != null)
+                    cardBg.localScale = Vector3.LerpUnclamped(cardStartScale, cardTargetScale, ease);
+
+                if (laserDivider != null)
+                {
+                    float divT = Mathf.Clamp01((elapsed - 0.03f) / (duration * 0.85f));
+                    laserDivider.localScale = new Vector3(Mathf.SmoothStep(0f, 1f, divT), 1f, 1f);
+                }
+
+                if (titleTr != null)
+                    titleTr.anchoredPosition = Vector2.LerpUnclamped(new Vector2(0f, 134f), new Vector2(0f, 142f), ease);
+
+                if (subtitleTr != null)
+                    subtitleTr.anchoredPosition = Vector2.LerpUnclamped(new Vector2(0f, 189f), new Vector2(0f, 195f), ease);
+
+                for (int i = 0; i < btnRects.Length; i++)
+                {
+                    if (btnRects[i] != null)
+                    {
+                        float delay = i * 0.05f;
+                        float btnT = Mathf.Clamp01((elapsed - delay) / (duration * 0.80f));
+                        float btnEase = Mathf.SmoothStep(0f, 1f, btnT);
+                        Vector2 startPos = btnTargetPositions[i] - new Vector2(0f, 12f);
+                        btnRects[i].anchoredPosition = Vector2.LerpUnclamped(startPos, btnTargetPositions[i], btnEase);
+                    }
+                }
+
+                yield return null;
+            }
+
+            cg.alpha = 1f;
+            if (cardBg != null) cardBg.localScale = cardTargetScale;
+            if (laserDivider != null) laserDivider.localScale = Vector3.one;
+            if (titleTr != null) titleTr.anchoredPosition = new Vector2(0f, 142f);
+            if (subtitleTr != null) subtitleTr.anchoredPosition = new Vector2(0f, 195f);
+
+            for (int i = 0; i < btnRects.Length; i++)
+            {
+                if (btnRects[i] != null)
+                    btnRects[i].anchoredPosition = btnTargetPositions[i];
+            }
+
+            cg.interactable = true;
+            cg.blocksRaycasts = true;
+
+            _matchEndFadeRoutine = null;
+        }
+        #endregion
 
         public void UpdateHealth(int currentHealth, int maxHealth)
         {
