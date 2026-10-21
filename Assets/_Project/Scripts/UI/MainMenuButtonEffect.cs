@@ -365,6 +365,9 @@ namespace PewPewArena.UI
 
             if (arrowTransform != null)
             {
+                if (!arrowTransform.gameObject.activeSelf)
+                    arrowTransform.gameObject.SetActive(true);
+
                 arrowTransform.sizeDelta = arrowSize;
             }
 
