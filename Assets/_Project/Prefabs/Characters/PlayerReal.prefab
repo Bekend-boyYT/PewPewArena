@@ -540,6 +540,13 @@ MonoBehaviour:
   scopedRecoilPitch2: 0.8
   scopedRecoilYaw2: 0.45
   sniper2Damage: 999
+  thirdPersonSniper1Prefab: {fileID: 100100000, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+  thirdPersonSniper2Prefab: {fileID: 100100000, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
+  thirdPersonSniper1: {fileID: 0}
+  thirdPersonSniper2: {fileID: 0}
+  weaponSocket: {fileID: 0}
+  socketLocalPosition: {x: 0.05, y: 0.01, z: 0.01}
+  socketLocalRotation: {x: -35, y: -105, z: -145}
   maxClipAmmo: 5
   reloadDuration: 2.2
   weaponAudioSource: {fileID: 3570139252239378147}

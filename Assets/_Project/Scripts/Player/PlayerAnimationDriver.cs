@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using SniperGame.Weapons;
 
 namespace SniperGame.Player
 {
@@ -125,6 +126,7 @@ namespace SniperGame.Player
         {
             base.OnNetworkSpawn();
             FindSoldierAnimator();
+            GetComponent<SniperWeapon>()?.ResolveThirdPersonWeapons();
             _lastPosition = transform.position;
         }
 

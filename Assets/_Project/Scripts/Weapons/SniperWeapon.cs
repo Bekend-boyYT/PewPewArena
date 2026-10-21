@@ -35,6 +35,20 @@ namespace SniperGame.Weapons
         [SerializeField] private float scopedRecoilYaw2 = 0.45f;
         [SerializeField] private int sniper2Damage = 999;
 
+        [Header("3rd-Person Soldier Weapon Setup")]
+        [Tooltip("Prefab for 3rd-person Sniper 1")]
+        [SerializeField] private GameObject thirdPersonSniper1Prefab;
+        [Tooltip("Prefab for 3rd-person Sniper 2")]
+        [SerializeField] private GameObject thirdPersonSniper2Prefab;
+        [Tooltip("Active 3rd-person Sniper 1 instance in soldier hand")]
+        [SerializeField] private GameObject thirdPersonSniper1;
+        [Tooltip("Active 3rd-person Sniper 2 instance in soldier hand")]
+        [SerializeField] private GameObject thirdPersonSniper2;
+        [Tooltip("Socket attached to soldier right hand")]
+        [SerializeField] private Transform weaponSocket;
+        [SerializeField] private Vector3 socketLocalPosition = new Vector3(0.05f, 0.01f, 0.01f);
+        [SerializeField] private Vector3 socketLocalRotation = new Vector3(-35f, -105f, -145f);
+
         [Header("Ammo Settings (Legacy Fallback)")]
         [SerializeField] private int maxClipAmmo = 5;
         [SerializeField] private float reloadDuration = 2.2f;
@@ -166,6 +180,7 @@ namespace SniperGame.Weapons
             ActiveWeaponIndex.Value = startingSlot;
             EquipWeapon(startingSlot);
             ResetAmmo();
+            ConfigureThirdPersonVisuals();
         }
 
         public override void OnNetworkDespawn()
@@ -314,6 +329,8 @@ namespace SniperGame.Weapons
             if (weaponVisuals == null) weaponVisuals = weaponHolder1;
             if (weaponAnimator == null) weaponAnimator = weaponAnimator1;
             if (firePoint == null) firePoint = firePoint1;
+
+            ResolveThirdPersonWeapons();
         }
 
         public bool CanSwitchWeapons()
@@ -427,6 +444,22 @@ namespace SniperGame.Weapons
             weaponAnimator = (slot == 0) ? weaponAnimator1 : weaponAnimator2;
             firePoint = (slot == 0) ? firePoint1 : firePoint2;
 
+            // 3rd Person Soldier Snipers
+            if (thirdPersonSniper1 == null || thirdPersonSniper2 == null)
+            {
+                ResolveThirdPersonWeapons();
+            }
+
+            if (thirdPersonSniper1 != null)
+            {
+                thirdPersonSniper1.SetActive(slot == 0);
+            }
+
+            if (thirdPersonSniper2 != null)
+            {
+                thirdPersonSniper2.SetActive(slot == 1);
+            }
+
             CacheWeaponRenderers();
         }
 
@@ -445,6 +478,355 @@ namespace SniperGame.Weapons
                 _weaponRenderers = activeObj.GetComponentsInChildren<Renderer>(true);
             }
         }
+
+        #region 3rd-Person Character Weapons
+
+        public void ResolveThirdPersonWeapons()
+        {
+            if (weaponSocket == null)
+            {
+                Transform soldierTransform = transform.Find("Low poly soldier (1)");
+                if (soldierTransform == null)
+                {
+                    foreach (Transform child in transform)
+                    {
+                        string childName = child.name.ToLower();
+                        if (childName.Contains("camera") || childName.Contains("weapon") || childName.Contains("hitbox"))
+                            continue;
+                        if (child.GetComponentInChildren<SkinnedMeshRenderer>() != null || child.GetComponentInChildren<Animator>() != null)
+                        {
+                            soldierTransform = child;
+                            break;
+                        }
+                    }
+                }
+
+                if (soldierTransform != null)
+                {
+                    Transform rightHand = null;
+                    foreach (Transform t in soldierTransform.GetComponentsInChildren<Transform>(true))
+                    {
+                        if (t.name.Equals("hand.r", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            rightHand = t;
+                            break;
+                        }
+                    }
+
+                    if (rightHand != null)
+                    {
+                        Transform existingSock = rightHand.Find("WeaponSocket_R");
+                        GameObject sockGo;
+                        if (existingSock != null)
+                        {
+                            sockGo = existingSock.gameObject;
+                        }
+                        else
+                        {
+                            sockGo = new GameObject("WeaponSocket_R");
+                            sockGo.transform.SetParent(rightHand, false);
+                        }
+
+                        sockGo.transform.localPosition = Vector3.zero;
+                        sockGo.transform.localRotation = Quaternion.identity;
+
+                        // Counteract any armature bone scaling (e.g. rig 100x scale in Blender FBX exports)
+                        Vector3 handScale = rightHand.lossyScale;
+                        float invX = Mathf.Abs(handScale.x) > 0.0001f ? (1f / handScale.x) : 0.01f;
+                        float invY = Mathf.Abs(handScale.y) > 0.0001f ? (1f / handScale.y) : 0.01f;
+                        float invZ = Mathf.Abs(handScale.z) > 0.0001f ? (1f / handScale.z) : 0.01f;
+                        sockGo.transform.localScale = new Vector3(invX, invY, invZ);
+
+                        // Pivot under the socket in true 1:1 real-world meters
+                        Transform pivot = sockGo.transform.Find("Pivot");
+                        if (pivot == null)
+                        {
+                            GameObject pivotGo = new GameObject("Pivot");
+                            pivotGo.transform.SetParent(sockGo.transform, false);
+                            pivot = pivotGo.transform;
+                        }
+
+                        pivot.localPosition = socketLocalPosition;
+                        pivot.localRotation = Quaternion.Euler(socketLocalRotation);
+                        pivot.localScale = Vector3.one;
+
+                        // Migrate any previously created weapons under sockGo into pivot
+                        Transform legacy1 = sockGo.transform.Find("ThirdPersonSniper1");
+                        if (legacy1 != null && legacy1 != pivot) legacy1.SetParent(pivot, false);
+
+                        Transform legacy2 = sockGo.transform.Find("ThirdPersonSniper2");
+                        if (legacy2 != null && legacy2 != pivot) legacy2.SetParent(pivot, false);
+
+                        weaponSocket = pivot;
+                    }
+                }
+            }
+
+            if (weaponSocket != null)
+            {
+                // Ensure socket always counteracts rightHand world scale
+                Transform sockRoot = (weaponSocket.name == "WeaponSocket_R") ? weaponSocket : weaponSocket.parent;
+                if (sockRoot != null && sockRoot.parent != null)
+                {
+                    Vector3 pScale = sockRoot.parent.lossyScale;
+                    float ix = Mathf.Abs(pScale.x) > 0.0001f ? (1f / pScale.x) : 0.01f;
+                    float iy = Mathf.Abs(pScale.y) > 0.0001f ? (1f / pScale.y) : 0.01f;
+                    float iz = Mathf.Abs(pScale.z) > 0.0001f ? (1f / pScale.z) : 0.01f;
+                    sockRoot.localScale = new Vector3(ix, iy, iz);
+                }
+
+                weaponSocket.localPosition = socketLocalPosition;
+                weaponSocket.localRotation = Quaternion.Euler(socketLocalRotation);
+                weaponSocket.localScale = Vector3.one;
+
+                if (thirdPersonSniper1 == null)
+                {
+                    Transform t1 = weaponSocket.Find("ThirdPersonSniper1");
+                    if (t1 != null)
+                    {
+                        thirdPersonSniper1 = t1.gameObject;
+                    }
+                    else
+                    {
+                        thirdPersonSniper1 = CreateThirdPersonWeapon(0, weaponSocket);
+                    }
+                }
+
+                if (thirdPersonSniper2 == null)
+                {
+                    Transform t2 = weaponSocket.Find("ThirdPersonSniper2");
+                    if (t2 != null)
+                    {
+                        thirdPersonSniper2 = t2.gameObject;
+                    }
+                    else
+                    {
+                        thirdPersonSniper2 = CreateThirdPersonWeapon(1, weaponSocket);
+                    }
+                }
+
+                // Ensure visual dimensions match authentic sniper rifle scale (~1.05m)
+                NormalizeWeaponVisualScale(thirdPersonSniper1);
+                NormalizeWeaponVisualScale(thirdPersonSniper2);
+
+                ConfigureThirdPersonVisuals();
+            }
+        }
+
+        private void NormalizeWeaponVisualScale(GameObject weaponGo)
+        {
+            if (weaponGo == null) return;
+
+            bool wasActive = weaponGo.activeSelf;
+            if (!wasActive)
+            {
+                weaponGo.SetActive(true);
+            }
+
+            Bounds combined = new Bounds();
+            bool hasBounds = false;
+
+            var meshRenderers = weaponGo.GetComponentsInChildren<MeshRenderer>(true);
+            if (meshRenderers != null && meshRenderers.Length > 0)
+            {
+                foreach (var mr in meshRenderers)
+                {
+                    if (mr == null) continue;
+                    if (!hasBounds)
+                    {
+                        combined = mr.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        combined.Encapsulate(mr.bounds);
+                    }
+                }
+            }
+
+            // Fallback using MeshFilter.sharedMesh if renderer bounds are zero
+            if (!hasBounds || combined.size.sqrMagnitude < 0.0001f)
+            {
+                var filters = weaponGo.GetComponentsInChildren<MeshFilter>(true);
+                foreach (var mf in filters)
+                {
+                    if (mf == null || mf.sharedMesh == null) continue;
+                    Bounds mb = mf.sharedMesh.bounds;
+                    Vector3 worldExtents = Vector3.Scale(mb.size, mf.transform.lossyScale);
+                    float dim = Mathf.Max(worldExtents.x, Mathf.Max(worldExtents.y, worldExtents.z));
+                    if (dim > combined.size.x)
+                    {
+                        combined = new Bounds(Vector3.zero, new Vector3(dim, dim, dim));
+                        hasBounds = true;
+                    }
+                }
+            }
+
+            if (!wasActive)
+            {
+                weaponGo.SetActive(false);
+            }
+
+            float currentLength = Mathf.Max(combined.size.x, Mathf.Max(combined.size.y, combined.size.z));
+            if (currentLength > 0.05f)
+            {
+                const float targetLength = 1.05f; // Authentic ~105cm sniper rifle length
+                float scaleRatio = targetLength / currentLength;
+                if (scaleRatio < 0.85f || scaleRatio > 1.15f)
+                {
+                    weaponGo.transform.localScale *= scaleRatio;
+                }
+            }
+        }
+
+        private GameObject CreateThirdPersonWeapon(int slot, Transform parentSocket)
+        {
+            GameObject prefab = (slot == 0) ? thirdPersonSniper1Prefab : thirdPersonSniper2Prefab;
+            string weaponName = (slot == 0) ? "ThirdPersonSniper1" : "ThirdPersonSniper2";
+
+            GameObject weaponGo = null;
+
+            if (prefab != null)
+            {
+                weaponGo = Instantiate(prefab, parentSocket, false);
+                weaponGo.name = weaponName;
+            }
+            else
+            {
+                // Fallback: Check if Resources has ThirdPersonSniper
+                GameObject resPrefab = Resources.Load<GameObject>(weaponName);
+                if (resPrefab != null)
+                {
+                    weaponGo = Instantiate(resPrefab, parentSocket, false);
+                    weaponGo.name = weaponName;
+                }
+                else
+                {
+                    // Clone from the viewmodel in weaponHolder1/weaponHolder2
+                    GameObject sourceHolder = (slot == 0) ? weaponHolder1 : weaponHolder2;
+                    weaponGo = new GameObject(weaponName);
+                    weaponGo.transform.SetParent(parentSocket, false);
+
+                    if (sourceHolder != null)
+                    {
+                        MeshFilter[] filters = sourceHolder.GetComponentsInChildren<MeshFilter>(true);
+                        foreach (var sf in filters)
+                        {
+                            if (sf == null || sf.sharedMesh == null) continue;
+                            if (sf.name.ToLower().Contains("firepoint")) continue;
+
+                            MeshRenderer smr = sf.GetComponent<MeshRenderer>();
+                            if (smr == null) continue;
+
+                            GameObject part = new GameObject(sf.name);
+                            part.transform.SetParent(weaponGo.transform, false);
+                            part.transform.localPosition = Vector3.zero;
+                            part.transform.localRotation = Quaternion.identity;
+                            part.transform.localScale = Vector3.one;
+
+                            var mf = part.AddComponent<MeshFilter>();
+                            mf.sharedMesh = sf.sharedMesh;
+
+                            var mr = part.AddComponent<MeshRenderer>();
+                            mr.sharedMaterials = smr.sharedMaterials;
+                        }
+                    }
+                }
+            }
+
+            if (weaponGo != null)
+            {
+                weaponGo.transform.localPosition = Vector3.zero;
+                weaponGo.transform.localRotation = Quaternion.identity;
+                weaponGo.transform.localScale = Vector3.one;
+
+                // Reset any internal offsets on sub-children (e.g. sniper2 child in Sniper02, sniper 2 in Sniper)
+                for (int i = 0; i < weaponGo.transform.childCount; i++)
+                {
+                    Transform child = weaponGo.transform.GetChild(i);
+                    string cName = child.name.ToLower();
+                    if (cName.Contains("sniper") || cName.Contains("model") || cName.Contains("mesh"))
+                    {
+                        child.localPosition = Vector3.zero;
+                        child.localRotation = Quaternion.identity;
+                        child.localScale = Vector3.one;
+                    }
+                }
+
+                // Strip any colliders so character controller and hitboxes are unaffected
+                foreach (var col in weaponGo.GetComponentsInChildren<Collider>(true))
+                {
+                    col.enabled = false;
+                }
+
+                // Strip any Animators or Cameras on the 3rd person prop
+                foreach (var anim in weaponGo.GetComponentsInChildren<Animator>(true))
+                {
+                    anim.enabled = false;
+                }
+                foreach (var cam in weaponGo.GetComponentsInChildren<Camera>(true))
+                {
+                    cam.enabled = false;
+                }
+
+                // Set layer 0
+                SetLayerRecursively(weaponGo.transform, 0);
+
+                // Normalize visual scale to match authentic sniper rifle length (~1.05m)
+                NormalizeWeaponVisualScale(weaponGo);
+            }
+
+            return weaponGo;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (weaponSocket != null)
+            {
+                weaponSocket.localPosition = socketLocalPosition;
+                weaponSocket.localRotation = Quaternion.Euler(socketLocalRotation);
+            }
+        }
+#endif
+
+        private void ConfigureThirdPersonVisuals()
+        {
+            bool isLocalOwner = IsOwner;
+
+            if (thirdPersonSniper1 != null)
+            {
+                var rends1 = thirdPersonSniper1.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rends1)
+                {
+                    r.shadowCastingMode = isLocalOwner ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly 
+                                                       : UnityEngine.Rendering.ShadowCastingMode.On;
+                    r.receiveShadows = true;
+                }
+            }
+
+            if (thirdPersonSniper2 != null)
+            {
+                var rends2 = thirdPersonSniper2.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rends2)
+                {
+                    r.shadowCastingMode = isLocalOwner ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly 
+                                                       : UnityEngine.Rendering.ShadowCastingMode.On;
+                    r.receiveShadows = true;
+                }
+            }
+        }
+
+        private static void SetLayerRecursively(Transform trans, int layer)
+        {
+            trans.gameObject.layer = layer;
+            for (int i = 0; i < trans.childCount; i++)
+            {
+                SetLayerRecursively(trans.GetChild(i), layer);
+            }
+        }
+
+        #endregion
 
         private bool IsGameplayScene()
         {
