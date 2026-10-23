@@ -36,9 +36,9 @@ namespace SniperGame.Player
 
         [Header("Stamina Settings")]
         [SerializeField] private bool staminaEnabled = true;
-        [SerializeField] private float maxStamina = 100f;
+        [SerializeField] private float maxStamina = 200f;
         [SerializeField] private float staminaDrainRate = 22f;
-        [SerializeField] private float staminaRegenRate = 18f;
+        [SerializeField] private float staminaRegenRate = 36f;
         [SerializeField] private float staminaRegenDelay = 0.9f;
         [SerializeField] private float minStaminaToSprint = 15f;
 

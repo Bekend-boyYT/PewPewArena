@@ -60,16 +60,7 @@ namespace PewPewArena.UI
                 _font = titleComp.font;
             }
 
-            if (_codeFont == null)
-            {
-#if UNITY_EDITOR
-                _codeFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro Effect/Examples/KomikaDemo.asset");
-#endif
-                if (_codeFont == null)
-                {
-                    _codeFont = Resources.Load<TMP_FontAsset>("KomikaDemo") ?? Resources.Load<TMP_FontAsset>("Fonts/KomikaDemo");
-                }
-            }
+            _codeFont = GetKomikaFont();
 
             SetupAtmosphere();
             SetupHeader();
@@ -78,6 +69,54 @@ namespace PewPewArena.UI
             SetupConfirmButton();
             SetupBackButton();
             SyncCounter();
+        }
+
+        public TMP_FontAsset GetKomikaFont()
+        {
+            if (_codeFont != null) return _codeFont;
+
+            // 1. Check existing font on JoinCodeInput text component or placeholder
+            Transform inputTrans = transform.Find("JoinCodeInput");
+            if (inputTrans != null)
+            {
+                var inputField = inputTrans.GetComponent<TMP_InputField>();
+                if (inputField != null && inputField.textComponent != null && inputField.textComponent.font != null)
+                {
+                    if (inputField.textComponent.font.name.IndexOf("Komika", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        _codeFont = inputField.textComponent.font;
+                        return _codeFont;
+                    }
+                }
+                if (inputField != null && inputField.placeholder is TextMeshProUGUI ph && ph.font != null)
+                {
+                    if (ph.font.name.IndexOf("Komika", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        _codeFont = ph.font;
+                        return _codeFont;
+                    }
+                }
+            }
+
+            // 2. Check loaded font assets in build memory
+            var allFonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            foreach (var f in allFonts)
+            {
+                if (f != null && f.name.IndexOf("Komika", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _codeFont = f;
+                    return _codeFont;
+                }
+            }
+
+            // 3. Fallback to Resources
+            _codeFont = Resources.Load<TMP_FontAsset>("KomikaDemo") ?? Resources.Load<TMP_FontAsset>("Fonts/KomikaDemo");
+            if (_codeFont != null) return _codeFont;
+
+#if UNITY_EDITOR
+            _codeFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro Effect/Examples/KomikaDemo.asset");
+#endif
+            return _codeFont;
         }
 
         #region Atmosphere
@@ -281,11 +320,16 @@ namespace PewPewArena.UI
                 _inputField.onSubmit.RemoveListener(OnInputSubmit);
                 _inputField.onSubmit.AddListener(OnInputSubmit);
 
+                var codeFont = GetKomikaFont();
+
                 // Configure input text component
                 if (_inputField.textComponent != null)
                 {
-                    if (_codeFont != null) _inputField.textComponent.font = _codeFont;
-                    else if (_font != null) _inputField.textComponent.font = _font;
+                    if (codeFont != null)
+                    {
+                        _inputField.textComponent.font = codeFont;
+                        _inputField.fontAsset = codeFont;
+                    }
                     _inputField.textComponent.fontSize = 24f;
                     _inputField.textComponent.characterSpacing = 3f;
                     _inputField.textComponent.color = Color.white;
@@ -298,8 +342,10 @@ namespace PewPewArena.UI
                     var placeholderText = _inputField.placeholder as TextMeshProUGUI;
                     if (placeholderText != null)
                     {
-                        if (_codeFont != null) placeholderText.font = _codeFont;
-                        else if (_font != null) placeholderText.font = _font;
+                        if (codeFont != null)
+                        {
+                            placeholderText.font = codeFont;
+                        }
                         placeholderText.text = "ENTER CODE...";
                         placeholderText.fontSize = 19f;
                         placeholderText.characterSpacing = 2f;
