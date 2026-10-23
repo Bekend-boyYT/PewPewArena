@@ -798,19 +798,6 @@ namespace SniperGame.Weapons
                 weaponGo.transform.localRotation = Quaternion.identity;
                 weaponGo.transform.localScale = Vector3.one;
 
-                // Reset any internal offsets on sub-children (e.g. sniper2 child in Sniper02, sniper 2 in Sniper)
-                for (int i = 0; i < weaponGo.transform.childCount; i++)
-                {
-                    Transform child = weaponGo.transform.GetChild(i);
-                    string cName = child.name.ToLower();
-                    if (cName.Contains("sniper") || cName.Contains("model") || cName.Contains("mesh"))
-                    {
-                        child.localPosition = Vector3.zero;
-                        child.localRotation = Quaternion.identity;
-                        child.localScale = Vector3.one;
-                    }
-                }
-
                 // Strip any colliders so character controller and hitboxes are unaffected
                 foreach (var col in weaponGo.GetComponentsInChildren<Collider>(true))
                 {
@@ -837,14 +824,101 @@ namespace SniperGame.Weapons
             return weaponGo;
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
+        public Transform WeaponSocket => weaponSocket;
+
+        public Vector3 SocketLocalPosition
+        {
+            get => socketLocalPosition;
+            set
+            {
+                socketLocalPosition = value;
+                ApplySocketTransform();
+            }
+        }
+
+        public Vector3 SocketLocalRotation
+        {
+            get => socketLocalRotation;
+            set
+            {
+                socketLocalRotation = value;
+                ApplySocketTransform();
+            }
+        }
+
+        public void ApplySocketTransform()
         {
             if (weaponSocket != null)
             {
                 weaponSocket.localPosition = socketLocalPosition;
                 weaponSocket.localRotation = Quaternion.Euler(socketLocalRotation);
             }
+        }
+
+#if UNITY_EDITOR
+        [System.NonSerialized] private bool _isEditorPreviewActive;
+
+        public bool IsEditorPreviewActive => _isEditorPreviewActive;
+
+        private void OnValidate()
+        {
+            ApplySocketTransform();
+        }
+
+        public void ShowEditorPreview(int slot)
+        {
+            _isEditorPreviewActive = true;
+            ResolveThirdPersonWeapons();
+            ApplySocketTransform();
+
+            if (thirdPersonSniper1 != null)
+            {
+                thirdPersonSniper1.SetActive(slot == 0);
+                var rends1 = thirdPersonSniper1.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rends1)
+                {
+                    r.enabled = (slot == 0);
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+            }
+
+            if (thirdPersonSniper2 != null)
+            {
+                thirdPersonSniper2.SetActive(slot == 1);
+                var rends2 = thirdPersonSniper2.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in rends2)
+                {
+                    r.enabled = (slot == 1);
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+            }
+
+            UnityEditor.SceneView.RepaintAll();
+        }
+
+        public void ClearEditorPreview()
+        {
+            _isEditorPreviewActive = false;
+            if (thirdPersonSniper1 != null && !Application.isPlaying)
+            {
+                DestroyImmediate(thirdPersonSniper1);
+                thirdPersonSniper1 = null;
+            }
+            if (thirdPersonSniper2 != null && !Application.isPlaying)
+            {
+                DestroyImmediate(thirdPersonSniper2);
+                thirdPersonSniper2 = null;
+            }
+            if (weaponSocket != null && !Application.isPlaying)
+            {
+                Transform sockRoot = (weaponSocket.name == "WeaponSocket_R") ? weaponSocket : weaponSocket.parent;
+                if (sockRoot != null)
+                {
+                    DestroyImmediate(sockRoot.gameObject);
+                }
+                weaponSocket = null;
+            }
+            UnityEditor.SceneView.RepaintAll();
         }
 #endif
 
