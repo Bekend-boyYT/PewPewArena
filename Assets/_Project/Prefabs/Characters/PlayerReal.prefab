@@ -545,8 +545,8 @@ MonoBehaviour:
   thirdPersonSniper1: {fileID: 0}
   thirdPersonSniper2: {fileID: 0}
   weaponSocket: {fileID: 0}
-  socketLocalPosition: {x: 0.05, y: 0.01, z: 0.01}
-  socketLocalRotation: {x: -35, y: -105, z: -145}
+  socketLocalPosition: {x: 0.06, y: 0, z: 0.01}
+  socketLocalRotation: {x: -146, y: 74, z: 33}
   maxClipAmmo: 5
   reloadDuration: 2.2
   weaponAudioSource: {fileID: 3570139252239378147}

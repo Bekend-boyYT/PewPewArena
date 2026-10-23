@@ -46,8 +46,8 @@ namespace SniperGame.Weapons
         [SerializeField] private GameObject thirdPersonSniper2;
         [Tooltip("Socket attached to soldier right hand")]
         [SerializeField] private Transform weaponSocket;
-        [SerializeField] private Vector3 socketLocalPosition = new Vector3(0.05f, 0.01f, 0.01f);
-        [SerializeField] private Vector3 socketLocalRotation = new Vector3(-35f, -105f, -145f);
+        [SerializeField] private Vector3 socketLocalPosition = new Vector3(0.06f, 0.0f, 0.01f);
+        [SerializeField] private Vector3 socketLocalRotation = new Vector3(-146f, 74f, 33f);
 
         [Header("Ammo Settings (Legacy Fallback)")]
         [SerializeField] private int maxClipAmmo = 5;
@@ -150,6 +150,7 @@ namespace SniperGame.Weapons
         private bool _wantsToScope;
         private bool _isFullyScoped;
         private Renderer[] _weaponRenderers;
+        private PlayerAnimationDriver _animDriver;
 
         public override void OnNetworkSpawn()
         {
@@ -228,6 +229,7 @@ namespace SniperGame.Weapons
 
         private void Awake()
         {
+            if (_animDriver == null) _animDriver = GetComponent<PlayerAnimationDriver>();
             ResolveWeaponReferences();
 
             int preferredSlot = RelayNetworkUI.GetLocalEquippedSniper();
@@ -968,6 +970,8 @@ namespace SniperGame.Weapons
 
         private IEnumerator ScopeInRoutine()
         {
+            _animDriver?.SetScoped(true);
+
             // 1. Immediately start raising the 3D sniper weapon
             if (weaponAnimator != null)
             {
@@ -1018,6 +1022,7 @@ namespace SniperGame.Weapons
 
         private void ScopeOut()
         {
+            _animDriver?.SetScoped(false);
             _wantsToScope = false;
             _isFullyScoped = false;
 
@@ -1148,6 +1153,7 @@ namespace SniperGame.Weapons
             }
 
             PlayShootEffects(_activeWeaponSlot);
+            _animDriver?.TriggerShoot();
 
             // Instant client-side predicted bullet tracer for 0ms shooter feedback
             Transform activeMuzzle = (_activeWeaponSlot == 0) ? firePoint1 : firePoint2;
@@ -1192,6 +1198,7 @@ namespace SniperGame.Weapons
         public void StartReload()
         {
             if (_isReloading || CurrentClipAmmo >= CurrentMaxClipAmmo) return;
+            _animDriver?.TriggerReload();
 
             if (_reloadCoroutine != null) StopCoroutine(_reloadCoroutine);
             _reloadCoroutine = StartCoroutine(ReloadRoutine());
@@ -1393,6 +1400,9 @@ namespace SniperGame.Weapons
         {
             // Owner already spawned their predicted cosmetic bullet tracer with 0ms delay
             if (IsOwner) return;
+
+            if (_animDriver == null) _animDriver = GetComponent<PlayerAnimationDriver>();
+            _animDriver?.TriggerShoot();
 
             SpawnCosmeticBullet(origin, hitPosition, hitNormal, weaponSlot, isCharacterHit);
         }

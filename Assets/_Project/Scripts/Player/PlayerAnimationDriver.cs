@@ -47,9 +47,13 @@ namespace SniperGame.Player
         private static readonly int WallJumpTriggerHash = Animator.StringToHash("WallJump");
         private static readonly int DieTriggerHash = Animator.StringToHash("Die");
         private static readonly int ReviveTriggerHash = Animator.StringToHash("Revive");
+        private static readonly int ShootTriggerHash = Animator.StringToHash("Shoot");
+        private static readonly int ReloadTriggerHash = Animator.StringToHash("Reload");
+        private static readonly int IsScopedHash = Animator.StringToHash("IsScoped");
 
         private Vector3 _lastPosition;
         private float _currentDisplayedSpeed = 0f;
+        private bool _isScoped = false;
 
         private void Awake()
         {
@@ -165,6 +169,7 @@ namespace SniperGame.Player
             if (crouched) flags |= (1 << 1);
             if (sliding) flags |= (1 << 2);
             if (dead) flags |= (1 << 3);
+            if (_isScoped) flags |= (1 << 4);
 
             // Update network variable if changed or moving
             PlayerAnimNetworkData current = _netAnimData.Value;
@@ -179,7 +184,7 @@ namespace SniperGame.Player
             }
 
             // Apply directly to animator
-            ApplyParameters(speed, grounded, crouched, sliding, wallSide);
+            ApplyParameters(speed, grounded, crouched, sliding, wallSide, _isScoped);
         }
 
         private void UpdateRemoteProxyState()
@@ -189,6 +194,7 @@ namespace SniperGame.Player
             bool grounded = (data.stateFlags & (1 << 0)) != 0;
             bool crouched = (data.stateFlags & (1 << 1)) != 0;
             bool sliding = (data.stateFlags & (1 << 2)) != 0;
+            bool isScoped = (data.stateFlags & (1 << 4)) != 0;
             int wallSide = data.wallRunSide;
 
             // Fallback speed deduction from transform delta if network variable is slightly latent
@@ -199,16 +205,17 @@ namespace SniperGame.Player
 
             _currentDisplayedSpeed = Mathf.Lerp(_currentDisplayedSpeed, targetSpeed, Time.deltaTime * 12f);
 
-            ApplyParameters(_currentDisplayedSpeed, grounded, crouched, sliding, wallSide);
+            ApplyParameters(_currentDisplayedSpeed, grounded, crouched, sliding, wallSide, isScoped);
         }
 
-        private void ApplyParameters(float speed, bool grounded, bool crouched, bool sliding, int wallSide)
+        private void ApplyParameters(float speed, bool grounded, bool crouched, bool sliding, int wallSide, bool isScoped)
         {
             soldierAnimator.SetFloat(MoveSpeedHash, speed);
             soldierAnimator.SetBool(IsGroundedHash, grounded);
             soldierAnimator.SetBool(IsCrouchedHash, crouched);
             soldierAnimator.SetBool(IsSlidingHash, sliding);
             soldierAnimator.SetInteger(WallRunSideHash, wallSide);
+            soldierAnimator.SetBool(IsScopedHash, isScoped);
         }
 
         #region Action Triggers
@@ -284,6 +291,71 @@ namespace SniperGame.Player
             {
                 soldierAnimator.ResetTrigger(DieTriggerHash);
                 soldierAnimator.SetTrigger(ReviveTriggerHash);
+            }
+        }
+
+        public void SetScoped(bool isScoped)
+        {
+            _isScoped = isScoped;
+            if (soldierAnimator != null)
+            {
+                soldierAnimator.SetBool(IsScopedHash, isScoped);
+            }
+        }
+
+        public void TriggerShoot()
+        {
+            if (soldierAnimator != null)
+            {
+                soldierAnimator.SetTrigger(ShootTriggerHash);
+            }
+
+            if (IsOwner && IsSpawned)
+            {
+                TriggerShootServerRpc();
+            }
+        }
+
+        [ServerRpc]
+        private void TriggerShootServerRpc()
+        {
+            TriggerShootClientRpc();
+        }
+
+        [ClientRpc]
+        private void TriggerShootClientRpc()
+        {
+            if (!IsOwner && soldierAnimator != null)
+            {
+                soldierAnimator.SetTrigger(ShootTriggerHash);
+            }
+        }
+
+        public void TriggerReload()
+        {
+            if (soldierAnimator != null)
+            {
+                soldierAnimator.SetTrigger(ReloadTriggerHash);
+            }
+
+            if (IsOwner && IsSpawned)
+            {
+                TriggerReloadServerRpc();
+            }
+        }
+
+        [ServerRpc]
+        private void TriggerReloadServerRpc()
+        {
+            TriggerReloadClientRpc();
+        }
+
+        [ClientRpc]
+        private void TriggerReloadClientRpc()
+        {
+            if (!IsOwner && soldierAnimator != null)
+            {
+                soldierAnimator.SetTrigger(ReloadTriggerHash);
             }
         }
 
