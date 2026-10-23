@@ -986,7 +986,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3692339189830376156, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
       propertyPath: m_Name
-      value: Houte kar placeholder (1)
+      value: Houte kar (1)
       objectReference: {fileID: 0}
     - target: {fileID: 4068441798864240742, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1063,7 +1063,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3692339189830376156, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
       propertyPath: m_Name
-      value: Houte kar placeholder
+      value: Houte kar
       objectReference: {fileID: 0}
     - target: {fileID: 4068441798864240742, guid: 6a999577c47034d4f8382e0f648e3639, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2177,7 +2177,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5366269155657474474, guid: ad27cdc06bc36c74ca75b5b85b587f91, type: 3}
       propertyPath: m_Name
-      value: Houte emmer placeholder
+      value: Houte emmer
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2377,7 +2377,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4605123809164745536, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_Name
-      value: Uitkijk toren placeholder (1)
+      value: Uitkijk toren (1)
       objectReference: {fileID: 0}
     - target: {fileID: 5493327223901821286, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2890,7 +2890,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4605123809164745536, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_Name
-      value: Uitkijk toren placeholder
+      value: Uitkijk toren
       objectReference: {fileID: 0}
     - target: {fileID: 5493327223901821286, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3521,7 +3521,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4605123809164745536, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_Name
-      value: Uitkijk toren placeholder (2)
+      value: Uitkijk toren (2)
       objectReference: {fileID: 0}
     - target: {fileID: 5493327223901821286, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_LocalPosition.x
@@ -24425,7 +24425,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4605123809164745536, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_Name
-      value: Uitkijk toren placeholder
+      value: Uitkijk toren
       objectReference: {fileID: 0}
     - target: {fileID: 5493327223901821286, guid: a1bced9674c53f5489cb9abf3a905588, type: 3}
       propertyPath: m_LocalPosition.x
