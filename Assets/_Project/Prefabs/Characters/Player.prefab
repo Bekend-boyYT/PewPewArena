@@ -461,9 +461,9 @@ MonoBehaviour:
   acceleration: 18
   airControl: 0.6
   staminaEnabled: 1
-  maxStamina: 100
+  maxStamina: 200
   staminaDrainRate: 28
-  staminaRegenRate: 22
+  staminaRegenRate: 44
   staminaRegenDelay: 0.9
   minStaminaToSprint: 15
   jumpHeight: 2.4

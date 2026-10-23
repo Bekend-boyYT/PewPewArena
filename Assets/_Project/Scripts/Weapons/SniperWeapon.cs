@@ -332,7 +332,17 @@ namespace SniperGame.Weapons
             if (weaponAnimator == null) weaponAnimator = weaponAnimator1;
             if (firePoint == null) firePoint = firePoint1;
 
-            ResolveThirdPersonWeapons();
+            EnsureWeaponLayerRecursive(weaponHolder1);
+            EnsureWeaponLayerRecursive(weaponHolder2);
+
+            try
+            {
+                ResolveThirdPersonWeapons();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SniperWeapon] Exception resolving third-person weapons: {ex.Message}");
+            }
         }
 
         public bool CanSwitchWeapons()
@@ -446,10 +456,19 @@ namespace SniperGame.Weapons
             weaponAnimator = (slot == 0) ? weaponAnimator1 : weaponAnimator2;
             firePoint = (slot == 0) ? firePoint1 : firePoint2;
 
+            EnsureWeaponLayerRecursive(weaponVisuals);
+
             // 3rd Person Soldier Snipers
             if (thirdPersonSniper1 == null || thirdPersonSniper2 == null)
             {
-                ResolveThirdPersonWeapons();
+                try
+                {
+                    ResolveThirdPersonWeapons();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[SniperWeapon] Exception resolving third-person weapons in SetWeaponSlotActive: {ex.Message}");
+                }
             }
 
             if (thirdPersonSniper1 != null)
@@ -681,6 +700,22 @@ namespace SniperGame.Weapons
             }
         }
 
+        private static void EnsureWeaponLayerRecursive(GameObject root)
+        {
+            if (root == null) return;
+            int weaponLayer = LayerMask.NameToLayer("Weapon");
+            if (weaponLayer < 0) weaponLayer = 6;
+
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i] != null)
+                {
+                    transforms[i].gameObject.layer = weaponLayer;
+                }
+            }
+        }
+
         private GameObject CreateThirdPersonWeapon(int slot, Transform parentSocket)
         {
             GameObject prefab = (slot == 0) ? thirdPersonSniper1Prefab : thirdPersonSniper2Prefab;
@@ -690,19 +725,40 @@ namespace SniperGame.Weapons
 
             if (prefab != null)
             {
-                weaponGo = Instantiate(prefab, parentSocket, false);
-                weaponGo.name = weaponName;
+                try
+                {
+                    weaponGo = Instantiate(prefab, parentSocket, false);
+                    if (weaponGo != null)
+                    {
+                        weaponGo.name = weaponName;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[SniperWeapon] Failed to instantiate thirdPersonSniper{(slot + 1)}Prefab ({prefab.name}): {ex.Message}. Falling back.");
+                    weaponGo = null;
+                }
             }
-            else
+
+            if (weaponGo == null)
             {
                 // Fallback: Check if Resources has ThirdPersonSniper
                 GameObject resPrefab = Resources.Load<GameObject>(weaponName);
                 if (resPrefab != null)
                 {
-                    weaponGo = Instantiate(resPrefab, parentSocket, false);
-                    weaponGo.name = weaponName;
+                    try
+                    {
+                        weaponGo = Instantiate(resPrefab, parentSocket, false);
+                        if (weaponGo != null) weaponGo.name = weaponName;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[SniperWeapon] Failed to instantiate Resources {weaponName}: {ex.Message}");
+                        weaponGo = null;
+                    }
                 }
-                else
+                
+                if (weaponGo == null)
                 {
                     // Clone from the viewmodel in weaponHolder1/weaponHolder2
                     GameObject sourceHolder = (slot == 0) ? weaponHolder1 : weaponHolder2;

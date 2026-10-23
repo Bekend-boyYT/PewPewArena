@@ -133,6 +133,7 @@ namespace SniperGame.UI
             if (hudContainer != null && !hudContainer.activeSelf) hudContainer.SetActive(true);
             if (healthSlider != null && !healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
             if (staminaSlider != null && !staminaSlider.gameObject.activeSelf) staminaSlider.gameObject.SetActive(true);
+            EnsureHUDHealthAndStaminaLayout();
             ResolveAmmoElements();
             if (ammoRoot != null && !ammoRoot.activeSelf) ammoRoot.SetActive(true);
             else if (ammoText != null && !ammoText.gameObject.activeSelf) ammoText.gameObject.SetActive(true);
@@ -211,13 +212,24 @@ namespace SniperGame.UI
             InitializeUIParticles();
         }
 
+        private int _lastScreenWidth;
+        private int _lastScreenHeight;
+
         private void Start()
         {
+            EnsureHUDHealthAndStaminaLayout();
             StartCoroutine(InitializeLocalPlayerRoutine());
         }
 
         private void Update()
         {
+            if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
+            {
+                _lastScreenWidth = Screen.width;
+                _lastScreenHeight = Screen.height;
+                EnsureHUDHealthAndStaminaLayout();
+            }
+
             // Keeps cursor free and visible whenever match end or rematch screen is open
             if (IsMatchEndActive)
             {
@@ -225,6 +237,70 @@ namespace SniperGame.UI
                 {
                     Cursor.lockState = CursorLockMode.None;
                     Cursor.visible = true;
+                }
+            }
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            EnsureHUDHealthAndStaminaLayout();
+        }
+
+        public void EnsureHUDHealthAndStaminaLayout()
+        {
+            if (hudContainer == null) return;
+            RectTransform containerRt = hudContainer.GetComponent<RectTransform>();
+            if (containerRt == null) return;
+
+            // In reference 1920x1080 canvas:
+            // Center is (0, 0), bottom-left is (-960, -540).
+            // HealthSliderMain was positioned at (-803.37335, -462.8268) -> exactly 156.6267 units right and 77.1732 units up from bottom-left.
+            // StaminaSlider was anchored at bottom-left (0, 0) with anchoredPosition (90, 40).
+            float blX = -containerRt.rect.width * 0.5f;
+            float blY = -containerRt.rect.height * 0.5f;
+
+            if (healthSlider != null && healthSlider.transform.parent != null)
+            {
+                Transform healthMain = healthSlider.transform.parent;
+                healthMain.localPosition = new Vector3(blX + 156.6267f, blY + 77.1732f, healthMain.localPosition.z);
+            }
+
+            if (staminaSlider != null)
+            {
+                RectTransform staminaRt = staminaSlider.GetComponent<RectTransform>();
+                if (staminaRt != null)
+                {
+                    staminaRt.anchorMin = Vector2.zero;
+                    staminaRt.anchorMax = Vector2.zero;
+                    staminaRt.pivot = Vector2.zero;
+                    staminaRt.anchoredPosition = new Vector2(90f, 40f);
+                    staminaRt.sizeDelta = new Vector2(200f, 20f);
+
+                    Transform bg = staminaRt.Find("Background");
+                    if (bg != null)
+                    {
+                        RectTransform bgRt = bg.GetComponent<RectTransform>();
+                        if (bgRt != null)
+                        {
+                            bgRt.anchorMin = Vector2.zero;
+                            bgRt.anchorMax = Vector2.one;
+                            bgRt.sizeDelta = Vector2.zero;
+                            bgRt.anchoredPosition = Vector2.zero;
+                        }
+                    }
+
+                    Transform fillArea = staminaRt.Find("Fill Area");
+                    if (fillArea != null)
+                    {
+                        RectTransform faRt = fillArea.GetComponent<RectTransform>();
+                        if (faRt != null)
+                        {
+                            faRt.anchorMin = Vector2.zero;
+                            faRt.anchorMax = Vector2.one;
+                            faRt.sizeDelta = Vector2.zero;
+                            faRt.anchoredPosition = Vector2.zero;
+                        }
+                    }
                 }
             }
         }

@@ -410,9 +410,9 @@ MonoBehaviour:
   acceleration: 14
   airControl: 0.6
   staminaEnabled: 1
-  maxStamina: 100
+  maxStamina: 200
   staminaDrainRate: 22
-  staminaRegenRate: 18
+  staminaRegenRate: 36
   staminaRegenDelay: 0.9
   minStaminaToSprint: 15
   jumpHeight: 2.4
@@ -540,8 +540,8 @@ MonoBehaviour:
   scopedRecoilPitch2: 0.8
   scopedRecoilYaw2: 0.45
   sniper2Damage: 999
-  thirdPersonSniper1Prefab: {fileID: 100100000, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
-  thirdPersonSniper2Prefab: {fileID: 100100000, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
+  thirdPersonSniper1Prefab: {fileID: 4507843972025579413, guid: f52d97f792ad5824c90d6f3dfbea0ce8, type: 3}
+  thirdPersonSniper2Prefab: {fileID: 2500924936944056406, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
   thirdPersonSniper1: {fileID: 0}
   thirdPersonSniper2: {fileID: 0}
   weaponSocket: {fileID: 0}
@@ -1361,7 +1361,7 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
-    - target: {fileID: 3481485769454047758, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
+    - target: {fileID: 919132149155446097, guid: 8ee4358d5d4f8cf45888d873b0f4ad66, type: 3}
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
